@@ -3,6 +3,7 @@
 library(stringr)
 library(dplyr)
 library(ggplot2)
+library(lubridate)
 
 # Import data 
 flux_data_raw <- read.csv("flux_data/combined_data.csv")
@@ -43,10 +44,14 @@ flux_data <- flux_data %>%
   mutate(
     Campaign = case_when(
       grepl("G", base_code) ~ "Gradient",
-      grepl("D", base_code) ~ "Daily"
+      grepl("D", base_code) ~ "Daily",
+      grepl("^PIT", base_code) ~ "PIT"
     )
   )
 
+flux_data <- flux_data %>% 
+  mutate(plotID = paste(base_code, treatment, sep = "_"),
+         longdate = dmy(paste0(date, " 2024")))
 
 # Calculating photosynthesis
 flux_data <- flux_data %>% 
@@ -88,4 +93,23 @@ scatterplot2 <- ggplot(zoomdaily, aes(x = UniqueID, y = best.flux))+
   geom_smooth(method = lm) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
 scatterplot2
+
+zoomdaily <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul"), Animal %in% c("Horse", "Cow"))
+
+ggplot(zoomdaily, aes(x = date, y = best.flux, color = treatment)) +
+  geom_point() +
+  facet_wrap(~ Animal, scales = "free_y") +
+  labs(x = "Date", y = "CO2 Flux")
+
+
+HD <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Horse", NEERE == "NEE")
+
+ggplot(HD, aes(x = longdate, y = best.flux, color = treatment, group = plotID)) +
+  geom_point() +
+  geom_line()+
+  facet_wrap(~plotID, scales = "free_x")+
+  labs(title = "Daily Horse CO2",
+       x = "Date", y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}))
+
+
 
