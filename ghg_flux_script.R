@@ -2,6 +2,7 @@
 
 library(stringr)
 library(dplyr)
+library(ggplot2)
 
 # Import data 
 flux_data_raw <- read.csv("flux_data/combined_data.csv")
@@ -45,3 +46,46 @@ flux_data <- flux_data %>%
       grepl("D", base_code) ~ "Daily"
     )
   )
+
+
+# Calculating photosynthesis
+flux_data <- flux_data %>% 
+  mutate(photosynthesis = NA)
+  
+for(i in 1:(nrow(flux_data) - 1)) {  # Loop until n-1 to avoid going out of bounds
+  if (flux_data$NEERE[i] == "NEE" && flux_data$NEERE[i+1] == "RE") {
+    if (flux_data$gastype[i] == "CO2") {
+      # Subtract the best.flux values from NEE and RE
+      flux_data$photosynthesis[i] <-  flux_data$best.flux[i+1] - flux_data$best.flux[i]
+    }
+  }
+}
+
+
+gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
+dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
+
+scatterplot <- ggplot(gradients, aes(x = UniqueID, y = best.flux))+
+  geom_point(aes(color = treatment)) +
+  geom_smooth(method = lm) + 
+  xlab("plot ID") +
+  ylab("gas type") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+scatterplot
+
+scatterplot1 <- ggplot(dailies, aes(x = UniqueID, y = best.flux))+
+  geom_point(aes(color = treatment)) +
+  geom_smooth(method = lm) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+ 
+scatterplot1
+
+zoomdaily <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul"), Animal == "Horse")
+
+scatterplot2 <- ggplot(zoomdaily, aes(x = UniqueID, y = best.flux))+
+  geom_point(aes(color = treatment)) +
+  geom_smooth(method = lm) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+scatterplot2
+
