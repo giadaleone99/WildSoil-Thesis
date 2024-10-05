@@ -5,9 +5,13 @@ library(dplyr)
 library(ggplot2)
 library(ggbreak)
 library(lubridate)
+library(knitr)
+library(gridExtra)
+library(grid)
 
 # Import data 
 flux_data_raw <- read.csv("flux_data/combined_data.csv")
+dung_area_data <- read.csv("data/dung_soil_data.csv")
 
 flux_data <- flux_data_raw %>%
   mutate(
@@ -69,7 +73,29 @@ for(i in 1:(nrow(flux_data) - 1)) {  # Loop until n-1 to avoid going out of boun
   }
 }
 
+frame_area <- 3058.15 #cm2
+
 flux_data <- flux_data %>% select(...1, UniqueID, base_code, treatment, NEERE, date, best.flux, model, gastype, Animal, Campaign, plotID, longdate, plotNEERE, photosynthesis)
+
+flux_data <- left_join(flux_data, dung_area_data, by = "UniqueID")
+
+flux_data <- flux_data %>% 
+  mutate(corr_veg_dung = frame_area - dung_area_cm2,
+         plottype = case_when(
+           Campaign %in% c("Gradient", "Daily") ~ "Vegetated",  
+           Campaign == "PIT" ~ "PIT",                          
+           TRUE ~ NA_character_                                 
+         ))
+
+flux_data <- flux_data %>% 
+  mutate(corr_photosynthesis = (frame_area/corr_veg_dung) * photosynthesis,
+         period = case_when(
+           longdate >= as.Date("2024-06-13") & longdate <= as.Date("2024-06-14") ~ 1,  # Period 1
+           longdate >= as.Date("2024-07-15") & longdate <= as.Date("2024-07-19") ~ 2,  # Period 2
+           longdate >= as.Date("2024-07-29") & longdate <= as.Date("2024-08-02") ~ 3,  # Period 3
+           TRUE ~ NA_integer_  # Handle dates outside these ranges
+         ))
+
 
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
 dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
@@ -171,15 +197,100 @@ generate_plots("Horse", "Gradient", gradient_date_filter, "G")
 generate_plots("Cow", "Gradient", gradient_date_filter, "G")
 
 
-# Photosynthesis plot # NEED TO ADJUST PHOTOSYNTHESIS IN DUNG PLOTS TO ACCOUNT FOR 
-# VEGETATION AREA
+# Photosynthesis plot 
 photosynthesis_data <- flux_data %>% filter(gastype == "CO2", Campaign == "Daily", NEERE == "NEE")
 
-photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = photosynthesis, color = treatment)) +
-  geom_boxplot() +
+photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = corr_photosynthesis, color = treatment)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(aes(color = treatment), position = position_dodge(width = 0.8))+
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Cow vs Horse Photosynthesis") +
-  theme_minimal()
+       title = "Cow vs Horse Photosynthesis",
+       colour = "Treatment") +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+  
 
 photosynthesis_plot
-ggsave(filename = "plots/HorseCow_photosynthesis.jpeg", plot = photosynthesis_plot, width = 10, height = 8)
+ggsave(filename = "plots/HorseCow_photosynthesis.jpeg", plot = photosynthesis_plot, width = 6, height = 5)
+
+
+# Soil temp and SWC
+SWC_plot <- ggplot(flux_data, aes(x = factor(period), y = SWC_., colour = plottype)) +
+  geom_boxplot(position = position_dodge(width = 0.75)) +  # Adjust boxplots
+  geom_point(aes(color = plottype), position = position_dodge(width = 0.75), size = 2) +  # Align points with boxplots
+  labs(x = "Sampling period", y = "Soil Water Content (%)", title = "Soil Water Content by Period",
+       colour = "Plot type") +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+SWC_plot
+ggsave("plots/SWC_plot.jpeg", plot = SWC_plot, width = 6, height = 5, dpi = 300, units = "in")
+
+Stemp_plot <- ggplot(flux_data, aes(x = factor(period), y = S_temp, colour = plottype)) +
+  geom_boxplot(position = position_dodge(width = 0.75)) +
+  geom_point(aes(color = plottype), position = position_dodge(width = 0.75)) +
+  labs(y = expression("Soil temperature"~(degree*C)), x = "Sampling period",
+       title = "Soil temperature",
+       colour = "Plot type") +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank()  # Removes outer border, if any
+  )
+
+Stemp_plot
+
+ggsave("plots/Stemp_plot.jpeg", plot = Stemp_plot, width = 6, height = 5, dpi = 300, units = "in")
+
+### SUMMARY STATISTICS THSI CRAP ISNT WORKING!! FIX NEXT TIME
+Soil_temp_stats <- flux_data %>%
+  group_by(period) %>%  # Group by 'period' column
+  summarize(
+    Mean_temp = mean(S_temp, na.rm = TRUE),  # Mean
+    Median_temp = median(S_temp, na.rm = TRUE),  # Median
+    Min_temp = min(S_temp, na.rm = TRUE),  # Minimum
+    Max_temp = max(S_temp, na.rm = TRUE),  # Maximum
+    SD_temp = sd(S_temp, na.rm = TRUE)  # Standard deviation
+  )
+print(Soil_temp_stats)
+
+Soil_temp_stats[sapply(Soil_temp_stats, is.numeric)] <- lapply(Soil_temp_stats[sapply(Soil_temp_stats, is.numeric)], round, digits = 1)
+
+# Create the table
+table <- tableGrob(Soil_temp_stats)
+
+# Save the table as a JPEG file
+jpeg("tables/soiltemp_table.jpeg", width = 800, height = 400)  # Adjust dimensions as needed
+grid.draw(table)
+dev.off()
+
+
+# swc
+SWC_stats <- flux_data %>%
+  group_by(period) %>%  # Group by 'period' column
+  summarize(
+    Mean_SWC = mean(SWC_., na.rm = TRUE),  # Mean
+    Median_SWC = median(SWC_., na.rm = TRUE),  # Median
+    Min_SWC = min(SWC_., na.rm = TRUE),  # Minimum
+    Max_SWC = max(SWC_., na.rm = TRUE),  # Maximum
+    SD_SWC = sd(SWC_., na.rm = TRUE)  # Standard deviation
+  )
+print(SWC_stats)
+
+SWC_stats[sapply(SWC_stats, is.numeric)] <- lapply(SWC_stats[sapply(SWC_stats, is.numeric)], round, digits = 1)
+
+# Create the table
+table1 <- tableGrob(SWC_stats)
+
+# Save the table as a JPEG file
+jpeg("tables/swc_table.jpeg", width = 800, height = 400)  # Adjust dimensions as needed
+grid.draw(table)
+dev.off()
