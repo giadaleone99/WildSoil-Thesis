@@ -28,10 +28,7 @@ for (i in 1:nrow(flux_data_raw)) {
   flux_data$date[i] <- split_values[i, 4] 
 }
 
-flux_data <- flux_data %>% relocate(date, .after=UniqueID)
-flux_data <- flux_data %>% relocate(NEERE, .after=UniqueID)
-flux_data <- flux_data %>% relocate(treatment, .after=UniqueID)
-flux_data <- flux_data %>% relocate(base_code, .after=UniqueID)
+flux_data <- flux_data %>% relocate(date, NEERE, treatment, base_code, .after = UniqueID)
 
 flux_data <- flux_data %>% 
   mutate(
@@ -72,18 +69,11 @@ for(i in 1:(nrow(flux_data) - 1)) {  # Loop until n-1 to avoid going out of boun
   }
 }
 
+flux_data <- flux_data %>% select(...1, UniqueID, base_code, treatment, NEERE, date, best.flux, model, gastype, Animal, Campaign, plotID, longdate, plotNEERE, photosynthesis)
 
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
 dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
 
-scatterplot <- ggplot(gradients, aes(x = UniqueID, y = best.flux))+
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = lm) + 
-  xlab("plot ID") +
-  ylab("gas type") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
-
-scatterplot
 
 scatterplot1 <- ggplot(dailies, aes(x = UniqueID, y = best.flux))+
   geom_point(aes(color = treatment)) +
@@ -107,356 +97,89 @@ ggplot(zoomdaily, aes(x = date, y = best.flux, color = treatment)) +
   facet_wrap(~ Animal, scales = "free_y") +
   labs(x = "Date", y = "CO2 Flux")
 
-# Horse daily plots CO2
-HD_CO2 <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Horse")
+### GENERATING PLOTS
+# Create the plots directory if it doesn't exist
+if (!dir.exists("plots")) {
+  dir.create("plots")
+}
 
-HD_CO2_plot <- ggplot(HD_CO2, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free_x")+
-  labs(title = "Daily Horse CO2",
-       x = "Date", y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
+# List of gases to plot
+gases <- list(
+  list(gastype = "CO2", y_label = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}), filename_suffix = "CO2"),
+  list(gastype = "CH4", y_label = expression("nmol CH4 m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
+  list(gastype = "N2O", y_label = expression("nmol N2O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
+)
 
-ggsave(filename = "plots/HD_CO2.jpeg", plot = HD_CO2_plot, width = 10, height = 8)
+# Function to generate plots
+generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
+  for (gas in gases) {
+    # Filter data based on gas type and other conditions
+    gas_data <- flux_data %>%
+      filter(Campaign == campaign_type, gastype == gas$gastype, date %in% date_filter, Animal == animal_type)
+    
+    # Check if the gas is CH4 or N2O, and filter for RE measurements only
+    if (gas$gastype %in% c("CH4", "N2O")) {
+      gas_data <- gas_data %>% filter(NEERE == "RE")  # Filter to include only RE measurements
+    }
+    
+    # Print the number of rows in gas_data
+    cat("Processing gas:", gas$gastype, " - Rows:", nrow(gas_data), "\n")
+    
+    # Check if there is data to plot
+    if (nrow(gas_data) > 0) {
+      # Create the plot dynamically
+      gas_plot <- ggplot(gas_data, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
+        geom_point(size = 2) +
+        geom_line() +
+        facet_wrap(~base_code, scales = "free") +
+        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Date", y = gas$y_label,
+             color = "Light/Dark",         # Changed title for the color legend
+             shape = "Treatment") +
+        scale_color_manual(values = c("NEE" = "gray", "RE" = "black")) +
+        scale_shape_manual(values = c(16, 17)) +
+        theme_minimal() +
+        theme(
+          legend.position.inside = c(0.75, 0.25),
+          axis.line = element_line(color = "black"), 
+          axis.text = element_text(color = "black"),   
+          axis.ticks = element_line(color = "black"),
+          panel.grid.major = element_blank(),               # No major grid lines
+          panel.background = element_rect(fill = "white")   # White background
+        )
+      
+      # Generate the filename dynamically
+      filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
+      
+      # Save the plot
+      ggsave(filename = filename, plot = gas_plot, width = 10, height = 8)
+      
+      cat("Saved plot to:", filename, "\n")  # Confirm save location
+    } else {
+      cat("No data available for gas:", gas$gastype, "\n")
+    }
+  }
+}
 
-# Horse daily plots CH4
-HD_CH4 <- flux_data %>% filter(Campaign == "Daily", gastype == "CH4", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Horse")
+# Daily plots for Horse and Cow
+daily_date_filter <- c("15jul", "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug")
+generate_plots("Horse", "Daily", daily_date_filter, "D")
+generate_plots("Cow", "Daily", daily_date_filter, "D")
 
-HD_CH4_plot <- ggplot(HD_CH4, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Daily Horse CH4",
-       x = "Date", y = expression("nmol CH4 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
+# Gradient plots for Horse and Cow
+gradient_date_filter <- c("13jun", "14jun", "16jul", "17jul", "18jul", "29jul", "30jul")
+generate_plots("Horse", "Gradient", gradient_date_filter, "G")
+generate_plots("Cow", "Gradient", gradient_date_filter, "G")
 
-ggsave(filename = "plots/HD_CH4.jpeg", plot = HD_CH4_plot, width = 10, height = 8)
 
-# Horse Daily N2O plots
-HD_N2O <- flux_data %>% filter(Campaign == "Daily", gastype == "N2O", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Horse")
-
-HD_N2O_plot <- ggplot(HD_N2O, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free_x")+
-  labs(title = "Daily Horse N2O",
-       x = "Date", y = expression("nmol N2O m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-ggsave(filename = "plots/HD_N2O.jpeg", plot = HD_N2O_plot, width = 10, height = 8)
-
-# Cow daily plots CO2
-CD_CO2 <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Cow")
-
-CD_CO2_plot <- ggplot(CD_CO2, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free_x")+
-  labs(title = "Daily Cow CO2",
-       x = "Date", y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = "bottom",
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-ggsave(filename = "plots/CD_CO2.jpeg", plot = CD_CO2_plot, width = 10, height = 8)
-
-# Cow daily plots CH4
-CD_CH4 <- flux_data %>% filter(Campaign == "Daily", gastype == "CH4", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Cow")
-
-CD_CH4_plot <- ggplot(CD_CH4, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Daily Cow CH4",
-       x = "Date", y = expression("nmol CH4 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = "bottom",
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-ggsave(filename = "plots/CD_CH4.jpeg", plot = CD_CH4_plot, width = 10, height = 8)
-
-# Cow daily plots N2O
-CD_N2O <- flux_data %>% filter(Campaign == "Daily", gastype == "N2O", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug"), Animal == "Cow")
-
-CD_N2O_plot <- ggplot(CD_N2O, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Daily Cow N2O",
-       x = "Date", y = expression("nmol N2O m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  ) +
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = "bottom",
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-CD_N2O_plot
-
-ggsave(filename = "plots/CD_N2O.jpeg", plot = CD_N2O_plot, width = 10, height = 8)
-
-# GRADIENTS PLOTS
-# Horse Gradient CO2 plots
-HG_CO2 <- flux_data %>% filter(Campaign == "Gradient", gastype == "CO2", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Horse")
-
-HG_CO2_plot <- ggplot(HG_CO2, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free_x")+
-  labs(title = "Gradient Horse CO2",
-       x = "Date", y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-HG_CO2_plot
-
-ggsave(filename = "plots/HG_CO2.jpeg", plot = HG_CO2_plot, width = 10, height = 8)
-
-# Horse Gradient CH4 plot
-HG_CH4 <- flux_data %>% filter(Campaign == "Gradient", gastype == "CH4", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Horse")
-
-HG_CH4_plot <- ggplot(HG_CH4, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Gradient Horse CH4",
-       x = "Date", y = expression("nmol CH4 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-HG_CH4_plot
-
-ggsave(filename = "plots/HG_CH4.jpeg", plot = HG_CH4_plot, width = 10, height = 8)
-
-# Horse Gradient N2O plot
-HG_N2O <- flux_data %>% filter(Campaign == "Gradient", gastype == "N2O", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Horse")
-
-HG_N2O_plot <- ggplot(HG_N2O, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Gradient Horse N2O",
-       x = "Date", y = expression("nmol N2O m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-HG_N2O_plot
-
-ggsave(filename = "plots/HG_N2O.jpeg", plot = HG_N2O_plot, width = 10, height = 8)
-
-# Cow Gradient CO2 plots
-CG_CO2 <- flux_data %>% filter(Campaign == "Gradient", gastype == "CO2", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Cow")
-
-CG_CO2_plot <- ggplot(CG_CO2, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free_x")+
-  labs(title = "Gradient Cow CO2",
-       x = "Date", y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-CG_CO2_plot
-
-ggsave(filename = "plots/CG_CO2.jpeg", plot = CG_CO2_plot, width = 10, height = 8)
-
-# Cow Gradient CH4 plots
-CG_CH4 <- flux_data %>% filter(Campaign == "Gradient", gastype == "CH4", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Cow")
-
-CG_CH4_plot <- ggplot(CG_CH4, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Gradient Cow CH4",
-       x = "Date", y = expression("nmol CH4 m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.major = element_blank(),               # No major grid lines
-    panel.background = element_rect(fill = "white")   # White background
-  )
-
-CG_CH4_plot
-
-ggsave(filename = "plots/CG_CH4.jpeg", plot = CG_CH4_plot, width = 10, height = 8)
-
-# Cow Gradient N2O plots
-CG_N2O <- flux_data %>% filter(Campaign == "Gradient", gastype == "N2O", date %in% c("13jun", "14jun",  "16jul", "17jul", "18jul", "29jul", "30jul"), Animal == "Cow")
-
-CG_N2O_plot <- ggplot(CG_N2O, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-  geom_point(size = 2) +
-  geom_line()+
-  facet_wrap(~base_code, scales = "free")+
-  labs(title = "Gradient Cow N2O",
-       x = "Date", y = expression("nmol N2O m"^{-2} * " s"^{-1})) +
-  theme_minimal() +
-  labs(
-    color = "Light/Dark",
-    shape = "Treatment"
-  )+
-  scale_color_manual(values = c("NEE" = "gray", "RE" = "black"))+
-
-  theme(
-    legend.position = c(0.75, 0.25),
-    scale_shape_manual(values = c(16, 17)),
-    axis.line = element_line(color = "black"), 
-    axis.text = element_text(color = "black"),   
-    axis.ticks = element_line(color = "black"),
-    panel.grid.minor = element_line(color = "gray88", linewidth = 0.05),
-    panel.grid.major = element_blank(), 
-    panel.background = element_rect(fill = "white")
-  )
-
-CG_N2O_plot
-
-ggsave(filename = "plots/CG_N2O.jpeg", plot = CG_N2O_plot, width = 10, height = 8)
-
+# Photosynthesis plot # NEED TO ADJUST PHOTOSYNTHESIS IN DUNG PLOTS TO ACCOUNT FOR 
+# VEGETATION AREA
 photosynthesis_data <- flux_data %>% filter(gastype == "CO2", Campaign == "Daily", NEERE == "NEE")
-plot(photosynthesis_data$date, photosynthesis_data$photosynthesis)
 
 photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = photosynthesis, color = treatment)) +
   geom_boxplot() +
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-  title = "Cow vs Horse Photosynthesis") +
+       title = "Cow vs Horse Photosynthesis") +
   theme_minimal()
 
+photosynthesis_plot
 ggsave(filename = "plots/HorseCow_photosynthesis.jpeg", plot = photosynthesis_plot, width = 10, height = 8)
-
-# Dailys COW
