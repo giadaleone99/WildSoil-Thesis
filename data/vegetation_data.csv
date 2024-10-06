@@ -1,0 +1,433 @@
+plot_id,veg_class,dry_weight,harvested_area,veg_height,veg_height_2
+CD1_F,Bryophytes,1.444,432,2,3
+CD1_F,Achillea millefolium,0.104,432,2,3
+CD1_F,Dandelions and false dandelions,0.956,432,2,3
+CD1_F,Pilosella officinarum,0.727,432,2,3
+CD1_F,Plantago lanceolata,0.134,432,2,3
+CD1_F,Rumex acetosella,0.219,432,2,3
+CD1_F,Trifolium repens,0.364,432,2,3
+CD1_F,Graminoids,3.535,432,2,3
+CD1_C,Bryophytes,3.677,475,3,3
+CD1_C,Achillea millefolium,0.431,475,3,3
+CD1_C,Galium verum,0.106,475,3,3
+CD1_C,Dandelions and false dandelions,0.766,475,3,3
+CD1_C,Pilosella officinarum,1.165,475,3,3
+CD1_C,Plantago lanceolata,1.905,475,3,3
+CD1_C,Rumex acetosa,0.007,475,3,3
+CD1_C,Stellaria graminea,0.071,475,3,3
+CD1_C,Trifolium arvense,0.107,475,3,3
+CD1_C,Trifolium pratense,0.772,475,3,3
+CD1_C,Trifolium repens,0.258,475,3,3
+CD1_C,Graminoids,5.256,475,3,3
+CD2_F,Bryophytes,0.357,492,7,11
+CD2_F,Achillea millefolium,1.28,492,7,11
+CD2_F,Euphrasia stricta,1.474,492,7,11
+CD2_F,Dandelions and false dandelions,0.686,492,7,11
+CD2_F,Pilosella officinarum,0.013,492,7,11
+CD2_F,Plantago lanceolata,7.58,492,7,11
+CD2_F,Rumex acetosa,0.309,492,7,11
+CD2_F,Stellaria graminea,0.467,492,7,11
+CD2_F,Trifolium arvense,0.188,492,7,11
+CD2_F,Trifolium campestre,0.015,492,7,11
+CD2_F,Trifolium pratense,3.358,492,7,11
+CD2_F,Graminoids,2.181,492,7,11
+CD2_C,Bryophytes,0.404,503,3,5
+CD2_C,Achillea millefolium,0.101,503,3,5
+CD2_C,Euphrasia stricta,0.737,503,3,5
+CD2_C,Dandelions and false dandelions,0.501,503,3,5
+CD2_C,Pilosella officinarum,0.071,503,3,5
+CD2_C,Plantago lanceolata,3.056,503,3,5
+CD2_C,Ranunculus sp.,0.003,503,3,5
+CD2_C,Trifolium arvense,0.028,503,3,5
+CD2_C,Graminoids,3.696,503,3,5
+CD3_F,Bryophytes,0.701,447,,2
+CD3_F,Achillea millefolium,0.085,447,,2
+CD3_F,Dandelions and false dandelions,0.619,447,,2
+CD3_F,Jacobaea vulgaris,0.096,447,,2
+CD3_F,Pilosella officinarum,0.068,447,,2
+CD3_F,Pimpinella saxifraga,0.019,447,,2
+CD3_F,Plantago lanceolata,0.334,447,,2
+CD3_F,Rosa canina,0.22,447,,2
+CD3_F,Rumex acetosa,0.038,447,,2
+CD3_F,Trifolium arvense,0.065,447,,2
+CD3_F,Trifolium pratense,0.84,447,,2
+CD3_F,Graminoids,1.036,447,,2
+CD3_C,Bryophytes,2.141,433,,3
+CD3_C,Achillea millefolium,0.424,433,,3
+CD3_C,Euphrasia stricta,0.088,433,,3
+CD3_C,Dandelions and false dandelions,0.673,433,,3
+CD3_C,Pilosella officinarum,1.753,433,,3
+CD3_C,Pimpinella saxifraga,0.069,433,,3
+CD3_C,Plantago lanceolata,0.824,433,,3
+CD3_C,Rumex acetosa,0.016,433,,3
+CD3_C,Trifolium pratense,1.222,433,,3
+CD3_C,Graminoids,2.355,433,,3
+CD4_F,Bryophytes,2.045,415,,2
+CD4_F,Achillea millefolium,0.098,415,,2
+CD4_F,Cerastium fontanum,0.344,415,,2
+CD4_F,Euphrasia stricta,0.338,415,,2
+CD4_F,Dandelions and false dandelions,0.802,415,,2
+CD4_F,Pilosella officinarum,0.029,415,,2
+CD4_F,Pimpinella saxifraga,0.066,415,,2
+CD4_F,Plantago lanceolata,1.03,415,,2
+CD4_F,Rumex acetosa,0.113,415,,2
+CD4_F,Trifolium campestre,0.049,415,,2
+CD4_F,Trifolium repens,0.224,415,,2
+CD4_F,Graminoids,4.036,415,,2
+CD4_C,Bryophytes,1.185,425,,2
+CD4_C,Achillea millefolium,0.158,425,,2
+CD4_C,Cerastium fontanum,0.134,425,,2
+CD4_C,Euphrasia stricta,0.014,425,,2
+CD4_C,Pilosella officinarum,0.982,425,,2
+CD4_C,Pimpinella saxifraga,0.023,425,,2
+CD4_C,Plantago lanceolata,0.4,425,,2
+CD4_C,Rumex acetosa,0.016,425,,2
+CD4_C,Dandelions and false dandelions,0.442,425,,2
+CD4_C,Stellaria graminea,0.018,425,,2
+CD4_C,Trifolium campestre,0.053,425,,2
+CD4_C,Trifolium repens,0.037,425,,2
+CD4_C,Vicia sativa,0.07,425,,2
+CD4_C,Graminoids,4.793,425,,2
+HD1_F,Bryophytes,0.279,480,2,6
+HD1_F,Achillea millefolium,0.303,480,2,6
+HD1_F,Euphrasia stricta,0.19,480,2,6
+HD1_F,Dandelions and false dandelions,1.147,480,2,6
+HD1_F,Plantago lanceolata,1.247,480,2,6
+HD1_F,Rumex acetosa,1.5,480,2,6
+HD1_F,Trifolium repens,0.035,480,2,6
+HD1_F,Veronica chamaedrys,0.031,480,2,6
+HD1_F,Graminoids,5.681,480,2,6
+HD1_C,Bryophytes,0.321,480,3,4
+HD1_C,Achillea millefolium,0.484,480,3,4
+HD1_C,Campanula rotundifolia,0.477,480,3,4
+HD1_C,Cerastium fontanum,0.193,480,3,4
+HD1_C,Daucus carota,0.027,480,3,4
+HD1_C,Euphrasia stricta,1.803,480,3,4
+HD1_C,Galium verum,0.141,480,3,4
+HD1_C,Dandelions and false dandelions,0.62,480,3,4
+HD1_C,Plantago lanceolata,0.454,480,3,4
+HD1_C,Rumex acetosa,0.063,480,3,4
+HD1_C,Rumex acetosella,0.074,480,3,4
+HD1_C,Trifolium repens,0.012,480,3,4
+HD1_C,Graminoids,3.182,480,3,4
+HD2_F,Bryophytes,0.113,513,5,12
+HD2_F,Achillea millefolium,0.777,513,5,12
+HD2_F,Pilosella officinarum,0.023,513,5,12
+HD2_F,Plantago lanceolata,2.755,513,5,12
+HD2_F,Rumex acetosa,0.021,513,5,12
+HD2_F,Stellaria graminea,0.563,513,5,12
+HD2_F,Trifolium pratense,0.145,513,5,12
+HD2_F,Trifolium repens,0.059,513,5,12
+HD2_F,Graminoids,9.731,513,5,12
+HD2_C,Bryophytes,0.602,559,4,5
+HD2_C,Achillea millefolium,0.165,559,4,5
+HD2_C,Cerastium fontanum,0.016,559,4,5
+HD2_C,Euphrasia stricta,1.15,559,4,5
+HD2_C,Dandelions and false dandelions,0.669,559,4,5
+HD2_C,Pilosella officinarum,0.041,559,4,5
+HD2_C,Plantago lanceolata,2.027,559,4,5
+HD2_C,Ranunculus sp.,0.019,559,4,5
+HD2_C,Rumex acetosa,0.359,559,4,5
+HD2_C,Stellaria graminea,0.04,559,4,5
+HD2_C,Trifolium arvense,0.21,559,4,5
+HD2_C,Trifolium campestre,0.107,559,4,5
+HD2_C,Graminoids,6.947,559,4,5
+HD3_F,Bryophytes,1.206,408,,7
+HD3_F,Achillea millefolium,0.382,408,,7
+HD3_F,Cerastium fontanum,0.479,408,,7
+HD3_F,Euphrasia stricta,0.806,408,,7
+HD3_F,Galium verum,0.174,408,,7
+HD3_F,Dandelions and false dandelions,0.076,408,,7
+HD3_F,Pilosella officinarum,0.596,408,,7
+HD3_F,Plantago lanceolata,1.996,408,,7
+HD3_F,Rumex acetosa,0.183,408,,7
+HD3_F,Stellaria graminea,0.106,408,,7
+HD3_F,Trifolium campestre,0.039,408,,7
+HD3_F,Graminoids,6.929,408,,7
+HD3_C,Bryophytes,1.364,441,,6
+HD3_C,Achillea millefolium,0.036,441,,6
+HD3_C,Cerastium fontanum,0.352,441,,6
+HD3_C,Dandelions and false dandelions,0.955,441,,6
+HD3_C,Euphrasia stricta,2.12,441,,6
+HD3_C,Pilosella officinarum,0.902,441,,6
+HD3_C,Pimpinella saxifraga,0.003,441,,6
+HD3_C,Plantago lanceolata,0.784,441,,6
+HD3_C,Trifolium arvense,0.044,441,,6
+HD3_C,Trifolium repens,0.285,441,,6
+HD3_C,Graminoids,8.357,441,,6
+HD4_F,Bryophytes,0.298,400,,4
+HD4_F,Achillea millefolium,0.155,400,,4
+HD4_F,Cerastium fontanum,0.195,400,,4
+HD4_F,Galium verum,0.014,400,,4
+HD4_F,Dandelions and false dandelions,0.619,400,,4
+HD4_F,Pilosella officinarum,0.066,400,,4
+HD4_F,Pimpinella saxifraga,0.128,400,,4
+HD4_F,Plantago lanceolata,1.226,400,,4
+HD4_F,Rumex acetosa,0.174,400,,4
+HD4_F,Stellaria graminea,0.067,400,,4
+HD4_F,Trifolium pratense,0.113,400,,4
+HD4_F,Trifolium repens,0.054,400,,4
+HD4_F,Graminoids,6.332,400,,4
+HD4_C,Bryophytes,0.634,441,,3
+HD4_C,Achillea millefolium,0.105,441,,3
+HD4_C,Galium verum,0.023,441,,3
+HD4_C,Dandelions and false dandelions,0.812,441,,3
+HD4_C,Pimpinella saxifraga,0.186,441,,3
+HD4_C,Plantago lanceolata,1.438,441,,3
+HD4_C,Rumex acetosa,0.056,441,,3
+HD4_C,Rumex acetosella,0.089,441,,3
+HD4_C,Trifolium campestre,0.028,441,,3
+HD4_C,Trifolium pratense,0.077,441,,3
+HD4_C,Trifolium repens,0.05,441,,3
+HD4_C,Graminoids,8.988,441,,3
+HD5_F,Bryophytes,1.409,477,,6
+HD5_F,Achillea millefolium,0.637,477,,6
+HD5_F,Dandelions and false dandelions,0.039,477,,6
+HD5_F,Plantago lanceolata,0.056,477,,6
+HD5_F,Rumex acetosa,0.158,477,,6
+HD5_F,Trifolium arvense,0.338,477,,6
+HD5_F,Trifolium campestre,0.06,477,,6
+HD5_F,Graminoids,9.577,477,,6
+HD5_C,Bryophytes,0.883,549,,6
+HD5_C,Achillea millefolium,0.22,549,,6
+HD5_C,Cerastium fontanum,0.045,549,,6
+HD5_C,Euphrasia stricta,0.491,549,,6
+HD5_C,Galium verum,0.081,549,,6
+HD5_C,Dandelions and false dandelions,0.447,549,,6
+HD5_C,Plantago lanceolata,0.802,549,,6
+HD5_C,Rumex acetosella,0.073,549,,6
+HD5_C,Stellaria graminea,0.126,549,,6
+HD5_C,Trifolium arvense,1.11,549,,6
+HD5_C,Trifolium pratense,0.392,549,,6
+HD5_C,Graminoids,7.342,549,,6
+HG1_F,Bryophytes,0.152,589,11,14
+HG1_F,Achillea millefolium,0.69,589,11,14
+HG1_F,Euphrasia stricta,8.726,589,11,14
+HG1_F,Galium verum,0.08,589,11,14
+HG1_F,Dandelions and false dandelions,0.624,589,11,14
+HG1_F,Pilosella officinarum,0.012,589,11,14
+HG1_F,Plantago lanceolata,5.669,589,11,14
+HG1_F,Rumex acetosa,1.119,589,11,14
+HG1_F,Stellaria graminea,0.061,589,11,14
+HG1_F,Trifolium arvense,0.024,589,11,14
+HG1_F,Trifolium pretense,0.428,589,11,14
+HG1_F,Trifolium repens,0.045,589,11,14
+HG1_F,Graminoids,6.745,589,11,14
+HG1_C,Bryophytes,6.981,595,4,5
+HG1_C,Achillea millefolium,0.878,595,4,5
+HG1_C,Galium verum,0.153,595,4,5
+HG1_C,Dandelions and false dandelions,0.318,595,4,5
+HG1_C,Pilosella officinarum,0.049,595,4,5
+HG1_C,Pimpinella saxifraga,0.487,595,4,5
+HG1_C,Plantago lanceolata,3.282,595,4,5
+HG1_C,Rumex acetosa,0.072,595,4,5
+HG1_C,Rumex acetosella,0.011,595,4,5
+HG1_C,Stellaria graminea,0.689,595,4,5
+HG1_C,Trifolium repens,1.117,595,4,5
+HG1_C,Graminoids,6.707,595,4,5
+HG2_F,Bryophytes,0.132,566,6,9
+HG2_F,Achillea millefolium,1.137,566,6,9
+HG2_F,Campanula rotundifolia,0.319,566,6,9
+HG2_F,Cerastium fontanum,0.743,566,6,9
+HG2_F,Dandelions and false dandelions,1.975,566,6,9
+HG2_F,Pilosella officinarum,0.987,566,6,9
+HG2_F,Plantago lanceolata,1.906,566,6,9
+HG2_F,Rumex acetosa,0.035,566,6,9
+HG2_F,Rumex acetosella,0.435,566,6,9
+HG2_F,Stellaria granimea,0.195,566,6,9
+HG2_F,Trifolium arvense,0.41,566,6,9
+HG2_F,Trifolium campestre,0.022,566,6,9
+HG2_F,Trifolium pratense,0.465,566,6,9
+HG2_F,Graminoids,3.617,566,6,9
+HG2_C,Bryophytes,1.506,533,5,6
+HG2_C,Achillea millefolium,0.116,533,5,6
+HG2_C,Dandelions and false dandelions,0.414,533,5,6
+HG2_C,Pilosella officinarum,2.063,533,5,6
+HG2_C,Plantago lanceolata,1.227,533,5,6
+HG2_C,Rumex acestosella,0.08,533,5,6
+HG2_C,Stellaria graminea,0.035,533,5,6
+HG2_C,Trifolium arvense,0.357,533,5,6
+HG2_C,Trifolium campestre,0.185,533,5,6
+HG2_C,Trifolium repens,0.101,533,5,6
+HG2_C,Graminoids,2.211,533,5,6
+HG3_F,Bryophytes,1.787,560,7,7
+HG3_F,Achillea millefolium,0.216,560,7,7
+HG3_F,Cerastium fontanum,0.348,560,7,7
+HG3_F,Galium verum,0.079,560,7,7
+HG3_F,Dandelions and false dandelions,0.731,560,7,7
+HG3_F,Pilosella officinarum,0.457,560,7,7
+HG3_F,Plantago lanceolata,3.047,560,7,7
+HG3_F,Ranunculus sp.,0.016,560,7,7
+HG3_F,Rumex acetosa,0.719,560,7,7
+HG3_F,Stellaria granimea,0.189,560,7,7
+HG3_F,Trifolium arvense,0.171,560,7,7
+HG3_F,Graminoids,4.499,560,7,7
+HG3_C,Bryophytes,0.605,450,4,3
+HG3_C,Achillea millefolium,0.106,450,4,3
+HG3_C,Cerastium fontanum,0.346,450,4,3
+HG3_C,Galium verum,0.237,450,4,3
+HG3_C,Dandelions and false dandelions,0.67,450,4,3
+HG3_C,Pilosella officinarum,0.087,450,4,3
+HG3_C,Plantago lanceolata,0.395,450,4,3
+HG3_C,Trifolium repens,0.277,450,4,3
+HG3_C,Trifolium arvense,0.109,450,4,3
+HG3_C,Graminoids,3.721,450,4,3
+HG4_F,Bryophytes,1.624,474,5,7
+HG4_F,Achillea millefolium,0.963,474,5,7
+HG4_F,Euphrasia stricta,0.93,474,5,7
+HG4_F,Galium verum,0.119,474,5,7
+HG4_F,Dandelions and false dandelions,1.234,474,5,7
+HG4_F,Plantago lanceolata,1.47,474,5,7
+HG4_F,Ranunculus sp.,0.2,474,5,7
+HG4_F,Rumex acetosa,0.366,474,5,7
+HG4_F,Stellaria graminea,0.09,474,5,7
+HG4_F,Veronica officinalis,2.159,474,5,7
+HG4_F,Graminoids,3.623,474,5,7
+HG4_C,Bryophytes,0.668,534,3,4
+HG4_C,Achillea millefolium,0.819,534,3,4
+HG4_C,Euphrasia stricta,0.391,534,3,4
+HG4_C,Pimpinella saxifraga,0.185,534,3,4
+HG4_C,Plantago lanceolata,2.402,534,3,4
+HG4_C,Rumex acetosa,0.331,534,3,4
+HG4_C,Ranunculus sp.,0.136,534,3,4
+HG4_C,Stellaria graminea,0.074,534,3,4
+HG4_C,Trifolium arvense,0.482,534,3,4
+HG4_C,Trifolium campestre,0.075,534,3,4
+HG4_C,Trifolium repens,0.155,534,3,4
+HG4_C,Graminoids,5.915,534,3,4
+HG5_F,Bryophytes,0.224,470,9,16
+HG5_F,Euphrasia stricta,0.563,470,9,16
+HG5_F,Galium verum,1.428,470,9,16
+HG5_F,Dandelions and false dandelions,0.982,470,9,16
+HG5_F,Pilosella officinarum,0.565,470,9,16
+HG5_F,Pimpinella saxifraga,0.115,470,9,16
+HG5_F,Plantago lanceolata,5.167,470,9,16
+HG5_F,Rumex acetosella,0.572,470,9,16
+HG5_F,Graminoids,6.455,470,9,16
+HG5_C,Bryophytes,0.738,464,4,7
+HG5_C,Achillea millefolium,0.455,464,4,7
+HG5_C,Euphrasia stricta,1.056,464,4,7
+HG5_C,Dandelions and false dandelions,0.455,464,4,7
+HG5_C,Pilosella officinarum,0.92,464,4,7
+HG5_C,Plantago lanceolata,3.027,464,4,7
+HG5_C,Ranunculus sp.,0.006,464,4,7
+HG5_C,Rumex acetosa,0.071,464,4,7
+HG5_C,Rumex acetosella,0.106,464,4,7
+HG5_C,Stellaria graminea,0.014,464,4,7
+HG5_C,Trifolium arvense,0.065,464,4,7
+HG5_C,Trifolium campestre,0.025,464,4,7
+HG5_C,Trifolium repens,0.192,464,4,7
+HG5_C,Graminoids,7.151,464,4,7
+CG1_F,Bryophytes,2.727,594,7,12
+CG1_F,Achillea millefolium,0.018,594,7,12
+CG1_F,Campanula rotundifolia,0.118,594,7,12
+CG1_F,Euphrasia stricta,3.447,594,7,12
+CG1_F,Galium verum,0.098,594,7,12
+CG1_F,hypericum perforatum,0.276,594,7,12
+CG1_F,Pilosella officinarum,0.722,594,7,12
+CG1_F,Plantago lanceolata,2.597,594,7,12
+CG1_F,Rumex acetosa,0.18,594,7,12
+CG1_F,Graminoids,5.34,594,7,12
+CG1_C,Bryophytes,0.234,496,8,13
+CG1_C,Achillea millefolium,0.806,496,8,13
+CG1_C,Campanula rotundifolia,0.522,496,8,13
+CG1_C,Galium verum,0.708,496,8,13
+CG1_C,Dandelions and false dandelions,0.512,496,8,13
+CG1_C,Plantago lanceolata,2.188,496,8,13
+CG1_C,Ranunculus sp.,0.031,496,8,13
+CG1_C,Rosa canina,0.148,496,8,13
+CG1_C,Rumex acetosa,0.412,496,8,13
+CG1_C,Stellaria graminea,0.586,496,8,13
+CG1_C,Trifolium pratense,0.379,496,8,13
+CG1_C,Trifolium repens,0.173,496,8,13
+CG1_C,Graminoids,14.809,496,8,13
+CG2_F,Bryophytes,0.297,520,2,3
+CG2_F,Achillea millefolium,0.218,520,2,3
+CG2_F,Cerastium fontanum,0.034,520,2,3
+CG2_F,Galium verum,0.149,520,2,3
+CG2_F,Dandelions and false dandelions,0.264,520,2,3
+CG2_F,Pilosella officinarum,0.046,520,2,3
+CG2_F,Plantago lanceolata,1.875,520,2,3
+CG2_F,Ranunculus sp.,1.387,520,2,3
+CG2_F,Rumex acetosa,0.065,520,2,3
+CG2_F,Stellaria graminea,0.033,520,2,3
+CG2_F,Trifolium repens,0.005,520,2,3
+CG2_F,Graminoids,3.283,520,2,3
+CG2_C,Bryophytes,1.526,512,2,2
+CG2_C,Achillea millefolium,0.261,512,2,2
+CG2_C,Galium verum,0.049,512,2,2
+CG2_C,Pilosella officinarum,0.585,512,2,2
+CG2_C,Pimpinella saxifraga,0.002,512,2,2
+CG2_C,Plantago lanceolata,1.472,512,2,2
+CG2_C,Rumex acetosa,0.047,512,2,2
+CG2_C,Trifolium campestre,0.056,512,2,2
+CG2_C,Trifolium pratense,0.037,512,2,2
+CG2_C,Graminoids,3.512,512,2,2
+CG3_F,Bryophytes,0.505,568,3,4
+CG3_F,Achillea millefolium,0.071,568,3,4
+CG3_F,Euphrasia stricta,0.418,568,3,4
+CG3_F,Galium verum,0.412,568,3,4
+CG3_F,Dandelions and false dandelions,1.921,568,3,4
+CG3_F,Pilosella officinarum,0.377,568,3,4
+CG3_F,Plantago lanceolata,2.66,568,3,4
+CG3_F,Trifolium campestre,0.054,568,3,4
+CG3_F,Graminoids,1.596,568,3,4
+CG3_C,Bryophytes,2.444,467,2,2
+CG3_C,Achillea millefolium,0.091,467,2,2
+CG3_C,Cerastium fontanum,0.083,467,2,2
+CG3_C,Euphrasia stricta,0.056,467,2,2
+CG3_C,Galium verum,0.345,467,2,2
+CG3_C,Dandelions and false dandelions,1.586,467,2,2
+CG3_C,Pilosella officinarum,0.608,467,2,2
+CG3_C,Plantago lanceolata,2.218,467,2,2
+CG3_C,Stellaria graminea,0.295,467,2,2
+CG3_C,Trifolium campestre,0.026,467,2,2
+CG3_C,Trifolium repens,0.019,467,2,2
+CG3_C,Graminoids,1.53,467,2,2
+CG4_F,Bryophytes,0.226,540,8,10
+CG4_F,Achillea millefolium,0.528,540,8,10
+CG4_F,Campanula rotundifolia,0.026,540,8,10
+CG4_F,Galium verum,0.423,540,8,10
+CG4_F,Dandelions and false dandelions,0.172,540,8,10
+CG4_F,Pilosella officinarum,0.501,540,8,10
+CG4_F,Plantago lanceolata,4.261,540,8,10
+CG4_F,Rumex acetosa,0.008,540,8,10
+CG4_F,Trifolium arvense,0.024,540,8,10
+CG4_F,Trifolium repens,1.142,540,8,10
+CG4_F,Graminoids,7.611,540,8,10
+CG4_C,Bryophytes,0.439,576,5,5
+CG4_C,Achillea millefolium,0.142,576,5,5
+CG4_C,Cerastium fontanum,0.03,576,5,5
+CG4_C,Galium verum,0.922,576,5,5
+CG4_C,Dandelions and false dandelions,1.152,576,5,5
+CG4_C,Ranunculus sp.,0.033,576,5,5
+CG4_C,Plantago lanceolata,0.036,576,5,5
+CG4_C,Rumex acetosa,0.102,576,5,5
+CG4_C,Stellaria graminea,0.009,576,5,5
+CG4_C,Trifolium pratense,0.376,576,5,5
+CG4_C,Trifolium repens,1.248,576,5,5
+CG4_C,Graminoids,5.002,576,5,5
+CG5_F,Bryophytes,0.298,432,1,1
+CG5_F,Achillea millefolium,0.057,432,1,1
+CG5_F,Cerastium fontanum,0.012,432,1,1
+CG5_F,Dandelions and false dandelions,0.997,432,1,1
+CG5_F,Pilosella officinarum,0.572,432,1,1
+CG5_F,Plantago lanceolata,0.15,432,1,1
+CG5_F,Rumex acetosa,0.056,432,1,1
+CG5_F,Trifolium arvense,0.097,432,1,1
+CG5_F,Trifolium pratense,0.409,432,1,1
+CG5_F,Trifolium repens,0.746,432,1,1
+CG5_F,Graminoids,1.426,432,1,1
+CG5_C,Bryophytes,0.023,449,2,2
+CG5_C,Achillea millefolium,0.541,449,2,2
+CG5_C,Dandelions and false dandelions,0.442,449,2,2
+CG5_C,Knautia arvensis,0.017,449,2,2
+CG5_C,Pilosella officinarum,0.263,449,2,2
+CG5_C,Plantago lanceolata,0.622,449,2,2
+CG5_C,Ranunculus sp.,0.116,449,2,2
+CG5_C,Rumex acetosa,0.014,449,2,2
+CG5_C,Rumex acetosella,0.151,449,2,2
+CG5_C,Trifolium campestre,0.056,449,2,2
+CG5_C,Trifolium pratense,0.559,449,2,2
+CG5_C,Trifolium repens,0.177,449,2,2
+CG5_C,Graminoids,2.193,449,2,2

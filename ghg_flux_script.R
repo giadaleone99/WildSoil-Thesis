@@ -8,6 +8,7 @@ library(lubridate)
 library(knitr)
 library(gridExtra)
 library(grid)
+library(gtable)
 
 # Import data 
 flux_data_raw <- read.csv("flux_data/combined_data.csv")
@@ -264,14 +265,16 @@ print(Soil_temp_stats)
 
 Soil_temp_stats[sapply(Soil_temp_stats, is.numeric)] <- lapply(Soil_temp_stats[sapply(Soil_temp_stats, is.numeric)], round, digits = 1)
 
-# Create the table
-table <- tableGrob(Soil_temp_stats)
+# Use regular strings for column names in the data frame
+colnames(Soil_temp_stats) <- c("Period", "Mean Soil Temp", "Median Soil Temp", "Min Soil Temp", "Max Soil Temp", "SD Soil Temp")
+
+# Create the table with default labels
+Soil_temp_table <- tableGrob(Soil_temp_stats)
 
 # Save the table as a JPEG file
 jpeg("tables/soiltemp_table.jpeg", width = 800, height = 400)  # Adjust dimensions as needed
-grid.draw(table)
+grid.draw(Soil_temp_table)
 dev.off()
-
 
 # swc
 SWC_stats <- flux_data %>%
@@ -287,10 +290,15 @@ print(SWC_stats)
 
 SWC_stats[sapply(SWC_stats, is.numeric)] <- lapply(SWC_stats[sapply(SWC_stats, is.numeric)], round, digits = 1)
 
+colnames(SWC_stats) <- colnames(SWC_stats) %>%
+  gsub("_", " ", .) %>%                   # Replace underscores with spaces
+  tools::toTitleCase() %>%                # Capitalize the first letter of each word
+  gsub("Swc", "SWC (%)", ., ignore.case = TRUE)  # Append % to SWC columns
+
 # Create the table
-table1 <- tableGrob(SWC_stats)
+SWC_table <- tableGrob(SWC_stats)
 
 # Save the table as a JPEG file
 jpeg("tables/swc_table.jpeg", width = 800, height = 400)  # Adjust dimensions as needed
-grid.draw(table)
+grid.draw(SWC_table)
 dev.off()
