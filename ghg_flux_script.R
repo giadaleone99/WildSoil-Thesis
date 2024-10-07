@@ -9,6 +9,10 @@ library(knitr)
 library(gridExtra)
 library(grid)
 library(gtable)
+library(lme4)
+library(nlme)
+library(emmeans)
+
 
 # Import data 
 flux_data_raw <- read.csv("flux_data/combined_data.csv")
@@ -96,6 +100,30 @@ flux_data <- flux_data %>%
            longdate >= as.Date("2024-07-29") & longdate <= as.Date("2024-08-02") ~ 3,  # Period 3
            TRUE ~ NA_integer_  # Handle dates outside these ranges
          ))
+
+flux_data <- flux_data %>% 
+  mutate(Plotname_cleaned = sub("_[^_]*$", "", UniqueID),
+         date_formatted = as.Date(paste0("2024-", 
+                                         toupper(substr(date, 3, 5)), 
+                                         "-", 
+                                         substr(date, 1, 2)), 
+                                  format = "%Y-%b-%d"))
+
+first_gradient_date <- as.Date("2024-06-13")
+first_daily_date_1_2 <- as.Date("2024-07-15")
+first_daily_date_3_4 <- as.Date("2024-07-29")
+first_HD5_date <- as.Date("2024-07-30")
+
+
+flux_data <- flux_data %>%
+  mutate(Days_Since_First = case_when(
+    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date),
+    Campaign == "Daily" & base_code == "HD5" ~ as.numeric(date_formatted - first_HD5_date),
+    Campaign == "Daily" & date_formatted <= first_daily_date_1_2 ~ as.numeric(date_formatted - first_daily_date_1_2),
+    Campaign == "Daily" & date_formatted > first_daily_date_1_2 & date_formatted <= first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
+    Campaign == "Daily" & date_formatted > first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_3_4),  # Adjusted this condition
+    TRUE ~ NA_real_  # Catch-all for any unexpected cases
+  ))
 
 
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
@@ -302,3 +330,146 @@ SWC_table <- tableGrob(SWC_stats)
 jpeg("tables/swc_table.jpeg", width = 800, height = 400)  # Adjust dimensions as needed
 grid.draw(SWC_table)
 dev.off()
+
+# Repeated measures ANOVA
+library(rstatix)
+library(reshape)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(plyr)
+library(datarium)
+
+
+
+
+
+# Run repeated measures ANOVA
+flux_data %>%
+  group_by(Days_Since_First) %>%
+  get_summary_stats(best.flux, type = "mean_sd")
+
+flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
+
+
+
+ggplot(flux_data, aes(x = gastype, y = best.flux, colour = Days_Since_First)) +
+  geom_boxplot(aes(gastype))
+
+# Plot for CO2
+ggplot(subset(flux_data, gastype == "CO2"), aes(x = as.factor(Days_Since_First), y = best.flux, fill = Animal)) +
+  geom_boxplot() +
+  labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CO2") +
+  facet_wrap(~ Campaign)
+  theme_minimal()
+
+# Plot for CH4 and N2O
+ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_Since_First), y = best.flux, fill = Animal)) +
+  geom_boxplot() +
+  labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CH4 and N2O") +
+  theme_minimal()
+
+
+# Subset data for aNOVA
+
+
+# Function to create subsets based on specific conditions
+create_subsets <- function(flux_data) {
+  # Create a list to hold subsets
+  subsets <- list()
+  
+  # Loop through combinations and create specific subsets
+  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CO2")) {
+    subsets[["Horse_Daily_CO2"]] <- flux_data %>%
+      filter(Animal == "Horse", Campaign == "Daily", gastype == "CO2")
+  }
+  
+  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CH4")) {
+    subsets[["Horse_Daily_CH4"]] <- flux_data %>%
+      filter(Animal == "Horse", Campaign == "Daily", gastype == "CH4")
+  }
+  
+  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "N2O")) {
+    subsets[["Horse_Daily_N2O"]] <- flux_data %>%
+      filter(Animal == "Horse", Campaign == "Daily", gastype == "N2O")
+  }
+  
+  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CO2")) {
+    subsets[["Cow_Daily_CO2"]] <- flux_data %>%
+      filter(Animal == "Cow", Campaign == "Daily", gastype == "CO2")
+  }
+  
+  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CH4")) {
+    subsets[["Cow_Daily_CH4"]] <- flux_data %>%
+      filter(Animal == "Cow", Campaign == "Daily", gastype == "CH4")
+  }
+  
+  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "N2O")) {
+    subsets[["Cow_Daily_N2O"]] <- flux_data %>%
+      filter(Animal == "Cow", Campaign == "Daily", gastype == "N2O")
+  }
+  
+  # Add more conditions as needed for other combinations...
+  
+  return(subsets)
+}
+
+# Create subsets using your flux_data
+subsets_list <- create_subsets(flux_data)
+
+# Example of accessing a specific subset
+# View a specific subset
+print(subsets_list[["Horse_Daily_CO2"]])
+
+# plot graphs
+
+
+# Function to plot subsets
+plot_subsets <- function(subsets) {
+  for (subset_name in names(subsets)) {
+    subset_data <- subsets[[subset_name]]
+    
+    # Create a plot
+    p <- ggplot(subset_data, aes(x = Days_Since_First, y = best.flux)) +
+      geom_boxplot() +
+      geom_point()+
+      labs(title = subset_name, x = "Days Since First Measurement", y = "best flux") +
+      theme_minimal()
+    
+    # Print the plot
+    print(p)
+  }
+}
+
+# Plot the subsets
+plot_subsets(subsets_list)
+
+
+
+
+
+# Test normality
+flux_data %>%
+  group_by(Days_Since_First, gastype) %>%
+  shapiro_test(best.flux)
+
+
+
+
+
+
+print(anova_results)
+
+flux_data$gastype <- as.factor(flux_data$gastype) # CO2, CH4, N2O
+flux_data$Animal <- as.factor(flux_data$Animal) # Horse, Cow
+flux_data$treatment <- as.factor(flux_data$treatment) # Control or Treatment
+flux_data$Days_Since_First <- as.numeric(flux_data$Days_Since_First)
+
+
+model <- lmer(best.flux ~ gastype * Animal * treatment + (1 | UniqueID), data = flux_data)
+
+summary(model)
+
+
+
+
