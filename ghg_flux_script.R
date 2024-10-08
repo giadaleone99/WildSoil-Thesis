@@ -120,11 +120,16 @@ flux_data <- flux_data %>%
     Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date),
     Campaign == "Daily" & base_code == "HD5" ~ as.numeric(date_formatted - first_HD5_date),
     Campaign == "Daily" & date_formatted <= first_daily_date_1_2 ~ as.numeric(date_formatted - first_daily_date_1_2),
-    Campaign == "Daily" & date_formatted > first_daily_date_1_2 & date_formatted <= first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
-    Campaign == "Daily" & date_formatted > first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_3_4),  # Adjusted this condition
+    Campaign == "Daily" & date_formatted >= first_daily_date_1_2 & date_formatted < first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
+    Campaign == "Daily" & date_formatted >= first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_3_4),  # Adjusted this condition
     TRUE ~ NA_real_  # Catch-all for any unexpected cases
   ))
 
+
+flux_data_ANOVA <- flux_data %>% 
+  filter(!(NEERE == "NEE" & gastype %in% c("CH4", "N2O"))) %>% 
+  mutate(Unique_ANOVA = paste(plotNEERE, gastype, sep = "_")) %>% 
+  filter(plottype != "PIT")
 
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
 dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
@@ -360,7 +365,7 @@ ggplot(flux_data, aes(x = gastype, y = best.flux, colour = Days_Since_First)) +
 ggplot(subset(flux_data, gastype == "CO2"), aes(x = as.factor(Days_Since_First), y = best.flux, fill = Animal)) +
   geom_boxplot() +
   labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CO2") +
-  facet_wrap(~ Campaign)
+  facet_wrap(~ Campaign)+
   theme_minimal()
 
 # Plot for CH4 and N2O
@@ -445,7 +450,8 @@ plot_subsets <- function(subsets) {
 plot_subsets(subsets_list)
 
 
-
+res <- anova_test(data = flux_data_ANOVA, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
+get_anova_table(res)
 
 
 # Test normality
