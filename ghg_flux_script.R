@@ -15,7 +15,7 @@ library(emmeans)
 
 
 # Import data 
-flux_data_raw <- read.csv("flux_data/combined_data.csv", stringsAsFactors = FALSE)
+flux_data_raw <- read.csv("flux_data/combined_data.csv")
 dung_area_data <- read.csv("data/dung_soil_data.csv")
 
 flux_data <- flux_data_raw %>%
@@ -611,17 +611,36 @@ get_anova_table(daily_cow_ANOVA)
 
 
 # Test normality
-gradient_CO2_NEE_subset <- gradient_CO2_NEE_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_NEE_CO2") %>% 
-  filter(Unique_ANOVA != "CG5_F_NEE_CO2")
+gradient_CO2_RE_subset <- gradient_CO2_RE_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_RE_CO2") %>% 
+  filter(Unique_ANOVA != "CG5_F_RE_CO2")
 
-normality <- gradient_CO2_NEE_subset %>%
+
+normality <- gradient_CO2_RE_subset %>%
   group_by(Days_Since_First) %>% 
   shapiro_test(best.flux)
 
+# CO2 not normal 
+
+data_wide <- gradient_CO2_RE_subset %>%
+  pivot_wider(names_from = Unique_ANOVA, values_from = best.flux)
+
+gradient_CO2_RE_subset$Unique_ANOVA <-factor(gradient_CO2_RE_subset$Unique_ANOVA)
+gradient_CO2_RE_subset$Days_Since_First<-factor(gradient_CO2_RE_subset$Days_Since_First)
+
+
+res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ Days_Since_First |Unique_ANOVA)
+
+friedman_result <- friedman.test(as.matrix(data_wide[, -1]), groups = data_wide$UniqueID)
+print(friedman_result)
+
+res.fried
+
+
+
 data.frame(normality)
-residuals <- residuals(gradients_CO2_NEE_ANOVA)
-qqnorm(normality)
+residuals <- residuals(gradients_CH4_ANOVA)
+qqnorm(residuals)
 
 model <- aov(best.flux ~  treatment + Error(Unique_ANOVA/Days_Since_First), data = gradient_CO2_NEE_subset)
 res <- residuals(model)
