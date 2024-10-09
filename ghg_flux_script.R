@@ -15,7 +15,7 @@ library(emmeans)
 
 
 # Import data 
-flux_data_raw <- read.csv("flux_data/combined_data.csv")
+flux_data_raw <- read.csv("flux_data/combined_data.csv", stringsAsFactors = FALSE)
 dung_area_data <- read.csv("data/dung_soil_data.csv")
 
 flux_data <- flux_data_raw %>%
@@ -109,7 +109,8 @@ flux_data <- flux_data %>%
                                          substr(date, 1, 2)), 
                                   format = "%Y-%b-%d"))
 
-first_gradient_date <- as.Date("2024-06-13")
+first_gradient_date_1_3 <- as.Date("2024-06-13")
+first_gradient_date_4_5 <- as.Date("2024-06-14")
 first_daily_date_1_2 <- as.Date("2024-07-15")
 first_daily_date_3_4 <- as.Date("2024-07-29")
 first_HD5_date <- as.Date("2024-07-30")
@@ -117,7 +118,8 @@ first_HD5_date <- as.Date("2024-07-30")
 
 flux_data <- flux_data %>%
   mutate(Days_Since_First = case_when(
-    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date),
+    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date_1_3),
+    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date_4_5),
     Campaign == "Daily" & base_code == "HD5" ~ as.numeric(date_formatted - first_HD5_date),
     Campaign == "Daily" & date_formatted <= first_daily_date_1_2 ~ as.numeric(date_formatted - first_daily_date_1_2),
     Campaign == "Daily" & date_formatted >= first_daily_date_1_2 & date_formatted < first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
@@ -131,6 +133,8 @@ flux_data_ANOVA <- flux_data %>%
   mutate(Unique_ANOVA = paste(plotNEERE, gastype, sep = "_")) %>% 
   filter(plottype != "PIT")
 
+
+# DO NOT RUN ----------------------------------------------------
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
 dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
 
@@ -449,21 +453,182 @@ plot_subsets <- function(subsets) {
 # Plot the subsets
 plot_subsets(subsets_list)
 
+gradient_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
-res <- anova_test(data = flux_data_ANOVA, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
-get_anova_table(res)
+gradient_CO2_NEE_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "NEE") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+gradient_CO2_RE_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "RE") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+gradient_CH4_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(gastype == "CH4") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+gradient_N2O_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(gastype == "N2O") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+gradient_horse_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(Animal == "Horse") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+gradient_cow_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Gradient") %>% 
+  filter(Animal == "Cow") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_CO2_NEE_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "NEE") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_CO2_RE_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "RE") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_CH4_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(gastype == "CH4") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_N2O_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(gastype == "N2O") %>%
+  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_horse_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(Animal == "Horse") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+daily_cow_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(Animal == "Cow") %>% 
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+
+#res <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
+
+
+gradients_ANOVA <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_ANOVA)
+
+# per gas type (cannot do per animal as well for the gradient data)
+gradients_CO2_NEE_ANOVA <- anova_test(data = gradient_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_CO2_NEE_ANOVA)
+
+gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_CO2_RE_ANOVA)
+
+gradients_CH4_ANOVA <- anova_test(data = gradient_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_CH4_ANOVA)
+
+# N2O data for gradients too similar?
+gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_N2O_ANOVA)
+
+# per animal
+gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradient_horse_ANOVA)
+
+gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradient_cow_ANOVA)
+
+# dailies
+dailies_ANOVA <- anova_test(data = daily_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(dailies_ANOVA)
+
+# per gas type and animal
+dailies_CO2_NEE_ANOVA <- anova_test(data = daily_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_CO2_NEE_ANOVA)
+
+dailies_CO2_RE_ANOVA <- anova_test(data = daily_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_CO2_RE_ANOVA)
+
+dailies_CH4_ANOVA <- anova_test(data = daily_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_CH4_ANOVA)
+
+dailies_N2O_ANOVA <- anova_test(data = daily_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_N2O_ANOVA)
+
+# per animal
+daily_horse_ANOVA <- anova_test(data = daily_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(daily_horse_ANOVA)
+
+daily_cow_ANOVA <- anova_test(data = daily_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(daily_cow_ANOVA)
 
 
 # Test normality
-flux_data %>%
-  group_by(Days_Since_First, gastype) %>%
+gradient_CO2_NEE_subset <- gradient_CO2_NEE_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_NEE_CO2") %>% 
+  filter(Unique_ANOVA != "CG5_F_NEE_CO2")
+
+normality <- gradient_CO2_NEE_subset %>%
+  group_by(Days_Since_First) %>% 
   shapiro_test(best.flux)
 
+data.frame(normality)
+residuals <- residuals(gradients_CO2_NEE_ANOVA)
+qqnorm(normality)
 
+model <- aov(best.flux ~  treatment + Error(Unique_ANOVA/Days_Since_First), data = gradient_CO2_NEE_subset)
+res <- residuals(model)
 
-
-
-
+print(model)
+qqnorm(res)
+qqline(res)
 print(anova_results)
 
 flux_data$gastype <- as.factor(flux_data$gastype) # CO2, CH4, N2O
