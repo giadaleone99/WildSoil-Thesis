@@ -3,7 +3,6 @@
 library(ggplot2)
 library(ggpubr)
 library(dplyr)
-library(plyr)
 library(stringr)
 library(gridExtra)
 library(patchwork)
@@ -27,7 +26,7 @@ veg_new <- veg_raw %>%
 
 veg_summary <- veg_new %>%
   group_by(plot_id) %>%
-  summarise(
+  dplyr::summarise(
     total_veg_weight = sum(`Total harvested weight`),
     veg_height = unique(veg_height),
     veg_height_2 = unique(veg_height_2)
@@ -57,18 +56,6 @@ veg_combined <- veg_summary %>%
   distinct() %>%
   mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung)
 
-# function to get error bars for the plots
-data_summary <- function(data, varname, groupnames){
-  summary_func <- function(x, col){
-    c(mean = mean(x[[col]], na.rm=TRUE),
-      sd = sd(x[[col]], na.rm=TRUE))
-  }
-  data_sum<-ddply(data, groupnames, .fun=summary_func,
-                  varname)
-  data_sum <- rename(data_sum, c("mean" = varname))
-  return(data_sum)
-}
-
 # Plotting function for weight and height
 save_plot <- function(df, y_var, filename, y_label) {
   p <- ggplot(df, aes(x = plot_id, y = !!sym(y_var), fill = treatment)) +
@@ -88,13 +75,14 @@ veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
 dailyvegweight <- ggplot(veg_daily, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   facet_wrap("Animal", scales = "free") +
-  xlab("Plot ID") + ylab("vegetation weight") +
+  xlab("\nPlot ID") + ylab("vegetation weight (grams)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        scale_y_continuous(expand = expansion(mult = c(0, 0.1)))) +
-  scale_fill_manual(values=c("#A4AC86", "#414833", "#936639", "#582F0E")) +
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Vegetation weight of the short term campaign")
 dailyvegweight
 ggsave(filename = dailyvegweight, plot = dailyvegweight, width = 6, height = 4)
@@ -103,9 +91,14 @@ veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
 gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   facet_wrap("Animal", scales = "free") +
-  xlab("Plot ID") + ylab("vegetation weight") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +
-  scale_fill_manual(values=c("#A4AC86", "#414833", "#936639", "#582F0E")) +
+  xlab("\nPlot ID") + ylab("vegetation weight (grams)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Vegetation weight of the long term campaign")
 gradientvegweight
 ggsave(filename = gradientvegweight, plot = gradientvegweight, width = 6, height = 4)
@@ -124,6 +117,8 @@ save_plot(veg_growth, "veg_growth", "veg_plots/veg_growth.jpeg", "Veg Growth")
 
 # Bar plot for biomass
 save_plot(veg_combined, "estimated_biomass_plot", "veg_plots/estimated_biomass_plot.jpeg", "Estimated Biomass")
+
+
 
 # Loop for plotting based on base_code
 plot_by_code <- function(df, y_var, folder, y_label) {
