@@ -7,6 +7,8 @@ library(stringr)
 library(gridExtra)
 library(patchwork)
 library(cowplot)
+library(tidyr)
+library(ggpattern)
 
 # Import data
 veg_raw <- read.csv("data/vegetation_data.csv")
@@ -56,6 +58,19 @@ veg_combined <- veg_summary %>%
   distinct() %>%
   mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung)
 
+# mutating the data for the stacked height bar plots
+veg_combined2 <- veg_combined
+na_index <- is.na(veg_combined2$veg_height) & !is.na(veg_combined2$veg_height_2)
+veg_combined2$veg_height[na_index] <- veg_combined2$veg_height_2[na_index]
+veg_combined2$veg_height_2[na_index] <- NA
+ 
+  
+veg_heightdata <- pivot_longer(veg_combined2, cols = c("veg_height", "veg_height_2"), 
+                               names_to = "height_type", 
+                               values_to = "height_value")
+
+  
+
 # Plotting function for weight and height
 save_plot <- function(df, y_var, filename, y_label) {
   p <- ggplot(df, aes(x = plot_id, y = !!sym(y_var), fill = treatment)) +
@@ -102,6 +117,59 @@ gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight,
   ggtitle("Vegetation weight of the long term campaign")
 gradientvegweight
 ggsave(filename = gradientvegweight, plot = gradientvegweight, width = 6, height = 4)
+
+# stacked bar plot for veg height 1 and 2 per campaign
+veg_heightdatadaily <- veg_heightdata %>% filter(grepl("D.", base_code))
+veg_heightdatadaily$height_type <- factor(veg_heightdatadaily$height_type, 
+                                          levels = c("veg_height_2", "veg_height"))
+dailyvegheights <- ggplot(veg_heightdatadaily, aes(x=plot_id, y = height_value, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  geom_bar_pattern(aes(pattern = height_type), 
+                   position = "stack", 
+                   stat = "identity", 
+                   pattern_fill = "black",
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.03) +
+  facet_wrap("Animal", scales = "free") +
+  xlab("\nPlot ID") + ylab("vegetation height (cm)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_pattern_manual(
+    name = "Measurement period", 
+    values=c("veg_height_2" = "stripe", "veg_height" = "none")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Vegetation height and growth of the short term campaign")
+dailyvegheights
+
+veg_heightdatagradient <- veg_heightdata %>% filter(grepl("G.", base_code))
+veg_heightdatagradient$height_type <- factor(veg_heightdatagradient$height_type, 
+                                          levels = c("veg_height_2", "veg_height"))
+gradientvegheights <- ggplot(veg_heightdatagradient, aes(x=plot_id, y = height_value, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  geom_bar_pattern(aes(pattern = height_type), 
+                   position = "stack", 
+                   stat = "identity", 
+                   pattern_fill = "black",
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.03) +
+  facet_wrap("Animal", scales = "free") +
+  xlab("\nPlot ID") + ylab("vegetation height (cm)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_pattern_manual(
+    name = "Measurement period", 
+    values=c("veg_height_2" = "stripe", "veg_height" = "none")) +
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Vegetation height and growth of the long term campaign")
+gradientvegheights
 
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +

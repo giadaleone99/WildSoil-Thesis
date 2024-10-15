@@ -560,10 +560,6 @@ daily_cow_subset <- flux_data_ANOVA %>%
 
 #res <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
 
-
-gradients_ANOVA <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
-get_anova_table(gradients_ANOVA)
-
 # per gas type (cannot do per animal as well for the gradient data)
 gradients_CO2_NEE_ANOVA <- anova_test(data = gradient_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
 get_anova_table(gradients_CO2_NEE_ANOVA)
@@ -578,7 +574,7 @@ get_anova_table(gradients_CH4_ANOVA)
 gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
 get_anova_table(gradients_N2O_ANOVA)
 
-# per animal
+# per animal probably not relevant cuz they are not per gas type
 gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
 get_anova_table(gradient_horse_ANOVA)
 
@@ -586,8 +582,6 @@ gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid
 get_anova_table(gradient_cow_ANOVA)
 
 # dailies
-dailies_ANOVA <- anova_test(data = daily_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
-get_anova_table(dailies_ANOVA)
 
 # per gas type and animal
 dailies_CO2_NEE_ANOVA <- anova_test(data = daily_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
@@ -611,12 +605,25 @@ get_anova_table(daily_cow_ANOVA)
 
 
 # Test normality
+
+# remove some data because there were only 2 measurements on this day since first
+gradient_CO2_NEE_subset <- gradient_CO2_NEE_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_NEE_CO2") %>% 
+  filter(Unique_ANOVA != "CG5_F_NEE_CO2")
+
 gradient_CO2_RE_subset <- gradient_CO2_RE_subset %>% 
   filter(Unique_ANOVA != "CG5_C_RE_CO2") %>% 
   filter(Unique_ANOVA != "CG5_F_RE_CO2")
 
+gradient_CH4_subset <- gradient_CH4_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_RE_CH4") %>% 
+  filter(Unique_ANOVA != "CG5_F_RE_CH4")
 
-normality <- gradient_CO2_RE_subset %>%
+gradient_N2O_subset <- gradient_N2O_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_RE_N2O") %>% 
+  filter(Unique_ANOVA != "CG5_F_RE_N2O")
+
+normality <- daily_CO2_NEE_subset %>%
   group_by(Days_Since_First) %>% 
   shapiro_test(best.flux)
 
