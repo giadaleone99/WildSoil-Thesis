@@ -3,6 +3,7 @@
 library(ggplot2)
 library(ggpubr)
 library(dplyr)
+library(plyr)
 library(stringr)
 library(gridExtra)
 library(patchwork)
@@ -56,6 +57,18 @@ veg_combined <- veg_summary %>%
   distinct() %>%
   mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung)
 
+# function to get error bars for the plots
+data_summary <- function(data, varname, groupnames){
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+
 # Plotting function for weight and height
 save_plot <- function(df, y_var, filename, y_label) {
   p <- ggplot(df, aes(x = plot_id, y = !!sym(y_var), fill = treatment)) +
@@ -69,6 +82,33 @@ veg_filtered <- veg_combined %>% filter(grepl("_F$", plot_id))
 
 save_plot(veg_filtered, "total_veg_weight", "veg_plots/Dung_veg_weight.jpeg", "Total Standardized Veg Weight")
 save_plot(veg_filtered, "veg_height_2", "veg_plots/Dung_veg_height.jpeg", "Veg Height")
+
+# plots for veg weight grouped together per campaign
+veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
+dailyvegweight <- ggplot(veg_daily, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  xlab("Plot ID") + ylab("vegetation weight") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(),
+        scale_y_continuous(expand = expansion(mult = c(0, 0.1)))) +
+  scale_fill_manual(values=c("#A4AC86", "#414833", "#936639", "#582F0E")) +
+  ggtitle("Vegetation weight of the short term campaign")
+dailyvegweight
+ggsave(filename = dailyvegweight, plot = dailyvegweight, width = 6, height = 4)
+
+veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
+gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  xlab("Plot ID") + ylab("vegetation weight") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +
+  scale_fill_manual(values=c("#A4AC86", "#414833", "#936639", "#582F0E")) +
+  ggtitle("Vegetation weight of the long term campaign")
+gradientvegweight
+ggsave(filename = gradientvegweight, plot = gradientvegweight, width = 6, height = 4)
 
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
