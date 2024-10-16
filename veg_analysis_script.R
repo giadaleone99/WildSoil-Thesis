@@ -223,6 +223,21 @@ ggsave(filename = "veg_plots/veg_growth_gradient_stacked.jpeg", plot = gradientv
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point() + geom_smooth(method = lm)
+print(scatterplot)
+
+scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
+  geom_point(size = 2) +  
+  geom_smooth(method = "lm", se = FALSE) +  
+  scale_color_manual(values = c("Control" = "grey", "Fresh" = "black")) +  
+  labs(color = "treatment") + 
+  labs(
+    x = "Total vegetation weight (g)",  
+    y = "Vegetation height (cm)",        
+    color = "Treatment"                   
+  ) +
+  theme_minimal()  
+
+print(scatterplot)
 ggsave("veg_plots/scatterplot_veg_weight_height.jpeg", plot = scatterplot, width = 6, height = 4)
 
 # Filtering for veg height growth and bar plot
@@ -235,23 +250,52 @@ save_plot(veg_growth, "veg_growth", "veg_plots/veg_growth.jpeg", "Veg Growth")
 # Bar plot for biomass
 save_plot(veg_combined, "estimated_biomass_plot", "veg_plots/estimated_biomass_plot.jpeg", "Estimated Biomass")
 
+# Custom colors for each combination of treatment and animal
+custom_colors <- c(
+  "Control.Cow" = "#A4AC86",    # Cow Control
+  "Fresh.Cow" = "#656D4A",      # Cow Fresh
+  "Control.Horse" = "#A68A64",  # Horse Control
+  "Fresh.Horse" = "#7F4F24"     # Horse Fresh
+)
 
+custom_labels <- c(
+  "Control.Cow" = "Cow Control",
+  "Fresh.Cow" = "Cow Fresh",
+  "Control.Horse" = "Horse Control",
+  "Fresh.Horse" = "Horse Fresh"
+)
 
-# Loop for plotting based on base_code
 plot_by_code <- function(df, y_var, folder, y_label) {
   for (code in unique(df$base_code)) {
     df_subset <- df %>% filter(base_code == code)
-    p <- ggplot(df_subset, aes(x = plot_id, y = !!sym(y_var), fill = plot_id)) +
+    
+    # Check if df_subset is created
+    if (nrow(df_subset) == 0) {
+      print(paste("No data for base_code:", code))
+      next  # Skip to the next iteration if no data is found
+    }
+    
+    # Create the plot
+    p <- ggplot(df_subset, aes(x = plot_id, y = !!sym(y_var), fill = interaction(treatment, Animal))) +
       geom_bar(stat = "identity") +
       ggtitle(paste("Bar Plot for", code)) +
+      scale_fill_manual(values = custom_colors, labels = custom_labels) +  # Set custom colors and labels
+      labs(fill = "Plot Type",  # Change legend title to "Plot Type"
+           x = "Plot ID",
+           y = y_label) +  # Set dynamic y-axis label
       theme_minimal()
+    
+    # Save the plot
     ggsave(filename = paste0("veg_plots/", folder, "/", code, "_plot.jpeg"), plot = p, width = 6, height = 4)
   }
 }
 
-plot_by_code(veg_combined, "total_veg_weight", "veg_weight", "Veg Weight")
-plot_by_code(veg_growth, "veg_growth", "veg_height", "Veg Growth")
 
+plot_by_code(veg_combined, "total_veg_weight", "veg_weight", "Vegetation weight (grams)")
+plot_by_code(veg_growth, "veg_growth", "veg_growth", "Vegetation growth (cm)")
+
+
+### STATISTICS ------------------------------------------------------------------------
 # T-tests and ANOVAs
 run_anova <- function(df, y_var) {
   res.aov <- aov(as.formula(paste(y_var, "~ Animal_treatment")), data = df)
