@@ -138,29 +138,6 @@ flux_data_ANOVA <- flux_data %>%
 gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
 dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
 
-
-scatterplot1 <- ggplot(dailies, aes(x = UniqueID, y = best.flux))+
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = lm) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
- 
-scatterplot1
-
-zoomdaily <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul"), Animal == "Horse")
-
-scatterplot2 <- ggplot(zoomdaily, aes(x = UniqueID, y = best.flux))+
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = lm) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
-scatterplot2
-
-zoomdaily <- flux_data %>% filter(Campaign == "Daily", gastype == "CO2", date %in% c("15jul",  "16jul", "17jul", "18jul", "19jul"), Animal %in% c("Horse", "Cow"))
-
-ggplot(zoomdaily, aes(x = date, y = best.flux, color = treatment)) +
-  geom_point() +
-  facet_wrap(~ Animal, scales = "free_y") +
-  labs(x = "Date", y = "CO2 Flux")
-
 ### GENERATING PLOTS
 # Create the plots directory if it doesn't exist
 if (!dir.exists("plots")) {
@@ -174,7 +151,7 @@ gases <- list(
   list(gastype = "N2O", y_label = expression("nmol N2O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
 )
 
-# Function to generate plots
+# Function to generate plots ### WORKING!!!! with DATES
 generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
   for (gas in gases) {
     # Filter data based on gas type and other conditions
@@ -210,6 +187,88 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
           panel.grid.major = element_blank(),               # No major grid lines
           panel.background = element_rect(fill = "white")   # White background
         )
+      # Generate the filename dynamically
+      filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
+      
+      # Save the plot
+      ggsave(filename = filename, plot = gas_plot, width = 10, height = 8)
+      
+      cat("Saved plot to:", filename, "\n")  # Confirm save location
+    } else {
+      cat("No data available for gas:", gas$gastype, "\n")
+    }
+  }
+}
+
+##### NEW CODE FROM CHAT GPT --- NOT WORKING WITH DAYS SINCE FIRST!
+# Function to generate plots
+# Function to generate plots
+generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
+  for (gas in gases) {
+    # Filter data based on gas type and other conditions
+    gas_data <- flux_data %>%
+      filter(Campaign == campaign_type, gastype == gas$gastype, date %in% date_filter, Animal == animal_type)
+    
+    # Check if the gas is CH4 or N2O, and filter for RE measurements only
+    if (gas$gastype %in% c("CH4", "N2O")) {
+      gas_data <- gas_data %>% filter(NEERE == "RE")  # Filter to include only RE measurements
+    }
+    
+    # Print the number of rows in gas_data
+    cat("Processing gas:", gas$gastype, " - Rows:", nrow(gas_data), "\n")
+    
+    # Check if there is data to plot
+    if (nrow(gas_data) > 0) {
+      # Determine the start date for the campaign
+      start_date <- switch(campaign_type,
+                           "Gradient" = first_gradient_date_1_3,  # Assuming both gradient campaigns started at the same date
+                           "Daily" = {
+                             if (any(gas_data$base_code == "HD5")) {
+                               first_HD5_date
+                             } else if (any(gas_data$date_formatted >= first_daily_date_1_2 & gas_data$date_formatted < first_daily_date_3_4)) {
+                               first_daily_date_1_2
+                             } else {
+                               first_daily_date_3_4
+                             }
+                           }
+      )
+      
+      # Print the start date for debugging
+      cat("Start Date for", campaign_type, ":", start_date, "\n")
+      
+      # Calculate Days_Since_First for the labels
+      gas_data <- gas_data %>%
+        mutate(Days_Since_First = as.numeric(longdate - start_date))
+      
+      # Print the longdate and Days_Since_First for debugging
+      gas_data <- gas_data %>%
+        mutate(Debug_Info = paste("Longdate:", longdate, "Start Date:", start_date, "Days Since First:", Days_Since_First))
+      
+      print(gas_data$Debug_Info)  # Print debugging information to check values
+      
+      # Create the plot dynamically
+      gas_plot <- ggplot(gas_data, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
+        geom_point(size = 2) +
+        geom_line() +
+        facet_wrap(~base_code, scales = "free") +
+        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Date", y = gas$y_label,
+             color = "Light/Dark",         # Changed title for the color legend
+             shape = "Treatment") +
+        scale_color_manual(values = c("NEE" = "gray", "RE" = "black")) +
+        scale_shape_manual(values = c(16, 17)) +
+        theme_minimal() +
+        theme(
+          legend.position.inside = c(0.75, 0.25),
+          axis.line = element_line(color = "black"), 
+          axis.text = element_text(color = "black"),   
+          axis.ticks = element_line(color = "black"),
+          panel.grid.major = element_blank(),               # No major grid lines
+          panel.background = element_rect(fill = "white")   # White background
+        ) +
+        # Custom x-axis labels based on Days_Since_First
+        scale_x_continuous(breaks = gas_data$longdate,
+                           labels = gas_data$Days_Since_First) +
+        labs(x = "Days Since First")  # Change x-axis label
       
       # Generate the filename dynamically
       filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
@@ -223,6 +282,7 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
     }
   }
 }
+
 
 # Daily plots for Horse and Cow
 daily_date_filter <- c("15jul", "16jul", "17jul", "18jul", "19jul", "29jul", "30jul", "31jul", "01aug", "02aug")
@@ -349,18 +409,12 @@ library(ggpubr)
 library(plyr)
 library(datarium)
 
-
-
-
-
 # Run repeated measures ANOVA
 flux_data %>%
   group_by(Days_Since_First) %>%
   get_summary_stats(best.flux, type = "mean_sd")
 
 flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
-
-
 
 ggplot(flux_data, aes(x = gastype, y = best.flux, colour = Days_Since_First)) +
   geom_boxplot(aes(gastype))
@@ -378,77 +432,6 @@ ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_S
   labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CH4 and N2O") +
   theme_minimal()
 
-
-# Subset data for aNOVA
-
-
-# Function to create subsets based on specific conditions
-create_subsets <- function(flux_data) {
-  # Create a list to hold subsets
-  subsets <- list()
-  
-  # Loop through combinations and create specific subsets
-  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CO2")) {
-    subsets[["Horse_Daily_CO2"]] <- flux_data %>%
-      filter(Animal == "Horse", Campaign == "Daily", gastype == "CO2")
-  }
-  
-  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CH4")) {
-    subsets[["Horse_Daily_CH4"]] <- flux_data %>%
-      filter(Animal == "Horse", Campaign == "Daily", gastype == "CH4")
-  }
-  
-  if (any(flux_data$Animal == "Horse") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "N2O")) {
-    subsets[["Horse_Daily_N2O"]] <- flux_data %>%
-      filter(Animal == "Horse", Campaign == "Daily", gastype == "N2O")
-  }
-  
-  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CO2")) {
-    subsets[["Cow_Daily_CO2"]] <- flux_data %>%
-      filter(Animal == "Cow", Campaign == "Daily", gastype == "CO2")
-  }
-  
-  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "CH4")) {
-    subsets[["Cow_Daily_CH4"]] <- flux_data %>%
-      filter(Animal == "Cow", Campaign == "Daily", gastype == "CH4")
-  }
-  
-  if (any(flux_data$Animal == "Cow") && any(flux_data$Campaign == "Daily") && any(flux_data$gastype == "N2O")) {
-    subsets[["Cow_Daily_N2O"]] <- flux_data %>%
-      filter(Animal == "Cow", Campaign == "Daily", gastype == "N2O")
-  }
-  
-  # Add more conditions as needed for other combinations...
-  
-  return(subsets)
-}
-
-# Create subsets using your flux_data
-subsets_list <- create_subsets(flux_data)
-
-# Example of accessing a specific subset
-# View a specific subset
-print(subsets_list[["Horse_Daily_CO2"]])
-
-# plot graphs
-
-
-# Function to plot subsets
-plot_subsets <- function(subsets) {
-  for (subset_name in names(subsets)) {
-    subset_data <- subsets[[subset_name]]
-    
-    # Create a plot
-    p <- ggplot(subset_data, aes(x = Days_Since_First, y = best.flux)) +
-      geom_boxplot() +
-      geom_point()+
-      labs(title = subset_name, x = "Days Since First Measurement", y = "best flux") +
-      theme_minimal()
-    
-    # Print the plot
-    print(p)
-  }
-}
 
 # Plot the subsets
 plot_subsets(subsets_list)
