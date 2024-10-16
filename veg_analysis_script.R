@@ -96,11 +96,15 @@ dailyvegweight <- ggplot(veg_daily, aes(x = plot_id, y = total_veg_weight, fill 
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
-  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                                 "Fresh.Cow" = "#656D4A", 
+                                 "Control.Horse" = "#A68A64", 
+                                 "Fresh.Horse" = "#7F4F24"),
+                      labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"))+
   scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Vegetation weight of the short term campaign")
 dailyvegweight
-ggsave(filename = dailyvegweight, plot = dailyvegweight, width = 6, height = 4)
+ggsave(filename = "veg_plots/dailyvegweight.jpeg", plot = dailyvegweight, width = 6, height = 4)
 
 veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
 gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
@@ -112,68 +116,128 @@ gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight,
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
-  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"))+
   scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Vegetation weight of the long term campaign")
 gradientvegweight
-ggsave(filename = gradientvegweight, plot = gradientvegweight, width = 6, height = 4)
+ggsave(filename = "veg_plots/gradientvegweight.jpeg", plot = gradientvegweight, width = 6, height = 4)
 
 # stacked bar plot for veg height 1 and 2 per campaign
 veg_heightdatadaily <- veg_heightdata %>% filter(grepl("D.", base_code))
 veg_heightdatadaily$height_type <- factor(veg_heightdatadaily$height_type, 
                                           levels = c("veg_height_2", "veg_height"))
-dailyvegheights <- ggplot(veg_heightdatadaily, aes(x=plot_id, y = height_value, fill = interaction(treatment, Animal))) +
+
+dailyvegheights <- ggplot(veg_heightdatadaily, aes(x = plot_id, y = height_value, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   geom_bar_pattern(aes(pattern = height_type), 
                    position = "stack", 
                    stat = "identity", 
-                   pattern_fill = "black",
-                   pattern_density = 0.1,
+                   pattern_fill = "black",     
+                   pattern_density = 0.1, 
                    pattern_spacing = 0.03) +
-  facet_wrap("Animal", scales = "free") +
-  xlab("\nPlot ID") + ylab("vegetation height (cm)") +
+  facet_wrap("Animal", scales = "free_x") +
+  xlab("\nPlot ID") + 
+  ylab("Vegetation height (cm)") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
-  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
-  scale_pattern_manual(
-    name = "Measurement period", 
-    values=c("veg_height_2" = "stripe", "veg_height" = "none")) +
-  scale_y_continuous(expand = c(0, 0)) +
-  ggtitle("Vegetation height and growth of the short term campaign")
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"),
+                    guide = guide_legend(override.aes = list(pattern = "none"))) +  
+  scale_pattern_manual(name = "Measurement period", 
+                       values = c("veg_height" = "none", "veg_height_2" = "stripe"),
+                       labels = c("1", "2"), 
+                       guide = guide_legend(override.aes = list(
+                         fill = "transparent", 
+                         pattern_fill = c("black", "transparent"),
+                         pattern = c("none", "stripe"),  # Ensure correct pattern display
+                         color = "black"  # Border color for legend boxes
+                       ))) + 
+                       #guide = guide_legend(reverse = TRUE)) +  # Reverse legend order
+  theme(legend.key = element_rect(fill = "transparent", color = NA),
+        legend.background = element_rect(fill = "transparent", color = NA)) +
+  scale_y_continuous(limits = c(0, 20), breaks = seq(0, 20, by = 5), expand = c(0, 0)) +  ggtitle("Vegetation height and growth of the short term campaign")
+
 dailyvegheights
+ggsave(filename = "veg_plots/veg_growth_daily_stacked.jpeg", plot = dailyvegheights, width = 6, height = 4)
+
 
 veg_heightdatagradient <- veg_heightdata %>% filter(grepl("G.", base_code))
 veg_heightdatagradient$height_type <- factor(veg_heightdatagradient$height_type, 
                                           levels = c("veg_height_2", "veg_height"))
-gradientvegheights <- ggplot(veg_heightdatagradient, aes(x=plot_id, y = height_value, fill = interaction(treatment, Animal))) +
+
+
+gradientvegheights <- ggplot(veg_heightdatagradient, aes(x = plot_id, y = height_value, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   geom_bar_pattern(aes(pattern = height_type), 
                    position = "stack", 
                    stat = "identity", 
-                   pattern_fill = "black",
-                   pattern_density = 0.1,
+                   pattern_fill = "black",     
+                   pattern_density = 0.1, 
                    pattern_spacing = 0.03) +
-  facet_wrap("Animal", scales = "free") +
-  xlab("\nPlot ID") + ylab("vegetation height (cm)") +
+  facet_wrap("Animal", scales = "free_x") +  # Changed to 'free_x' to match the daily plot
+  xlab("\nPlot ID") + 
+  ylab("Vegetation height (cm)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
-        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line()) +
+        panel.grid.minor.x = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), 
+        axis.line = element_line()) +
   labs(fill = "Plot type") +
-  scale_fill_manual(values=c("#A4AC86", "#656D4A", "#A68A64", "#7F4F24")) +
-  scale_pattern_manual(
-    name = "Measurement period", 
-    values=c("veg_height_2" = "stripe", "veg_height" = "none")) +
-  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"),
+                    guide = guide_legend(override.aes = list(pattern = "none"))) +  
+  scale_pattern_manual(name = "Measurement period", 
+                       values = c("veg_height" = "none", "veg_height_2" = "stripe"),
+                       labels = c("1", "2"), 
+                       guide = guide_legend(override.aes = list(
+                         fill = "transparent", 
+                         pattern_fill = c("black", "transparent"),
+                         pattern = c("none", "stripe"),  
+                         color = "black"  
+                       ))) + 
+  theme(legend.key = element_rect(fill = "transparent", color = NA),
+        legend.background = element_rect(fill = "transparent", color = NA)) +
+  scale_y_continuous(limits = c(0, 60), breaks = seq(0, 60, by = 10), expand = c(0, 0)) +
   ggtitle("Vegetation height and growth of the long term campaign")
+
+
 gradientvegheights
+ggsave(filename = "veg_plots/veg_growth_gradient_stacked.jpeg", plot = gradientvegheights, width = 6, height = 4)
+
+
 
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point() + geom_smooth(method = lm)
+print(scatterplot)
+
+scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
+  geom_point(size = 2) +  
+  geom_smooth(method = "lm", se = FALSE) +  
+  scale_color_manual(values = c("Control" = "grey", "Fresh" = "black")) +  
+  labs(color = "treatment") + 
+  labs(
+    x = "Total vegetation weight (g)",  
+    y = "Vegetation height (cm)",        
+    color = "Treatment"                   
+  ) +
+  theme_minimal()  
+
+print(scatterplot)
 ggsave("veg_plots/scatterplot_veg_weight_height.jpeg", plot = scatterplot, width = 6, height = 4)
 
 # Filtering for veg height growth and bar plot
@@ -186,23 +250,52 @@ save_plot(veg_growth, "veg_growth", "veg_plots/veg_growth.jpeg", "Veg Growth")
 # Bar plot for biomass
 save_plot(veg_combined, "estimated_biomass_plot", "veg_plots/estimated_biomass_plot.jpeg", "Estimated Biomass")
 
+# Custom colors for each combination of treatment and animal
+custom_colors <- c(
+  "Control.Cow" = "#A4AC86",    # Cow Control
+  "Fresh.Cow" = "#656D4A",      # Cow Fresh
+  "Control.Horse" = "#A68A64",  # Horse Control
+  "Fresh.Horse" = "#7F4F24"     # Horse Fresh
+)
 
+custom_labels <- c(
+  "Control.Cow" = "Cow Control",
+  "Fresh.Cow" = "Cow Fresh",
+  "Control.Horse" = "Horse Control",
+  "Fresh.Horse" = "Horse Fresh"
+)
 
-# Loop for plotting based on base_code
 plot_by_code <- function(df, y_var, folder, y_label) {
   for (code in unique(df$base_code)) {
     df_subset <- df %>% filter(base_code == code)
-    p <- ggplot(df_subset, aes(x = plot_id, y = !!sym(y_var), fill = plot_id)) +
+    
+    # Check if df_subset is created
+    if (nrow(df_subset) == 0) {
+      print(paste("No data for base_code:", code))
+      next  # Skip to the next iteration if no data is found
+    }
+    
+    # Create the plot
+    p <- ggplot(df_subset, aes(x = plot_id, y = !!sym(y_var), fill = interaction(treatment, Animal))) +
       geom_bar(stat = "identity") +
       ggtitle(paste("Bar Plot for", code)) +
+      scale_fill_manual(values = custom_colors, labels = custom_labels) +  # Set custom colors and labels
+      labs(fill = "Plot Type",  # Change legend title to "Plot Type"
+           x = "Plot ID",
+           y = y_label) +  # Set dynamic y-axis label
       theme_minimal()
+    
+    # Save the plot
     ggsave(filename = paste0("veg_plots/", folder, "/", code, "_plot.jpeg"), plot = p, width = 6, height = 4)
   }
 }
 
-plot_by_code(veg_combined, "total_veg_weight", "veg_weight", "Veg Weight")
-plot_by_code(veg_growth, "veg_growth", "veg_height", "Veg Growth")
 
+plot_by_code(veg_combined, "total_veg_weight", "veg_weight", "Vegetation weight (grams)")
+plot_by_code(veg_growth, "veg_growth", "veg_growth", "Vegetation growth (cm)")
+
+
+### STATISTICS ------------------------------------------------------------------------
 # T-tests and ANOVAs
 run_anova <- function(df, y_var) {
   res.aov <- aov(as.formula(paste(y_var, "~ Animal_treatment")), data = df)
