@@ -123,7 +123,8 @@ flux_data <- flux_data %>%
     Campaign == "Daily" & base_code == "HD5" ~ as.numeric(date_formatted - first_HD5_date),
     Campaign == "Daily" & date_formatted <= first_daily_date_1_2 ~ as.numeric(date_formatted - first_daily_date_1_2),
     Campaign == "Daily" & date_formatted >= first_daily_date_1_2 & date_formatted < first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
-    Campaign == "Daily" & date_formatted >= first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_3_4),  # Adjusted this condition
+    Campaign == "Daily" & date_formatted >= first_daily_date_3_4 & !(base_code %in% c("HD1", "HD2", "CD1", "CD2")) ~ as.numeric(date_formatted - first_daily_date_3_4),  # Adjusted this condition
+    Campaign == "Daily" & date_formatted >= first_daily_date_3_4 & base_code %in% c("HD1", "HD2", "CD1", "CD2") ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted for the old dailies
     TRUE ~ NA_real_  # Catch-all for any unexpected cases
   ))
 
@@ -169,7 +170,7 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
     # Check if there is data to plot
     if (nrow(gas_data) > 0) {
       # Create the plot dynamically
-      gas_plot <- ggplot(gas_data, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
+      gas_plot <- ggplot(gas_data, aes(x = Days_Since_First, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
         geom_point(size = 2) +
         geom_line() +
         facet_wrap(~base_code, scales = "free") +
@@ -187,89 +188,6 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
           panel.grid.major = element_blank(),               # No major grid lines
           panel.background = element_rect(fill = "white")   # White background
         )
-      # Generate the filename dynamically
-      filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
-      
-      # Save the plot
-      ggsave(filename = filename, plot = gas_plot, width = 10, height = 8)
-      
-      cat("Saved plot to:", filename, "\n")  # Confirm save location
-    } else {
-      cat("No data available for gas:", gas$gastype, "\n")
-    }
-  }
-}
-
-##### NEW CODE FROM CHAT GPT --- NOT WORKING WITH DAYS SINCE FIRST!
-# Function to generate plots
-# Function to generate plots
-generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
-  for (gas in gases) {
-    # Filter data based on gas type and other conditions
-    gas_data <- flux_data %>%
-      filter(Campaign == campaign_type, gastype == gas$gastype, date %in% date_filter, Animal == animal_type)
-    
-    # Check if the gas is CH4 or N2O, and filter for RE measurements only
-    if (gas$gastype %in% c("CH4", "N2O")) {
-      gas_data <- gas_data %>% filter(NEERE == "RE")  # Filter to include only RE measurements
-    }
-    
-    # Print the number of rows in gas_data
-    cat("Processing gas:", gas$gastype, " - Rows:", nrow(gas_data), "\n")
-    
-    # Check if there is data to plot
-    if (nrow(gas_data) > 0) {
-      # Determine the start date for the campaign
-      start_date <- switch(campaign_type,
-                           "Gradient" = first_gradient_date_1_3,  # Assuming both gradient campaigns started at the same date
-                           "Daily" = {
-                             if (any(gas_data$base_code == "HD5")) {
-                               first_HD5_date
-                             } else if (any(gas_data$date_formatted >= first_daily_date_1_2 & gas_data$date_formatted < first_daily_date_3_4)) {
-                               first_daily_date_1_2
-                             } else {
-                               first_daily_date_3_4
-                             }
-                           }
-      )
-      
-      # Print the start date for debugging
-      cat("Start Date for", campaign_type, ":", start_date, "\n")
-      
-      # Calculate Days_Since_First for the labels
-      gas_data <- gas_data %>%
-        mutate(Days_Since_First = as.numeric(longdate - start_date))
-      
-      # Print the longdate and Days_Since_First for debugging
-      gas_data <- gas_data %>%
-        mutate(Debug_Info = paste("Longdate:", longdate, "Start Date:", start_date, "Days Since First:", Days_Since_First))
-      
-      print(gas_data$Debug_Info)  # Print debugging information to check values
-      
-      # Create the plot dynamically
-      gas_plot <- ggplot(gas_data, aes(x = longdate, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
-        geom_point(size = 2) +
-        geom_line() +
-        facet_wrap(~base_code, scales = "free") +
-        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Date", y = gas$y_label,
-             color = "Light/Dark",         # Changed title for the color legend
-             shape = "Treatment") +
-        scale_color_manual(values = c("NEE" = "gray", "RE" = "black")) +
-        scale_shape_manual(values = c(16, 17)) +
-        theme_minimal() +
-        theme(
-          legend.position.inside = c(0.75, 0.25),
-          axis.line = element_line(color = "black"), 
-          axis.text = element_text(color = "black"),   
-          axis.ticks = element_line(color = "black"),
-          panel.grid.major = element_blank(),               # No major grid lines
-          panel.background = element_rect(fill = "white")   # White background
-        ) +
-        # Custom x-axis labels based on Days_Since_First
-        scale_x_continuous(breaks = gas_data$longdate,
-                           labels = gas_data$Days_Since_First) +
-        labs(x = "Days Since First")  # Change x-axis label
-      
       # Generate the filename dynamically
       filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
       
@@ -494,10 +412,21 @@ daily_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
+daily_subset <- flux_data_ANOVA %>% 
+  filter(Campaign == "Daily") %>% 
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
+  convert_as_factor(Days_Since_First) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
 daily_CO2_NEE_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "NEE") %>%
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
@@ -507,6 +436,9 @@ daily_CO2_RE_subset <- flux_data_ANOVA %>%
   filter(Campaign == "Daily") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "RE") %>%
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
@@ -515,6 +447,9 @@ daily_CO2_RE_subset <- flux_data_ANOVA %>%
 daily_CH4_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(gastype == "CH4") %>%
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
@@ -523,6 +458,9 @@ daily_CH4_subset <- flux_data_ANOVA %>%
 daily_N2O_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(gastype == "N2O") %>%
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
@@ -531,12 +469,18 @@ daily_N2O_subset <- flux_data_ANOVA %>%
 daily_horse_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(Animal == "Horse") %>% 
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 daily_cow_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(Animal == "Cow") %>% 
+  filter(!(
+    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
+  )) %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
