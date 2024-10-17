@@ -345,26 +345,39 @@ flux_data %>%
 
 flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
 
-ggplot(flux_data, aes(x = gastype, y = best.flux, colour = Days_Since_First)) +
-  geom_boxplot(aes(gastype))
+# LOOK AT THE CH4 in the Cow FRESH!
+ggplot(flux_data, aes(x = gastype, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(aes(gastype)) +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"))
 
 # Plot for CO2
-ggplot(subset(flux_data, gastype == "CO2"), aes(x = as.factor(Days_Since_First), y = best.flux, fill = Animal)) +
+ggplot(subset(flux_data, gastype == "CO2"), aes(y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot() +
   labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CO2") +
   facet_wrap(~ Campaign)+
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"))
 
 # Plot for CH4 and N2O
-ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_Since_First), y = best.flux, fill = Animal)) +
+ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_Since_First), y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot() +
+  facet_wrap(~ gastype) +
   labs(x = "Days Since First", y = "Best Flux", title = "Box Plot of Best Flux for CH4 and N2O") +
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"))
 
+### CREATING SUBSETS -------------------------------------------
 
-# Plot the subsets
-plot_subsets(subsets_list)
-
+## GRADIENT SUBSETS --------------------
 gradient_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   convert_as_factor(Days_Since_First) %>% 
@@ -417,6 +430,8 @@ gradient_cow_subset <- flux_data_ANOVA %>%
   filter(Animal == "Cow") %>% 
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+## DAILY SUBSETS -----------------
 
 daily_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
@@ -495,6 +510,9 @@ daily_cow_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
+### PLOTTING SUBSETS --------------------------------------------------
+
+## Gradients
 gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
@@ -515,7 +533,7 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
   )
 
 gradient_CH4_boxplot
-#ggsave(filename = "veg_plots/gradient_CH4_boxplot.jpeg", plot = gradientvegweight, width = 6, height = 4)
+#ggsave(filename = "veg_plots/gradient_CH4_boxplot.jpeg", plot = gradient_CH4_boxplot, width = 6, height = 4)
 
 
 # Gradient N2O boxplots
@@ -583,6 +601,8 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
 
 gradient_CO2_boxplot_RE
 
+## DAILY BOXPLOTS -------------------------------------------------
+
 # Daily CO2 boxplots
 daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
@@ -649,7 +669,7 @@ daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fil
 daily_N2O_boxplot
 
 # Daily CH4 boxplots
-# Daily N2O boxplots
+
 daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
@@ -795,6 +815,43 @@ gradient_CO2_RE_subset$Days_Since_First <- factor(gradient_CO2_RE_subset$Days_Si
 
 
 gradient_CO2_RE_subset$period <-  factor(gradient_CO2_RE_subset$period)
+
+### Transforming best.flux to normal distribution
+library(bestNormalize)
+
+result <- bestNormalize(gradient_CO2_RE_subset$best.flux)
+
+summary(result)
+transformed_data <- predict(result)
+
+gradient_CO2_RE_subset$transformed_best.flux <- transformed_data
+
+qqnorm(gradient_CO2_RE_subset$transformed_best.flux)
+qqline(gradient_CO2_RE_subset$transformed_best.flux)
+shapiro.test(gradient_CO2_RE_subset$transformed_best.flux)
+hist(gradient_CO2_RE_subset$transformed_best.flux)
+
+# Retrying repeated measures ANOVA
+gradients_CO2_RE_ANOVA_transformed <- anova_test(data = gradient_CO2_RE_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+get_anova_table(gradients_CO2_RE_ANOVA_transformed)
+
+### TRYING WITH A DAILY
+result <- bestNormalize(daily_CH4_subset$best.flux)
+
+summary(result)
+transformed_data <- predict(result)
+
+daily_CH4_subset$transformed_best.flux <- transformed_data
+
+qqnorm(daily_CH4_subset$transformed_best.flux)
+qqline(daily_CH4_subset$transformed_best.flux)
+shapiro.test(daily_CH4_subset$transformed_best.flux)
+hist(daily_CH4_subset$transformed_best.flux)
+
+dailies_CH4_ANOVA_transformed <- anova_test(data = daily_CH4_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_CH4_ANOVA_transformed)
+
+plot(dailies_CH4_ANOVA_transformed)
 
 ### WORKING
 res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ period |Unique_ANOVA)
