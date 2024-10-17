@@ -26,6 +26,7 @@ flux_data <- flux_data_raw %>%
     date = NA
   )
 
+
 # Split the uniqueID into its components
 split_values <- str_split_fixed(flux_data_raw$UniqueID, "_", 4)
 
@@ -63,7 +64,8 @@ flux_data <- flux_data %>%
 flux_data <- flux_data %>% 
   mutate(plotNEERE = paste(plotID, NEERE, sep = "_"))
 
-        
+#Removing outlier gradient CH4
+flux_data <- flux_data[-92, ]
 
 # Calculating photosynthesis
 flux_data <- flux_data %>% 
@@ -216,12 +218,18 @@ generate_plots("Cow", "Gradient", gradient_date_filter, "G")
 # Photosynthesis plot 
 photosynthesis_data <- flux_data %>% filter(gastype == "CO2", Campaign == "Daily", NEERE == "NEE")
 
-photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = corr_photosynthesis, color = treatment)) +
+photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = corr_photosynthesis, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
-  geom_point(aes(color = treatment), position = position_dodge(width = 0.8))+
+  geom_point(position = position_dodge(width = 0.8))+
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Cow vs Horse Photosynthesis",
-       colour = "Treatment") +
+       title = "Photosynthesis",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -326,7 +334,7 @@ library(dplyr)
 library(ggpubr)
 library(plyr)
 library(datarium)
-
+library(lmerTest)
 # Run repeated measures ANOVA
 flux_data %>%
   group_by(Days_Since_First) %>%
@@ -484,11 +492,186 @@ daily_cow_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
+gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       title = "Best flux CH4 Gradients",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+gradient_CH4_boxplot
+#ggsave(filename = "veg_plots/gradient_CH4_boxplot.jpeg", plot = gradientvegweight, width = 6, height = 4)
+
+
+# Gradient N2O boxplots
+gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
+       title = "Best flux N2O Gradients",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+gradient_N2O_boxplot
+
+# Gradient CO2 boxplots
+gradient_CO2_boxplot_NEE <- ggplot(gradient_CO2_NEE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
+       title = "Best flux CO2 NEE Gradients",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+gradient_CO2_boxplot_NEE
+
+gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
+       title = "Best flux CO2 RE Gradients",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+gradient_CO2_boxplot_RE
+
+# Daily CO2 boxplots
+daily_CO2_boxplot_NEE <- ggplot(daily_CO2_NEE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
+       title = "Best flux CO2 NEE Daily",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+daily_CO2_boxplot_NEE
+
+daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
+       title = "Best flux CO2 RE Daily",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+daily_CO2_boxplot_RE
+
+# Daily N2O boxplots
+daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
+       title = "Best flux N2O Daily",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+daily_N2O_boxplot
+
+# Daily CH4 boxplots
+# Daily N2O boxplots
+daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       title = "Best flux CH4 Daily",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+daily_CH4_boxplot
 
 #res <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
 
 # per gas type (cannot do per animal as well for the gradient data)
-gradients_CO2_NEE_ANOVA <- anova_test(data = gradient_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradients_CO2_NEE_ANOVA <- anova_test(data = gradient_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
 get_anova_table(gradients_CO2_NEE_ANOVA)
 
 gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
@@ -550,9 +733,53 @@ gradient_N2O_subset <- gradient_N2O_subset %>%
   filter(Unique_ANOVA != "CG5_C_RE_N2O") %>% 
   filter(Unique_ANOVA != "CG5_F_RE_N2O")
 
-normality <- daily_CO2_NEE_subset %>%
+norm_daily_CO2_NEE <- daily_CO2_NEE_subset %>%
+  shapiro_test(best.flux)
+
+norm_daily_CO2_NEE
+
+
+norm_daily_CO2_RE <- daily_CO2_RE_subset %>%
+  shapiro_test(best.flux)
+
+norm_daily_CO2_RE
+
+norm_daily_CH4 <- daily_CH4_subset %>%
+  shapiro_test(best.flux)
+
+norm_daily_CH4
+
+norm_daily_N2O <- daily_N2O_subset %>%
+  shapiro_test(best.flux)
+
+norm_daily_N2O
+
+# nothing is normal!!!
+hist(daily_N2O_subset$best.flux, main="Histogram best flux")
+hist(daily_CH4_subset$best.flux, main="Histogram best flux")
+hist(daily_CO2_NEE_subset$best.flux, main="Histogram best flux")
+hist(daily_CO2_RE_subset$best.flux, main="Histogram best flux")
+
+norm_gradient_CO2_NEE <- gradient_CO2_NEE_subset %>%
   group_by(Days_Since_First) %>% 
   shapiro_test(best.flux)
+
+norm_gradient_CO2_NEE
+
+norm_gradient_CO2_RE <- gradient_CO2_RE_subset %>%
+  shapiro_test(best.flux)
+
+norm_gradient_CO2_RE
+
+norm_gradient_CH4 <- gradient_CH4_subset %>%
+  shapiro_test(best.flux)
+
+norm_gradient_CH4
+
+norm_gradient_N2O <- gradient_N2O_subset %>%
+  shapiro_test(best.flux)
+
+norm_gradient_N2O
 
 # CO2 not normal 
 
@@ -560,10 +787,18 @@ data_wide <- gradient_CO2_RE_subset %>%
   pivot_wider(names_from = Unique_ANOVA, values_from = best.flux)
 
 gradient_CO2_RE_subset$Unique_ANOVA <-factor(gradient_CO2_RE_subset$Unique_ANOVA)
-gradient_CO2_RE_subset$Days_Since_First<-factor(gradient_CO2_RE_subset$Days_Since_First)
+
+gradient_CO2_RE_subset$Days_Since_First <- factor(gradient_CO2_RE_subset$Days_Since_First)
 
 
-res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ Days_Since_First |Unique_ANOVA)
+gradient_CO2_RE_subset$period <-  factor(gradient_CO2_RE_subset$period)
+
+### WORKING
+res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ period |Unique_ANOVA)
+res.fried
+
+
+result <- friedman.test(best.flux ~ treatment | plotID, data = gradient_CO2_RE_subset)
 
 friedman_result <- friedman.test(as.matrix(data_wide[, -1]), groups = data_wide$UniqueID)
 print(friedman_result)
@@ -592,8 +827,25 @@ flux_data$Days_Since_First <- as.numeric(flux_data$Days_Since_First)
 
 model <- lmer(best.flux ~ gastype * Animal * treatment + (1 | UniqueID), data = flux_data)
 
+
+model <- lmer(best.flux ~ treatment * period + 
+                (treatment == "F") * Animal * period + 
+                (1 | Unique_ANOVA), data = gradient_CO2_RE_subset)
+
+lmm <- lmer(value)
+
+
 summary(model)
 
 
 
+residuals <- resid(model)
+qqnorm(residuals)
+qqline(residuals) 
+shapiro.test(residuals)
+
+plot(fitted(model), residuals)
+abline(h = 0, col = "red") 
+
+plot(model)
 
