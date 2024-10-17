@@ -697,21 +697,21 @@ daily_CH4_boxplot
 gradients_CO2_PS_ANOVA <- anova_test(data = gradient_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
 get_anova_table(gradients_CO2_PS_ANOVA)
 
-gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradients_CO2_RE_ANOVA)
 
-gradients_CH4_ANOVA <- anova_test(data = gradient_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradients_CH4_ANOVA <- anova_test(data = gradient_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradients_CH4_ANOVA)
 
 # N2O data for gradients too similar?
-gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradients_N2O_ANOVA)
 
 # per animal probably not relevant cuz they are not per gas type
-gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradient_horse_ANOVA)
 
-gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradient_cow_ANOVA)
 
 # dailies
@@ -832,7 +832,7 @@ shapiro.test(gradient_CO2_RE_subset$transformed_best.flux)
 hist(gradient_CO2_RE_subset$transformed_best.flux)
 
 # Retrying repeated measures ANOVA
-gradients_CO2_RE_ANOVA_transformed <- anova_test(data = gradient_CO2_RE_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+gradients_CO2_RE_ANOVA_transformed <- anova_test(data = gradient_CO2_RE_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
 get_anova_table(gradients_CO2_RE_ANOVA_transformed)
 
 ### TRYING WITH A DAILY
