@@ -137,9 +137,8 @@ flux_data_ANOVA <- flux_data %>%
   filter(plottype != "PIT")
 
 
-# DO NOT RUN ----------------------------------------------------
-gradients <-  flux_data %>%  filter(Campaign == "Gradient", Animal == "Cow", gastype == "CH4")
-dailies <- flux_data %>%  filter(Campaign == "Daily", Animal == "Horse", gastype == "CH4")
+# DO NOT RUN -------------------------------------------------------------------------
+
 
 ### GENERATING PLOTS
 # Create the plots directory if it doesn't exist
@@ -153,6 +152,10 @@ gases <- list(
   list(gastype = "CH4", y_label = expression("nmol CH4 m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
   list(gastype = "N2O", y_label = expression("nmol N2O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
 )
+
+# replace the best flux of NEE measurements of CO2 with photosynthesis flux
+flux_data <- flux_data %>%
+  mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
 
 # Function to generate plots ### WORKING!!!! with DATES
 generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
@@ -177,7 +180,7 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
         geom_line() +
         facet_wrap(~base_code, scales = "free") +
         labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Date", y = gas$y_label,
-             color = "Light/Dark",         # Changed title for the color legend
+             color = "RE/Photosynthesis",         # Changed title for the color legend
              shape = "Treatment") +
         scale_color_manual(values = c("NEE" = "gray", "RE" = "black")) +
         scale_shape_manual(values = c(16, 17)) +
@@ -369,7 +372,7 @@ gradient_subset <- flux_data_ANOVA %>%
   convert_as_factor(treatment) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
-gradient_CO2_NEE_subset <- flux_data_ANOVA %>% 
+gradient_CO2_PS_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "NEE") %>%
@@ -428,7 +431,7 @@ daily_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
-daily_CO2_NEE_subset <- flux_data_ANOVA %>% 
+daily_CO2_PS_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "NEE") %>%
@@ -538,11 +541,11 @@ gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flu
 gradient_N2O_boxplot
 
 # Gradient CO2 boxplots
-gradient_CO2_boxplot_NEE <- ggplot(gradient_CO2_NEE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Best flux CO2 NEE Gradients",
+       title = "Best flux CO2 Photosynthesis Gradients",
        colour = "Treatment",
        fill = "Treatment & Animal") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -557,7 +560,7 @@ gradient_CO2_boxplot_NEE <- ggplot(gradient_CO2_NEE_subset, aes(x = Animal, y = 
     legend.position = "bottom"
   )
 
-gradient_CO2_boxplot_NEE
+gradient_CO2_boxplot_PS
 
 gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
@@ -581,11 +584,11 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
 gradient_CO2_boxplot_RE
 
 # Daily CO2 boxplots
-daily_CO2_boxplot_NEE <- ggplot(daily_CO2_NEE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Best flux CO2 NEE Daily",
+       title = "Best flux CO2 Photosynthesis Daily",
        colour = "Treatment",
        fill = "Treatment & Animal") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -600,7 +603,7 @@ daily_CO2_boxplot_NEE <- ggplot(daily_CO2_NEE_subset, aes(x = Animal, y = best.f
     legend.position = "bottom"
   )
 
-daily_CO2_boxplot_NEE
+daily_CO2_boxplot_PS
 
 daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
@@ -671,8 +674,8 @@ daily_CH4_boxplot
 #res <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
 
 # per gas type (cannot do per animal as well for the gradient data)
-gradients_CO2_NEE_ANOVA <- anova_test(data = gradient_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
-get_anova_table(gradients_CO2_NEE_ANOVA)
+gradients_CO2_PS_ANOVA <- anova_test(data = gradient_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
+get_anova_table(gradients_CO2_PS_ANOVA)
 
 gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
 get_anova_table(gradients_CO2_RE_ANOVA)
@@ -694,8 +697,8 @@ get_anova_table(gradient_cow_ANOVA)
 # dailies
 
 # per gas type and animal
-dailies_CO2_NEE_ANOVA <- anova_test(data = daily_CO2_NEE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_CO2_NEE_ANOVA)
+dailies_CO2_PS_ANOVA <- anova_test(data = daily_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+get_anova_table(dailies_CO2_PS_ANOVA)
 
 dailies_CO2_RE_ANOVA <- anova_test(data = daily_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
 get_anova_table(dailies_CO2_RE_ANOVA)
@@ -717,9 +720,9 @@ get_anova_table(daily_cow_ANOVA)
 # Test normality
 
 # remove some data because there were only 2 measurements on this day since first
-gradient_CO2_NEE_subset <- gradient_CO2_NEE_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_NEE_CO2") %>% 
-  filter(Unique_ANOVA != "CG5_F_NEE_CO2")
+gradient_CO2_PS_subset <- gradient_CO2_PS_subset %>% 
+  filter(Unique_ANOVA != "CG5_C_PS_CO2") %>% 
+  filter(Unique_ANOVA != "CG5_F_PS_CO2")
 
 gradient_CO2_RE_subset <- gradient_CO2_RE_subset %>% 
   filter(Unique_ANOVA != "CG5_C_RE_CO2") %>% 
@@ -733,10 +736,10 @@ gradient_N2O_subset <- gradient_N2O_subset %>%
   filter(Unique_ANOVA != "CG5_C_RE_N2O") %>% 
   filter(Unique_ANOVA != "CG5_F_RE_N2O")
 
-norm_daily_CO2_NEE <- daily_CO2_NEE_subset %>%
+norm_daily_CO2_PS <- daily_CO2_PS_subset %>%
   shapiro_test(best.flux)
 
-norm_daily_CO2_NEE
+norm_daily_CO2_PS
 
 
 norm_daily_CO2_RE <- daily_CO2_RE_subset %>%
@@ -757,14 +760,14 @@ norm_daily_N2O
 # nothing is normal!!!
 hist(daily_N2O_subset$best.flux, main="Histogram best flux")
 hist(daily_CH4_subset$best.flux, main="Histogram best flux")
-hist(daily_CO2_NEE_subset$best.flux, main="Histogram best flux")
+hist(daily_CO2_PS_subset$best.flux, main="Histogram best flux")
 hist(daily_CO2_RE_subset$best.flux, main="Histogram best flux")
 
-norm_gradient_CO2_NEE <- gradient_CO2_NEE_subset %>%
+norm_gradient_CO2_PS <- gradient_CO2_PS_subset %>%
   group_by(Days_Since_First) %>% 
   shapiro_test(best.flux)
 
-norm_gradient_CO2_NEE
+norm_gradient_CO2_PS
 
 norm_gradient_CO2_RE <- gradient_CO2_RE_subset %>%
   shapiro_test(best.flux)
@@ -811,7 +814,7 @@ data.frame(normality)
 residuals <- residuals(gradients_CH4_ANOVA)
 qqnorm(residuals)
 
-model <- aov(best.flux ~  treatment + Error(Unique_ANOVA/Days_Since_First), data = gradient_CO2_NEE_subset)
+model <- aov(best.flux ~  treatment + Error(Unique_ANOVA/Days_Since_First), data = gradient_CO2_PS_subset)
 res <- residuals(model)
 
 print(model)
