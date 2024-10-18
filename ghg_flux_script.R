@@ -477,7 +477,8 @@ daily_CH4_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
+         log_best.flux = log(best.flux))
 
 daily_N2O_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
@@ -866,12 +867,19 @@ flux_data$treatment <- as.factor(flux_data$treatment) # Control or Treatment
 flux_data$Days_Since_First <- as.numeric(flux_data$Days_Since_First)
 
 
-model <- lmer(best.flux ~ gastype * Animal * treatment + (1 | UniqueID), data = flux_data)
+model <- lmer(best.flux ~ treatment + Animal + (1 | Unique_ANOVA), data = daily_CH4_subset)
+residuals <- residuals(model)
+
+plot(residuals)
+qqnorm(residuals)
+qqline(residuals)
+shapiro.test(residuals)
+
+model <- lmer(best.flux ~ treatment + 
+                (treatment == "F") * Animal  + 
+                (1 | Unique_ANOVA), data = daily_CH4_subset)
 
 
-model <- lmer(best.flux ~ treatment * period + 
-                (treatment == "F") * Animal * period + 
-                (1 | Unique_ANOVA), data = gradient_CO2_RE_subset)
 
 lmm <- lmer(value)
 
