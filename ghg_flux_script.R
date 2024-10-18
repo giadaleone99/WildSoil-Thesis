@@ -326,6 +326,8 @@ jpeg("tables/swc_table.jpeg", width = 800, height = 400)  # Adjust dimensions as
 grid.draw(SWC_table)
 dev.off()
 
+### RUN FROM HERE -----------------------------------------------------------------------
+
 # Repeated measures ANOVA
 library(rstatix)
 library(reshape)
@@ -477,8 +479,7 @@ daily_CH4_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
-         log_best.flux = log(best.flux))
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))  
 
 daily_N2O_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
@@ -693,70 +694,70 @@ daily_CH4_boxplot
 #res <- anova_test(data = gradient_subset, dv = best.flux, wid = Unique_ANOVA, within = Days_Since_First)
 
 # per gas type (cannot do per animal as well for the gradient data)
-gradients_CO2_PS_ANOVA <- anova_test(data = gradient_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
-get_anova_table(gradients_CO2_PS_ANOVA)
+# gradients_CO2_PS_ANOVA <- anova_test(data = gradient_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Animal, treatment, period))
+# get_anova_table(gradients_CO2_PS_ANOVA)
+# 
+# gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradients_CO2_RE_ANOVA)
+# 
+# gradients_CH4_ANOVA <- anova_test(data = gradient_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradients_CH4_ANOVA)
+# 
+# # N2O data for gradients too similar?
+# gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradients_N2O_ANOVA)
+# 
+# # per animal probably not relevant cuz they are not per gas type
+# gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradient_horse_ANOVA)
+# 
+# gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradient_cow_ANOVA)
+# 
+# # dailies
+# 
+# # per gas type and animal
+# dailies_CO2_PS_ANOVA <- anova_test(data = daily_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+# get_anova_table(dailies_CO2_PS_ANOVA)
+# 
+# dailies_CO2_RE_ANOVA <- anova_test(data = daily_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+# get_anova_table(dailies_CO2_RE_ANOVA)
+# 
+# dailies_CH4_ANOVA <- anova_test(data = daily_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+# get_anova_table(dailies_CH4_ANOVA)
+# 
+# dailies_N2O_ANOVA <- anova_test(data = daily_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+# get_anova_table(dailies_N2O_ANOVA)
+# 
+# # per animal
+# daily_horse_ANOVA <- anova_test(data = daily_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+# get_anova_table(daily_horse_ANOVA)
+# 
+# daily_cow_ANOVA <- anova_test(data = daily_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
+# get_anova_table(daily_cow_ANOVA)
+# 
 
-gradients_CO2_RE_ANOVA <- anova_test(data = gradient_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradients_CO2_RE_ANOVA)
-
-gradients_CH4_ANOVA <- anova_test(data = gradient_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradients_CH4_ANOVA)
-
-# N2O data for gradients too similar?
-gradients_N2O_ANOVA <- anova_test(data = gradient_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradients_N2O_ANOVA)
-
-# per animal probably not relevant cuz they are not per gas type
-gradient_horse_ANOVA <- anova_test(data = gradient_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradient_horse_ANOVA)
-
-gradient_cow_ANOVA <- anova_test(data = gradient_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradient_cow_ANOVA)
-
-# dailies
-
-# per gas type and animal
-dailies_CO2_PS_ANOVA <- anova_test(data = daily_CO2_PS_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_CO2_PS_ANOVA)
-
-dailies_CO2_RE_ANOVA <- anova_test(data = daily_CO2_RE_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_CO2_RE_ANOVA)
-
-dailies_CH4_ANOVA <- anova_test(data = daily_CH4_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_CH4_ANOVA)
-
-dailies_N2O_ANOVA <- anova_test(data = daily_N2O_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_N2O_ANOVA)
-
-# per animal
-daily_horse_ANOVA <- anova_test(data = daily_horse_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
-get_anova_table(daily_horse_ANOVA)
-
-daily_cow_ANOVA <- anova_test(data = daily_cow_subset, dv = best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment))
-get_anova_table(daily_cow_ANOVA)
-
-
-# Test normality
-norm_daily_CO2_PS <- daily_CO2_PS_subset %>%
-  shapiro_test(best.flux)
-
-norm_daily_CO2_PS
-
-
-norm_daily_CO2_RE <- daily_CO2_RE_subset %>%
-  shapiro_test(best.flux)
-
-norm_daily_CO2_RE
-
-norm_daily_CH4 <- daily_CH4_subset %>%
-  shapiro_test(best.flux)
-
-norm_daily_CH4
-
-norm_daily_N2O <- daily_N2O_subset %>%
-  shapiro_test(best.flux)
-
-norm_daily_N2O
+# # Test normality
+# norm_daily_CO2_PS <- daily_CO2_PS_subset %>%
+#   shapiro_test(best.flux)
+# 
+# norm_daily_CO2_PS
+# 
+# 
+# norm_daily_CO2_RE <- daily_CO2_RE_subset %>%
+#   shapiro_test(best.flux)
+# 
+# norm_daily_CO2_RE
+# 
+# norm_daily_CH4 <- daily_CH4_subset %>%
+#   shapiro_test(best.flux)
+# 
+# norm_daily_CH4
+# 
+# norm_daily_N2O <- daily_N2O_subset %>%
+#   shapiro_test(best.flux)
+# 
+# norm_daily_N2O
 
 # nothing is normal!!!
 hist(daily_N2O_subset$best.flux, main="Histogram best flux")
@@ -785,76 +786,84 @@ norm_gradient_N2O <- gradient_N2O_subset %>%
 
 norm_gradient_N2O
 
-# CO2 not normal 
-
-data_wide <- gradient_CO2_RE_subset %>%
-  pivot_wider(names_from = Unique_ANOVA, values_from = best.flux)
-
-gradient_CO2_RE_subset$Unique_ANOVA <-factor(gradient_CO2_RE_subset$Unique_ANOVA)
-
-gradient_CO2_RE_subset$Days_Since_First <- factor(gradient_CO2_RE_subset$Days_Since_First)
-
-
-gradient_CO2_RE_subset$period <-  factor(gradient_CO2_RE_subset$period)
+# # co2 not normal 
+# 
+# data_wide <- gradient_co2_re_subset %>%
+#   pivot_wider(names_from = unique_anova, values_from = best.flux)
+# 
+# gradient_co2_re_subset$unique_anova <-factor(gradient_co2_re_subset$unique_anova)
+# 
+# gradient_co2_re_subset$days_since_first <- factor(gradient_co2_re_subset$days_since_first)
+# 
+# 
+# gradient_co2_re_subset$period <-  factor(gradient_co2_re_subset$period)
 
 ### Transforming best.flux to normal distribution
 library(bestNormalize)
 
+# Example of how to create a new column with the normalized_best.flux
 
-result <- bestNormalize(gradient_CO2_RE_subset$best.flux)
+daily_CO2_PS_subset <- daily_CO2_PS_subset %>%
+  mutate(normalized_best.flux = bestNormalize(best.flux)$x.t)
 
-summary(result)
-transformed_data <- predict(result)
+daily_CO2_RE_subset <- daily_CO2_RE_subset %>% 
+  mutate(normalized_best.flux = bestNormalize(best.flux)$x.t)
 
-gradient_CO2_RE_subset$transformed_best.flux <- transformed_data
+daily_CH4_subset <- daily_CH4_subset %>% 
+  mutate(normalized_best.flux = bestNormalize(best.flux)$x.t)
+
+daily_N2O_subset <- daily_N2O_subset %>% 
+  mutate(normalized_best.flux = bestNormalize(best.flux)$x.t)
+
+# Checking normalized_best.flux
+plot(daily_CO2_PS_subset$normalized_best.flux)
+qqnorm(daily_CO2_PS_subset$normalized_best.flux)
+qqline(daily_CO2_PS_subset$normalized_best.flux)
+hist(daily_CO2_PS_subset$normalized_best.flux)
+
 
 qqnorm(gradient_CO2_RE_subset$transformed_best.flux)
 qqline(gradient_CO2_RE_subset$transformed_best.flux)
 shapiro.test(gradient_CO2_RE_subset$transformed_best.flux)
 hist(gradient_CO2_RE_subset$transformed_best.flux)
 
-# Retrying repeated measures ANOVA
-gradients_CO2_RE_ANOVA_transformed <- anova_test(data = gradient_CO2_RE_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
-get_anova_table(gradients_CO2_RE_ANOVA_transformed)
+# # Retrying repeated measures ANOVA
+# gradients_CO2_RE_ANOVA_transformed <- anova_test(data = gradient_CO2_RE_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(period, treatment, Animal))
+# get_anova_table(gradients_CO2_RE_ANOVA_transformed)
+# 
+# ### TRYING WITH A DAILY
+# result <- bestNormalize(daily_CH4_subset$best.flux)
+# 
+# summary(result)
+# transformed_data <- predict(result)
+# 
+# daily_CH4_subset$transformed_best.flux <- transformed_data
+# 
+# qqnorm(daily_CH4_subset$transformed_best.flux)
+# qqline(daily_CH4_subset$transformed_best.flux)
+# shapiro.test(daily_CH4_subset$transformed_best.flux)
+# hist(daily_CH4_subset$transformed_best.flux)
+# 
+# dailies_CH4_ANOVA_transformed <- anova_test(data = daily_CH4_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
+# get_anova_table(dailies_CH4_ANOVA_transformed)
+# 
+# plot(dailies_CH4_ANOVA_transformed)
+# 
+# ### WORKING friedman test
+# # res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ period |Unique_ANOVA)
+# # res.fried
+# # 
+# # 
+# # result <- friedman.test(best.flux ~ treatment | plotID, data = gradient_CO2_RE_subset)
+# # 
+# # friedman_result <- friedman.test(as.matrix(data_wide[, -1]), groups = data_wide$UniqueID)
+# # print(friedman_result)
+# # 
+# # res.fried
 
-### TRYING WITH A DAILY
-result <- bestNormalize(daily_CH4_subset$best.flux)
 
-summary(result)
-transformed_data <- predict(result)
-
-daily_CH4_subset$transformed_best.flux <- transformed_data
-
-qqnorm(daily_CH4_subset$transformed_best.flux)
-qqline(daily_CH4_subset$transformed_best.flux)
-shapiro.test(daily_CH4_subset$transformed_best.flux)
-hist(daily_CH4_subset$transformed_best.flux)
-
-dailies_CH4_ANOVA_transformed <- anova_test(data = daily_CH4_subset, dv = transformed_best.flux, wid = Unique_ANOVA, between = c(Days_Since_First, treatment, Animal))
-get_anova_table(dailies_CH4_ANOVA_transformed)
-
-plot(dailies_CH4_ANOVA_transformed)
-
-### WORKING friedman test
-res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ period |Unique_ANOVA)
-res.fried
-
-
-result <- friedman.test(best.flux ~ treatment | plotID, data = gradient_CO2_RE_subset)
-
-friedman_result <- friedman.test(as.matrix(data_wide[, -1]), groups = data_wide$UniqueID)
-print(friedman_result)
-
-res.fried
-
-
-
-data.frame(normality)
 residuals <- residuals(gradients_CH4_ANOVA)
 qqnorm(residuals)
-
-model <- aov(best.flux ~  treatment + Error(Unique_ANOVA/Days_Since_First), data = gradient_CO2_PS_subset)
-res <- residuals(model)
 
 print(model)
 qqnorm(res)
@@ -867,34 +876,85 @@ flux_data$treatment <- as.factor(flux_data$treatment) # Control or Treatment
 flux_data$Days_Since_First <- as.numeric(flux_data$Days_Since_First)
 
 
-model <- lmer(best.flux ~ treatment + Animal + (1 | Unique_ANOVA), data = daily_CH4_subset)
-residuals <- residuals(model)
+### Linear Mixed Models ---------------------------------------------------------------
+## Comment from stats dude: if it is a gradient subset, use the period as the random effect, 
+## if it is a daily, then use the days_since_first as the random effect.
 
+## Daily models --------------------------------------
+# Daily CO2 PS subset
+
+model <- lmer(normalized_best.flux ~ treatment + Animal + (1 | Days_Since_First), data = daily_CO2_PS_subset)
+summary(model)
+anova(model)
+residuals <- residuals(model)
 plot(residuals)
 qqnorm(residuals)
 qqline(residuals)
 shapiro.test(residuals)
 
-model <- lmer(best.flux ~ treatment + 
+model <- lmer(normalized_best.flux ~ treatment + 
                 (treatment == "F") * Animal  + 
-                (1 | Unique_ANOVA), data = daily_CH4_subset)
+                (1 | Days_Since_First), data = daily_CO2_PS_subset)
 
 
+# Daily CO2 RE subset
+model <- lmer(normalized_best.flux ~ treatment + Animal + (1 | Days_Since_First), data = daily_CO2_RE_subset)
+summary(model)
+anova(model)
+residuals <- residuals(model)
+plot(residuals)
+qqnorm(residuals)
+qqline(residuals)
+shapiro.test(residuals)
 
-lmm <- lmer(value)
+model <- lmer(normalized_best.flux ~ treatment + 
+                (treatment == "F") * Animal  + 
+                (1 | Days_Since_First), data = daily_CO2_RE_subset)
 
+summary(model)
+
+# Daily CH4 subset
+model <- lmer(normalized_best.flux ~ treatment + Animal + (1 | Days_Since_First), data = daily_CH4_subset)
+summary(model)
+anova(model)
+residuals <- residuals(model)
+plot(residuals)
+qqnorm(residuals)
+qqline(residuals)
+shapiro.test(residuals)
+
+model <- lmer(normalized_best.flux ~ treatment + 
+                (treatment == "F") * Animal  + 
+                (1 | Days_Since_First), data = daily_CH4_subset)
 
 summary(model)
 
 
-
-residuals <- resid(model)
+# Daily N2O subset
+model <- lmer(normalized_best.flux ~ treatment + Animal + (1 | Days_Since_First), data = daily_N2O_subset)
+summary(model)
+anova(model)
+residuals <- residuals(model)
+plot(residuals)
 qqnorm(residuals)
-qqline(residuals) 
+qqline(residuals)
 shapiro.test(residuals)
 
-plot(fitted(model), residuals)
-abline(h = 0, col = "red") 
+model <- lmer(normalized_best.flux ~ treatment + 
+                (treatment == "F") * Animal  + 
+                (1 | Days_Since_First), data = daily_N2O_subset)
 
-plot(model)
+summary(model)
 
+#### GRADIENT models ----------------------------------------------------------------------
+
+## Gradient PS
+
+## Gradient RE
+
+## Gradient CH4
+
+# Gradient N2O
+
+
+### Consider running the models without control treatment rows and just look at Animal (cow, horse)
