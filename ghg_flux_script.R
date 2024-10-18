@@ -64,9 +64,6 @@ flux_data <- flux_data %>%
 flux_data <- flux_data %>% 
   mutate(plotNEERE = paste(plotID, NEERE, sep = "_"))
 
-#Removing outlier gradient CH4
-flux_data <- flux_data[-92, ]
-
 # Calculating photosynthesis
 flux_data <- flux_data %>% 
   mutate(photosynthesis = NA)
@@ -136,6 +133,10 @@ flux_data_ANOVA <- flux_data %>%
   mutate(Unique_ANOVA = paste(plotNEERE, gastype, sep = "_")) %>% 
   filter(plottype != "PIT")
 
+# replace the best flux of NEE measurements of CO2 with photosynthesis flux
+flux_data <- flux_data %>%
+  mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
+
 
 # DO NOT RUN -------------------------------------------------------------------------
 
@@ -152,10 +153,6 @@ gases <- list(
   list(gastype = "CH4", y_label = expression("nmol CH4 m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
   list(gastype = "N2O", y_label = expression("nmol N2O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
 )
-
-# replace the best flux of NEE measurements of CO2 with photosynthesis flux
-flux_data <- flux_data %>%
-  mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
 
 # Function to generate plots ### WORKING!!!! with DATES
 generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
@@ -345,13 +342,14 @@ flux_data %>%
 
 flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
 
-# LOOK AT THE CH4 in the Cow FRESH!
+# Plot with all the gasses and stuff
 ggplot(flux_data, aes(x = gastype, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(aes(gastype)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
-                               "F.Horse" = "#7F4F24"))
+                               "F.Horse" = "#7F4F24")) +
+  theme_minimal()
 
 # Plot for CO2
 ggplot(subset(flux_data, gastype == "CO2"), aes(y = best.flux, fill = interaction(treatment, Animal))) +
@@ -738,24 +736,6 @@ get_anova_table(daily_cow_ANOVA)
 
 
 # Test normality
-
-# remove some data because there were only 2 measurements on this day since first
-gradient_CO2_PS_subset <- gradient_CO2_PS_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_PS_CO2") %>% 
-  filter(Unique_ANOVA != "CG5_F_PS_CO2")
-
-gradient_CO2_RE_subset <- gradient_CO2_RE_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_RE_CO2") %>% 
-  filter(Unique_ANOVA != "CG5_F_RE_CO2")
-
-gradient_CH4_subset <- gradient_CH4_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_RE_CH4") %>% 
-  filter(Unique_ANOVA != "CG5_F_RE_CH4")
-
-gradient_N2O_subset <- gradient_N2O_subset %>% 
-  filter(Unique_ANOVA != "CG5_C_RE_N2O") %>% 
-  filter(Unique_ANOVA != "CG5_F_RE_N2O")
-
 norm_daily_CO2_PS <- daily_CO2_PS_subset %>%
   shapiro_test(best.flux)
 
@@ -819,6 +799,7 @@ gradient_CO2_RE_subset$period <-  factor(gradient_CO2_RE_subset$period)
 ### Transforming best.flux to normal distribution
 library(bestNormalize)
 
+
 result <- bestNormalize(gradient_CO2_RE_subset$best.flux)
 
 summary(result)
@@ -853,7 +834,7 @@ get_anova_table(dailies_CH4_ANOVA_transformed)
 
 plot(dailies_CH4_ANOVA_transformed)
 
-### WORKING
+### WORKING friedman test
 res.fried <- gradient_CO2_RE_subset %>% friedman_test(best.flux ~ period |Unique_ANOVA)
 res.fried
 
