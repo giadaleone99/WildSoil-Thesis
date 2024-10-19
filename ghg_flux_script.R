@@ -337,10 +337,7 @@ library(ggpubr)
 library(plyr)
 library(datarium)
 library(lmerTest)
-# Run repeated measures ANOVA
-flux_data %>%
-  group_by(Days_Since_First) %>%
-  get_summary_stats(best.flux, type = "mean_sd")
+
 
 flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
 
@@ -479,7 +476,8 @@ daily_CH4_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))  
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
+         log_best.flux = log(2+best.flux))  
 
 daily_N2O_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Daily") %>% 
@@ -761,9 +759,27 @@ daily_CH4_boxplot
 
 # nothing is normal!!!
 hist(daily_N2O_subset$best.flux, main="Histogram best flux")
-hist(daily_CH4_subset$best.flux, main="Histogram best flux")
+hist(daily_CH4_subset$log_best.flux, main="Histogram best flux")
 hist(daily_CO2_PS_subset$best.flux, main="Histogram best flux")
 hist(daily_CO2_RE_subset$best.flux, main="Histogram best flux")
+
+
+model <- lmer(log_best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CH4_subset)
+summary(model)
+res <- residuals(model)
+
+plot(res)
+qqnorm(res)
+shapiro.test(res)
+hist(res)
+
+model <- lmer(log_best.flux ~ treatment + 
+                (treatment == "F") * Animal  + 
+                (1 | Days_Since_First), data = daily_CH4_subset)
+              
+qqnorm(daily_CH4_subset$log_best.flux)
+qqline(daily_CH4_subset$log_best.flux)
+
 
 norm_gradient_CO2_PS <- gradient_CO2_PS_subset %>%
   group_by(Days_Since_First) %>% 
@@ -817,10 +833,10 @@ daily_N2O_subset <- daily_N2O_subset %>%
 
 # Checking normalized_best.flux
 plot(daily_CO2_PS_subset$normalized_best.flux)
-qqnorm(daily_CO2_PS_subset$normalized_best.flux)
-qqline(daily_CO2_PS_subset$normalized_best.flux)
-hist(daily_CO2_PS_subset$normalized_best.flux)
-
+qqnorm(daily_CH4_subset$normalized_best.flux)
+qqline(daily_CH4_subset$normalized_best.flux)
+hist(daily_CH4_subset$normalized_best.flux)
+shapiro.test(daily_CH4_subset$normalized_best.flux)
 
 qqnorm(gradient_CO2_RE_subset$transformed_best.flux)
 qqline(gradient_CO2_RE_subset$transformed_best.flux)
