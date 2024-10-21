@@ -1,6 +1,7 @@
 ### Soil data analysis script 
 
 library(ggplot2)
+library(dplyr)
 library(patchwork)
 
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
@@ -157,3 +158,62 @@ ggsave(filename = "soil_plots/combinedpo4.jpeg", plot = combinedpo4plot, width =
 combinedcnplot <- gradientcnplot + dailycnplot
 combinedcnplot
 ggsave(filename = "soil_plots/combinedcn.jpeg", plot = combinedcnplot, width = 6, height = 4)
+
+## Basic statistics 
+
+# Daily 
+Daily_summary_stats <- daily_soil %>%
+  group_by(Animal, sample_type) %>%
+  summarise(
+    pH_mean = mean(pH, na.rm = TRUE),
+    pH_median = median(pH, na.rm = TRUE),
+    pH_sd = sd(pH, na.rm = TRUE),
+    PO4.P_mean = mean(PO4.P, na.rm = TRUE),
+    PO4.P_median = median(PO4.P, na.rm = TRUE),
+    PO4.P_sd = sd(PO4.P, na.rm = TRUE),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_median = median(CN_ratio, na.rm = TRUE),
+    CN_sd = sd(CN_ratio, na.rm = TRUE)
+  )
+
+
+# Gradient
+Gradient_summary_stats <- gradient_soil %>%
+  group_by(Animal, sample_type) %>%
+  summarise(
+    pH_mean = mean(pH, na.rm = TRUE),
+    pH_median = median(pH, na.rm = TRUE),
+    pH_sd = sd(pH, na.rm = TRUE),
+    PO4.P_mean = mean(PO4.P, na.rm = TRUE),
+    PO4.P_median = median(PO4.P, na.rm = TRUE),
+    PO4.P_sd = sd(PO4.P, na.rm = TRUE),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_median = median(CN_ratio, na.rm = TRUE),
+    CN_sd = sd(CN_ratio, na.rm = TRUE)
+  )
+
+
+# ANOVA
+# Daily pH
+daily_pH_ANOVA <- aov(pH ~ Animal + sample_type, data = daily_soil)
+summary(daily_pH_ANOVA)
+res <- residuals(daily_pH_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(daily_pH_ANOVA)
+plot(TukeyHSD(daily_pH_ANOVA))
+
+# Daily PO4
+daily_PO4.P_ANOVA <- aov(PO4.P ~ Animal + sample_type, data = daily_soil)
+summary(daily_PO4.P_ANOVA)
+res <- residuals(daily_PO4.P_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+
+
+TukeyHSD(daily_PO4.P_ANOVA)
+plot(TukeyHSD(daily_PO4.P_ANOVA))
