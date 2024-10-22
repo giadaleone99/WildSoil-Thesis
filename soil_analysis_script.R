@@ -197,8 +197,19 @@ Gradient_summary_stats <- gradient_soil %>%
 
 
 # ANOVA
-# Daily pH
+# Daily pH 
 daily_pH_ANOVA <- aov(pH ~ Animal + sample_type, data = daily_soil)
+summary(daily_pH_ANOVA)
+res <- residuals(daily_pH_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(daily_pH_ANOVA)
+plot(TukeyHSD(daily_pH_ANOVA))
+
+# Interaction *
+daily_pH_ANOVA <- aov(pH ~ Animal * sample_type, data = daily_soil)
 summary(daily_pH_ANOVA)
 res <- residuals(daily_pH_ANOVA)
 qqnorm(res)
@@ -227,10 +238,29 @@ summary(daily_CN_ANOVA)
 res <- residuals(daily_CN_ANOVA)
 qqnorm(res)
 qqline(res)
-shapiro.test(res) # Not normally distributed
+shapiro.test(res) # normally distributed
+
+# Daily CN interaction *
+daily_CN_ANOVA <- aov(CN_ratio ~ Animal * sample_type, data = daily_soil)
+summary(daily_CN_ANOVA)
+res <- residuals(daily_CN_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res) # normally distributed
 
 # Gradient pH
 gradient_pH_ANOVA <- aov(pH ~ Animal + sample_type, data = gradient_soil)
+summary(gradient_pH_ANOVA)
+res <- residuals(gradient_pH_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(gradient_pH_ANOVA)
+plot(TukeyHSD(gradient_pH_ANOVA))
+
+# Gradient pH interaction *
+gradient_pH_ANOVA <- aov(pH ~ Animal * sample_type, data = gradient_soil)
 summary(gradient_pH_ANOVA)
 res <- residuals(gradient_pH_ANOVA)
 qqnorm(res)
@@ -251,6 +281,17 @@ shapiro.test(res)
 TukeyHSD(gradient_PO4.P_ANOVA)
 plot(TukeyHSD(gradient_PO4.P_ANOVA))
 
+# Gradient PO4.P interaction *
+gradient_PO4.P_ANOVA <- aov(PO4.P ~ Animal * sample_type, data = gradient_soil)
+summary(gradient_PO4.P_ANOVA)
+res <- residuals(gradient_PO4.P_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(gradient_PO4.P_ANOVA)
+plot(TukeyHSD(gradient_PO4.P_ANOVA))
+
 # Gradient CN
 gradient_CN_ANOVA <- aov(CN_ratio ~ Animal + sample_type, data = gradient_soil)
 summary(gradient_CN_ANOVA)
@@ -258,5 +299,14 @@ res <- residuals(gradient_CN_ANOVA)
 qqnorm(res)
 qqline(res)
 shapiro.test(res)
+
+# Gradient CN interaction +
+gradient_CN_ANOVA <- aov(CN_ratio ~ Animal * sample_type, data = gradient_soil)
+summary(gradient_CN_ANOVA)
+res <- residuals(gradient_CN_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
 
 ## We tried separating Horse and Cow and testing sample_type but no significance
