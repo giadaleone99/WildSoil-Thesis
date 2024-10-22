@@ -371,11 +371,11 @@ final_species_data <- final_species_data %>%
 
 # create df with species    
 comb_data <- final_species_data %>%
-  left_join(species_list, by = "plot_id")
+  left_join(species_list, by = c("plot_id", "veg_class"))
 
 # summarize to create species_list
 species_summary <- comb_data %>%
-  group_by(plot_id, veg_class.y) %>%
+  group_by(plot_id, veg_class) %>%
   dplyr::summarize(
     species_list = list(unique(species_list)),
     .groups = "drop"
@@ -383,7 +383,11 @@ species_summary <- comb_data %>%
 
 # Join back to retain the original data frame structure, now with species added as a list per row
 final_species_data <- final_species_data %>%
-  left_join(species_summary, by = "plot_id")
+  left_join(species_summary, by = c("plot_id", "veg_class"))
+
+saveRDS(final_species_data, "data/species_data.rds")
+saveRDS(dung_data, "data/dung_data.rds")
+saveRDS(veg_combined, "data/vegetation_data.rds")
 
 species_plot <- ggplot(final_species_data, aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
   geom_bar(stat = "identity") +  # Use stat = "identity" to plot the species counts

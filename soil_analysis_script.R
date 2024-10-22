@@ -16,12 +16,17 @@ gradient_soil <- soil_data_raw %>%
   
 gradient_soil$sample_type <- factor(gradient_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 
+saveRDS(gradient_soil, "data/gradient_soil_data.rds")
+
+
 daily_soil <- soil_data_raw %>% 
   filter(grepl("D.", base_code)) %>% 
   mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
   mutate(Animal = as.factor(Animal))
 
 daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
+
+saveRDS(daily_soil, "data/daily_soil_data.rds")
 
 summary(gradient_soil)
 
