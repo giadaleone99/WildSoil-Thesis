@@ -338,9 +338,9 @@ library(plyr)
 library(datarium)
 library(lmerTest)
 library(bestNormalize)
+library(ARTool)
+library(DHARMa)
 
-
-flux_data$Days_Since_First <- as.factor(flux_data$Days_Since_First)
 
 # Plot with all the gasses and stuff
 ggplot(flux_data, aes(x = gastype, y = best.flux, fill = interaction(treatment, Animal))) +
@@ -378,7 +378,7 @@ ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_S
 ## GRADIENT SUBSETS --------------------
 gradient_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
@@ -387,7 +387,7 @@ gradient_CO2_PS_subset <- flux_data_ANOVA %>%
   filter(Campaign == "Gradient") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "NEE") %>%
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
@@ -396,40 +396,43 @@ gradient_CO2_RE_subset <- flux_data_ANOVA %>%
   filter(Campaign == "Gradient") %>% 
   filter(gastype == "CO2") %>%
   filter(NEERE == "RE") %>%
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
         normalized_best.flux = bestNormalize(best.flux)$x.t)
 
 gradient_CH4_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   filter(gastype == "CH4") %>%
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   convert_as_factor(gastype) %>% 
-  convert_as_factor(treatment) %>% 
+  convert_as_factor(treatment) %>%
+  convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = bestNormalize(best.flux)$x.t)
 
 gradient_N2O_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   filter(gastype == "N2O") %>%
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = bestNormalize(best.flux)$x.t)
 
 gradient_horse_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   filter(Animal == "Horse") %>% 
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 gradient_cow_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
   filter(Animal == "Cow") %>% 
-  convert_as_factor(Days_Since_First) %>% 
+  convert_as_factor(period) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 ## DAILY SUBSETS -----------------
@@ -480,6 +483,7 @@ daily_CH4_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = bestNormalize(best.flux)$x.t)
 
@@ -492,6 +496,7 @@ daily_N2O_subset <- flux_data_ANOVA %>%
   convert_as_factor(Days_Since_First) %>% 
   convert_as_factor(gastype) %>% 
   convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = log(0.4 + best.flux))
 
@@ -695,28 +700,44 @@ daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fil
 daily_CH4_boxplot
 
 # creating the models for all the subsets
-gradient_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_PS_subset)
-gradient_CO2_RE_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_RE_subset)
-gradient_CH4_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_CH4_subset)
-gradient_N2O_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_N2O_subset)
+gradient_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_PS_subset) #best model to use. using * instead of + was not significant when comparing with anova(), so we use the more simple model
+gradient_CO2_RE_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_RE_subset) #same thing, use +
+gradient_CO2_RE_model <- art(best.flux ~ Animal * treatment + (1|period), data = gradient_CO2_RE_subset)
+anova(gradient_CO2_RE_model)
+gradient_CH4_model <- lmer(normalized_best.flux ~ Animal * treatment + (1|period), data = gradient_CH4_subset) #this time the anova() comparision was significant, so use *
+gradient_CH4_model <- art(best.flux ~ Animal * treatment + (1|period), data = gradient_CH4_subset)
+anova(gradient_CH4_model)
+gradient_N2O_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_N2O_subset) #not significant so use +
+gradient_N2O_model <- art(best.flux ~ Animal * treatment + (1|period), data = gradient_N2O_subset) 
+anova(gradient_N2O_model)
 
-daily_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CO2_PS_subset)
-daily_CO2_RE_model <- lmer(best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CO2_RE_subset)
-daily_CH4_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CH4_subset)
-daily_N2O_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_N2O_subset)
+daily_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CO2_PS_subset) #not significant so use +
+daily_CO2_RE_model <- lmer(best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_CO2_RE_subset) #not significant so use +
+daily_CH4_model <- lmer(normalized_best.flux ~ Animal * treatment + (1|Days_Since_First), data = daily_CH4_subset) #significant so use *
+daily_CH4_model <- art(best.flux ~ Animal * treatment + (1|Days_Since_First), data = daily_CH4_subset)
+anova(daily_CH4_model)
+daily_N2O_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|Days_Since_First), data = daily_N2O_subset) #not significant so use +
+daily_N2O_model <- art(best.flux ~ Animal * treatment + (1|Days_Since_First), data = daily_N2O_subset)
+anova(daily_N2O_model)
 
-res <- residuals(daily_CO2_RE_model)
+res <- residuals(gradient_CO2_PS_model)
 
 plot(res)
 qqnorm(res)
 shapiro.test(res)
 hist(res)
-summary(daily_CO2_RE_model)
+summary(daily_N2O_model)
+
+plot(simulateResiduals(gradient_CO2_PS_model1))
+AIC(gradient_CO2_RE_model)
+plot(simulateResiduals(gradient_CO2_PS_model2))
+AIC(gradient_CO2_PS_model2)
+anova(gradient_CO2_PS_model, model)
 
 # alternative model from chatGPT, bit sus
-model <- lmer(log_best.flux ~ treatment + 
+model <- lmer(best.flux ~ treatment + 
                 (treatment == "F") * Animal  + 
-                (1 | Days_Since_First), data = daily_CH4_subset)
+                (1 | period), data = gradient_CO2_PS_subset)
 
 # take out all Controls for all the subsets to test if animal becomes significant
 gradient_CO2_PS_subset_F <- gradient_CO2_PS_subset %>% 
