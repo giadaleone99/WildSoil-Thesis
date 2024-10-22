@@ -11,9 +11,11 @@ library(tidyr)
 library(ggpattern)
 
 # Import data
+vegdung_lab <- read.csv("data/vegdung_lab_data.csv")
 veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
 species_list <- read.csv("data/species_lists.csv")
+
 
 # Manipulating vegetation data
 veg_new <- veg_raw %>%
@@ -41,7 +43,11 @@ veg_summary <- veg_new %>%
       grepl("_C$", plot_id) ~ "Control",
       TRUE ~ NA_character_
     ),
-    Animal_treatment = paste(Animal, treatment)
+    Animal_treatment = paste(Animal, treatment),
+    Campaign = case_when(
+      grepl("G", base_code) ~ "Gradient",
+      grepl("D", base_code) ~ "Daily"
+    )
   )
 
 # Fieldwork data manipulation and joining with vegetation data
@@ -57,6 +63,21 @@ veg_combined <- veg_summary %>%
   left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
   distinct() %>%
   mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung)
+
+# get CN and plot_id from the lab data sheet and merge with the rest
+vegdung_data <- vegdung_lab %>% 
+  select(Kode_1, CN_ratio) %>% 
+  filter(!Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
+colnames(vegdung_data) <- c("plot_id", "CN_ratio")
+
+veg_combined <- veg_combined %>% 
+  left_join(vegdung_data, by = "plot_id")
+
+# create a df for dung
+dung_data <- vegdung_lab %>% 
+  select(Kode_1, CN_ratio) %>% 
+  filter(Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
+colnames(vegdung_data) <- c("plot_id", "CN_ratio")
 
 # mutating the data for the stacked height bar plots
 veg_combined2 <- veg_combined
@@ -322,20 +343,47 @@ plot_residuals(height_aov)
 # Species data analysis
 species_summary <- species_list %>%
   group_by(plot_id) %>%
-  summarise(species_count = n_distinct(species_list))
+  dplyr::summarise(species_count = n_distinct(species_list))
 
 species_data <- species_list %>%
   group_by(plot_id, veg_class) %>%
-  summarise(species_per_vegclass = n_distinct(species_list))
+  dplyr::summarise(species_per_vegclass = n_distinct(species_list))
 
 final_species_data <- left_join(species_data, species_summary, by = "plot_id")
 
-final_species_data <- final_species_data %>% 
-  mutate(treatment = case_when(
-    grepl("_F$", plot_id) ~ "Fresh",  # Ends with "_F"
-    grepl("_C$", plot_id) ~ "Control",  # Ends with "_C"
-    TRUE ~ NA_character_  # Assign NA if neither
-  ))
+final_species_data <- final_species_data %>%
+  mutate(
+    Animal = case_when(
+      grepl("^C", plot_id) ~ "Cow",
+      grepl("^H", plot_id) ~ "Horse",
+      TRUE ~ NA_character_  # Assign NA if neither
+    ),
+    Campaign = case_when(
+      grepl("G", plot_id) ~ "Gradient",
+      grepl("D", plot_id) ~ "Daily",
+      TRUE ~ NA_character_  # Assign NA if neither
+    ),
+    treatment = case_when(
+      grepl("_F$", plot_id) ~ "Fresh",  # Ends with "_F"
+      grepl("_C$", plot_id) ~ "Control",  # Ends with "_C"
+      TRUE ~ NA_character_  # Assign NA if neither
+    ))
+
+# create df with species    
+comb_data <- final_species_data %>%
+  left_join(species_list, by = "plot_id")
+
+# summarize to create species_list
+species_summary <- comb_data %>%
+  group_by(plot_id, veg_class.y) %>%
+  dplyr::summarize(
+    species_list = list(unique(species_list)),
+    .groups = "drop"
+  )
+
+# Join back to retain the original data frame structure, now with species added as a list per row
+final_species_data <- final_species_data %>%
+  left_join(species_summary, by = "plot_id")
 
 species_plot <- ggplot(final_species_data, aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
   geom_bar(stat = "identity") +  # Use stat = "identity" to plot the species counts
