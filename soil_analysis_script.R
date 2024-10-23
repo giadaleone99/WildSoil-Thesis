@@ -4,6 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(patchwork)
 library(ARTool)
+library(plotrix)
 
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
 
@@ -189,12 +190,15 @@ Daily_summary_stats <- daily_soil %>%
     pH_mean = mean(pH, na.rm = TRUE),
     pH_median = median(pH, na.rm = TRUE),
     pH_sd = sd(pH, na.rm = TRUE),
+    pH_se = std.error(pH),
     PO4.P_mean = mean(PO4.P, na.rm = TRUE),
     PO4.P_median = median(PO4.P, na.rm = TRUE),
     PO4.P_sd = sd(PO4.P, na.rm = TRUE),
+    PO4.P_se = std.error(PO4.P),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
-    CN_sd = sd(CN_ratio, na.rm = TRUE)
+    CN_sd = sd(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio)
   )
 
 
@@ -205,12 +209,15 @@ Gradient_summary_stats <- gradient_soil %>%
     pH_mean = mean(pH, na.rm = TRUE),
     pH_median = median(pH, na.rm = TRUE),
     pH_sd = sd(pH, na.rm = TRUE),
+    pH_se = std.error(pH),
     PO4.P_mean = mean(PO4.P, na.rm = TRUE),
     PO4.P_median = median(PO4.P, na.rm = TRUE),
     PO4.P_sd = sd(PO4.P, na.rm = TRUE),
+    PO4.P_se = std.error(PO4.P),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
-    CN_sd = sd(CN_ratio, na.rm = TRUE)
+    CN_sd = sd(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio)
   )
 
 
@@ -227,15 +234,15 @@ TukeyHSD(daily_pH_ANOVA1)
 plot(TukeyHSD(daily_pH_ANOVA1))
 
 # Interaction *
-# daily_pH_ANOVA2 <- aov(pH ~ Animal * sample_type, data = daily_soil)
-# summary(daily_pH_ANOVA2)
-# res <- residuals(daily_pH_ANOVA2)
-# qqnorm(res)
-# qqline(res)
-# shapiro.test(res)
-# 
-# TukeyHSD(daily_pH_ANOVA2)
-# plot(TukeyHSD(daily_pH_ANOVA2))
+daily_pH_ANOVA2 <- aov(pH ~ Animal * sample_type, data = daily_soil)
+summary(daily_pH_ANOVA2)
+res <- residuals(daily_pH_ANOVA2)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(daily_pH_ANOVA2)
+plot(TukeyHSD(daily_pH_ANOVA2))
 
 # Model comparison
 anova(daily_pH_ANOVA1, daily_pH_ANOVA2)
@@ -262,15 +269,15 @@ qqline(res)
 shapiro.test(res) # normally distributed
 
 # Daily CN interaction *
-# daily_CN_ANOVA2 <- aov(CN_ratio ~ Animal * sample_type, data = daily_soil)
-# summary(daily_CN_ANOVA2)
-# res <- residuals(daily_CN_ANOVA2)
-# qqnorm(res)
-# qqline(res)
-# shapiro.test(res) # normally distributed
-# 
-# # Model comparison
-# anova(daily_CN_ANOVA1, daily_CN_ANOVA2)
+daily_CN_ANOVA2 <- aov(CN_ratio ~ Animal * sample_type, data = daily_soil)
+summary(daily_CN_ANOVA2)
+res <- residuals(daily_CN_ANOVA2)
+qqnorm(res)
+qqline(res)
+shapiro.test(res) # normally distributed
+
+# Model comparison
+anova(daily_CN_ANOVA1, daily_CN_ANOVA2)
 
 # Gradient pH
 gradient_pH_ANOVA1 <- aov(pH ~ Animal + sample_type, data = gradient_soil)
@@ -284,15 +291,15 @@ TukeyHSD(gradient_pH_ANOVA1)
 plot(TukeyHSD(gradient_pH_ANOVA1))
 
 # Gradient pH interaction *
-# gradient_pH_ANOVA2 <- aov(pH ~ Animal * sample_type, data = gradient_soil)
-# summary(gradient_pH_ANOVA2)
-# res <- residuals(gradient_pH_ANOVA2)
-# qqnorm(res)
-# qqline(res)
-# shapiro.test(res)
-# 
-# TukeyHSD(gradient_pH_ANOVA2)
-# plot(TukeyHSD(gradient_pH_ANOVA2))
+gradient_pH_ANOVA2 <- aov(pH ~ Animal * sample_type, data = gradient_soil)
+summary(gradient_pH_ANOVA2)
+res <- residuals(gradient_pH_ANOVA2)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(gradient_pH_ANOVA2)
+plot(TukeyHSD(gradient_pH_ANOVA2))
 
 # model comparison
 anova(gradient_pH_ANOVA1, gradient_pH_ANOVA2)
@@ -308,16 +315,16 @@ shapiro.test(res)
 TukeyHSD(gradient_PO4.P_ANOVA1)
 plot(TukeyHSD(gradient_PO4.P_ANOVA))
 
-# Gradient PO4.P interaction *
-# gradient_PO4.P_ANOVA2 <- aov(PO4.P ~ Animal * sample_type, data = gradient_soil)
-# summary(gradient_PO4.P_ANOVA)
-# res <- residuals(gradient_PO4.P_ANOVA)
-# qqnorm(res)
-# qqline(res)
-# shapiro.test(res)
-# 
-# TukeyHSD(gradient_PO4.P_ANOVA)
-# plot(TukeyHSD(gradient_PO4.P_ANOVA))
+#Gradient PO4.P interaction *
+gradient_PO4.P_ANOVA2 <- aov(PO4.P ~ Animal * sample_type, data = gradient_soil)
+summary(gradient_PO4.P_ANOVA)
+res <- residuals(gradient_PO4.P_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
+
+TukeyHSD(gradient_PO4.P_ANOVA)
+plot(TukeyHSD(gradient_PO4.P_ANOVA))
 
 # model comparison
 anova(gradient_PO4.P_ANOVA1, gradient_PO4.P_ANOVA2)
@@ -330,14 +337,45 @@ qqnorm(res)
 qqline(res)
 shapiro.test(res)
 
-# Gradient CN interaction +
-# gradient_CN_ANOVA2 <- aov(CN_ratio ~ Animal * sample_type, data = gradient_soil)
-# summary(gradient_CN_ANOVA)
-# res <- residuals(gradient_CN_ANOVA)
-# qqnorm(res)
-# qqline(res)
-# shapiro.test(res)
+#Gradient CN interaction +
+gradient_CN_ANOVA2 <- aov(CN_ratio ~ Animal * sample_type, data = gradient_soil)
+summary(gradient_CN_ANOVA)
+res <- residuals(gradient_CN_ANOVA)
+qqnorm(res)
+qqline(res)
+shapiro.test(res)
 
 anova(gradient_CN_ANOVA1, gradient_CN_ANOVA2)
 
 ## We tried separating Horse and Cow and testing sample_type but no significance
+
+# Comparing gradient and daily campaigns
+gradient_stats_fresh <- gradient_soil %>%
+  filter(sample_type %in% c("Fresh", "Dung soil")) %>%
+  summarise(
+    mean_CN = mean(CN_ratio, na.rm = TRUE),
+    std_error_CN = std.error(CN_ratio, na.rm = TRUE),
+    mean_pH = mean(pH, na.rm = TRUE),
+    std_error_pH = std.error(pH, na.rm = TRUE),
+    mean_PO4 = mean(PO4.P, na.rm = TRUE),
+    std_error_PO4 = std.error(PO4.P, na.rm = TRUE)
+  ) %>%
+  mutate(source = "gradient_soil")
+
+# For daily_soil: filter for both fresh and dung samples
+daily_stats_fresh <- daily_soil %>%
+  filter(sample_type %in% c("Fresh", "Dung soil")) %>%
+  summarise(
+    mean_CN = mean(CN_ratio, na.rm = TRUE),
+    std_error_CN = std.error(CN_ratio, na.rm = TRUE),
+    mean_pH = mean(pH, na.rm = TRUE),
+    std_error_pH = std.error(pH, na.rm = TRUE),
+    mean_PO4 = mean(PO4.P, na.rm = TRUE),
+    std_error_PO4 = std.error(PO4.P, na.rm = TRUE)
+  ) %>%
+  mutate(source = "daily_soil")
+
+combined_stats <- bind_rows(gradient_stats_fresh, daily_stats_fresh)
+
+
+
