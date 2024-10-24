@@ -23,7 +23,8 @@ saveRDS(gradient_soil, "data/gradient_soil_data.rds")
 daily_soil <- soil_data_raw %>% 
   filter(grepl("D.", base_code)) %>% 
   mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
-  mutate(Animal = as.factor(Animal))
+  mutate(Animal = as.factor(Animal)) %>% 
+  mutate(log_PO4.P = log(PO4.P))
 
 daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 
@@ -248,7 +249,7 @@ plot(TukeyHSD(daily_pH_ANOVA2))
 anova(daily_pH_ANOVA1, daily_pH_ANOVA2)
 
 # Daily PO4
-daily_PO4.P_ANOVA1 <- aov(PO4.P ~ Animal + sample_type, data = daily_soil)
+daily_PO4.P_ANOVA1 <- aov(log_PO4.P ~ Animal + sample_type, data = daily_soil)
 summary(daily_PO4.P_ANOVA1)
 res <- residuals(daily_PO4.P_ANOVA1)
 qqnorm(res)

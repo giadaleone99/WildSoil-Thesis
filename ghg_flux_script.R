@@ -405,7 +405,7 @@ gradient_CO2_RE_subset <- flux_data_ANOVA %>%
   convert_as_factor(treatment) %>% 
   convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
-        normalized_best.flux = bestNormalize(best.flux)$x.t)
+        log_best.flux = log(best.flux))
 
 gradient_CH4_subset <- flux_data_ANOVA %>% 
   filter(Campaign == "Gradient") %>% 
@@ -763,7 +763,7 @@ ggsave(filename = "plots/Cow_fresh_CH4_boxplot.jpeg", plot = cow_fresh_CH4_plot,
 
 # creating the models for all the subsets
 gradient_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_PS_subset) #best model to use. using * instead of + was not significant when comparing with anova(), so we use the more simple model
-gradient_CO2_RE_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_RE_subset) #same thing, use +
+gradient_CO2_RE_model <- lmer(log_best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_RE_subset) #same thing, use +
 gradient_CO2_RE_model <- art(best.flux ~ Animal * treatment + (1|period), data = gradient_CO2_RE_subset)
 anova(gradient_CO2_RE_model)
 gradient_CH4_model <- lmer(normalized_best.flux ~ Animal * treatment + (1|period), data = gradient_CH4_subset) #this time the anova() comparision was significant, so use *
@@ -782,13 +782,13 @@ daily_N2O_model <- lmer(normalized_best.flux ~ Animal + treatment + (1|Days_Sinc
 daily_N2O_model <- art(best.flux ~ Animal * treatment + (1|Days_Since_First), data = daily_N2O_subset)
 anova(daily_N2O_model)
 
-res <- residuals(gradient_CO2_PS_model)
+res <- residuals(gradient_CO2_RE_model)
 
 plot(res)
 qqnorm(res)
 shapiro.test(res)
 hist(res)
-summary(daily_N2O_model)
+summary(gradient_CO2_RE_model)
 
 plot(simulateResiduals(gradient_CO2_PS_model1))
 AIC(gradient_CO2_RE_model)
