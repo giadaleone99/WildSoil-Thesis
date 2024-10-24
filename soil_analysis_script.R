@@ -82,7 +82,7 @@ ggsave(filename = "soil_plots/dailyph.jpeg", plot = dailyphplot, width = 6, heig
 gradientpo4plot <- ggplot(gradient_soil, aes(x = Animal, y = PO4.P, fill = interaction(sample_type, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1))+
-  xlab("\nAnimal") + ylab("PO4 P (mg/kg)") +
+  xlab("\nAnimal") + ylab("Plant available P (mg/kg)") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
