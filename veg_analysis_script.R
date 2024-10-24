@@ -249,7 +249,7 @@ ggsave(filename = "veg_plots/veg_growth_gradient_stacked.jpeg", plot = gradientv
 veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
 dailyvegbiomass <- ggplot(veg_daily, aes(x = plot_id, y = biomass, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
-  facet_wrap("Animal", scales = "free") +
+  facet_wrap("Animal", scales = "free_x") +
   xlab("\nPlot ID") + ylab("Estimated biomass per plot (g)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
@@ -266,10 +266,11 @@ dailyvegbiomass <- ggplot(veg_daily, aes(x = plot_id, y = biomass, fill = intera
 dailyvegbiomass
 ggsave(filename = "veg_plots/dailyvegbiomass.jpeg", plot = dailyvegbiomass, width = 6, height = 4)
 
+
 veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
-gradientvegbiomass_plot <- ggplot(veg_gradient, aes(x = plot_id, y = biomass, fill = interaction(treatment, Animal))) +
+gradientvegbiomass <- ggplot(veg_gradient, aes(x = plot_id, y = biomass, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
-  facet_wrap("Animal", scales = "free") +
+  facet_wrap("Animal", scales = "free_x") +
   xlab("\nPlot ID") + ylab("Estimated biomass per plot (g)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
@@ -283,7 +284,8 @@ gradientvegbiomass_plot <- ggplot(veg_gradient, aes(x = plot_id, y = biomass, fi
                     labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"))+
   scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Vegetation biomass per plot of the long term campaign")
-gradientvegbiomass_plot
+gradientvegbiomass
+ggsave(filename = "veg_plots/gradientvegbiomass.jpeg", plot = gradientvegbiomass, width = 6, height = 4)
 
 
 veg_gradient$plot_id <- as.factor(veg_gradient$plot_id)
@@ -295,9 +297,44 @@ barplot(veg_gradient$biomass)
 
 
 # Scatter plot of veg weight vs height
-scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
+scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = treatment)) +
   geom_point() + geom_smooth(method = lm)
 print(scatterplot)
+
+gradient_regression <- ggplot(veg_gradient, aes(x = biomass, y = veg_height_2, color = treatment)) +
+  geom_point() + geom_smooth(method = lm) +
+  theme_minimal() +
+  xlab("Estimated biomass per plot (g)") +
+  ylab("Vegetation height (cm)") +
+  ggtitle("Gradient") +
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(),
+        legend.position = "none") 
+  
+print(gradient_regression)
+
+daily_regression <- ggplot(veg_daily, aes(x = biomass, y = veg_height_2, color = treatment)) +
+  geom_point() + geom_smooth(method = lm) +
+  theme_minimal() +
+  xlab("Estimated biomass per plot (g)") +
+  ylab("Vegetation height (cm)") +
+  ggtitle("Daily") +
+  labs(colour = "Treatment") +
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line())
+
+print(daily_regression)
+
+combined_regression <- gradient_regression + daily_regression 
+# print(combined_plot)
+print(combined_regression)
+ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regression, width = 6, height = 4)
+
+
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -368,6 +405,48 @@ plot_by_code <- function(df, y_var, folder, y_label) {
 plot_by_code(veg_combined, "total_veg_weight", "veg_weight", "Vegetation weight (grams)")
 plot_by_code(veg_growth, "veg_growth", "veg_growth", "Vegetation growth (cm)")
 
+# CN plots
+gradientcnplot <- ggplot(veg_gradient, aes(x = Animal, y = CN_ratio, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1))+
+  xlab("\nAnimal") + ylab("CN ratio") +
+  scale_y_continuous(breaks = seq(12, 38, by = 4)) +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(),
+        axis.text.x = element_text(size = 12)) +
+  labs(fill = "Treatment") +
+  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
+                               "Control.Cow" = "#A4AC86",
+                               "Fresh.Horse" = "#7F4F24",
+                               "Control.Horse" = "#A68A64"),
+                    labels = c("Cow fresh", "Cow control","Horse fresh", "Horse control"))+
+  ggtitle("Long term campaign") +
+  theme(legend.position = "none")
+gradientcnplot
+ggsave(filename = "veg_plots/gradientcn.jpeg", plot = gradientcnplot, width = 6, height = 4)
+
+dailycnplot <- ggplot(veg_daily, aes(x = Animal, y = CN_ratio, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1))+
+  xlab("\nAnimal") + ylab(NULL) +
+  scale_y_continuous(breaks = seq(12, 38, by = 4)) +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(),
+        axis.text.x = element_text(size = 12)) +
+  labs(fill = "Treatment") +
+  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
+                               "Control.Cow" = "#A4AC86", 
+                               "Fresh.Horse" = "#7F4F24",
+                               "Control.Horse" = "#A68A64"),
+                    labels = c("Cow fresh", "Cow control", "Horse fresh", "Horse control"))+
+  ggtitle("Short term campaign")
+dailycnplot
+ggsave(filename = "veg_plots/dailycn.jpeg", plot = dailycnplot, width = 6, height = 4)
+combinedcnplot <- gradientcnplot + dailycnplot
+combinedcnplot
+ggsave(filename = "veg_plots/combinedcn.jpeg", plot = combinedcnplot, width = 8, height = 4)
 
 ### STATISTICS ------------------------------------------------------------------------
 #make subsets for the campaigns
@@ -537,6 +616,10 @@ species_summary <- comb_data %>%
 final_species_data <- final_species_data %>%
   left_join(species_summary, by = c("plot_id", "veg_class"))
 
+# add veg weight per veg clas
+final_species_data <- final_species_data %>%
+  left_join(veg_new, by = c("plot_id", "veg_class"))
+
 # T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
 species_aov <- run_anova(final_species_data, "species_count")
 species_model <- lmer(species_per_vegclass ~ Animal * treatment + (1|veg_class), data = final_species_data)
@@ -566,6 +649,7 @@ fresh_plot <- ggplot(data = final_species_data %>% filter(treatment == "Fresh"),
         plot.title = element_text(hjust = 0.5),
         legend.position = "none")  # Hide legend for this plot
 
+print(fresh_plot)
 # Create the Control stacked bar plot without the legend
 control_plot <- ggplot(data = final_species_data %>% filter(treatment == "Control"), 
                        aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
