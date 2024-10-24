@@ -59,16 +59,16 @@ fieldwork_data <- fieldwork_data_raw %>%
   mutate(plot_id = str_remove(Plot_ID, "_[^_]+$"))
 
 veg_combined <- veg_summary %>%
-  left_join(fieldwork_data %>% select(plot_id, dung_area_cm2), by = "plot_id") %>%
-  mutate(
-    frame_area_cm2 = 3058.15,
-    area_minus_dung = frame_area_cm2 - dung_area_cm2
-  ) %>%
-  left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
-  distinct() %>%
-  mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung,
-         Animal = as.factor(Animal),
-         treatment = as.factor(treatment))
+   left_join(fieldwork_data %>% select(plot_id, dung_area_cm2), by = "plot_id") #%>%
+  # mutate(
+  #   frame_area_cm2 = 3058.15,
+  #   area_minus_dung = frame_area_cm2 - dung_area_cm2
+  # ) %>%
+  # left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
+  # distinct() %>%
+  # mutate(biomass = total_veg_weight * area_minus_dung,
+  #        Animal = as.factor(Animal),
+  #        treatment = as.factor(treatment))
 
 # get CN and plot_id from the lab data sheet and merge with the rest
 vegdung_data <- vegdung_lab %>% 
@@ -245,6 +245,53 @@ gradientvegheights <- ggplot(veg_heightdatagradient, aes(x = plot_id, y = height
 gradientvegheights
 ggsave(filename = "veg_plots/veg_growth_gradient_stacked.jpeg", plot = gradientvegheights, width = 6, height = 4)
 
+# Biomass per campaign
+veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
+dailyvegbiomass <- ggplot(veg_daily, aes(x = plot_id, y = biomass, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  xlab("\nPlot ID") + ylab("Estimated biomass per plot (g)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"))+
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Vegetation biomass per plot of the short term campaign")
+dailyvegbiomass
+ggsave(filename = "veg_plots/dailyvegbiomass.jpeg", plot = dailyvegbiomass, width = 6, height = 4)
+
+veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
+gradientvegbiomass_plot <- ggplot(veg_gradient, aes(x = plot_id, y = biomass, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  xlab("\nPlot ID") + ylab("Estimated biomass per plot (g)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh"))+
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Vegetation biomass per plot of the long term campaign")
+gradientvegbiomass_plot
+
+
+veg_gradient$plot_id <- as.factor(veg_gradient$plot_id)
+
+ggplot(veg_gradient, aes(x = plot_id, y = CN_ratio)) +
+  geom_bar(stat = "identity") 
+
+barplot(veg_gradient$biomass)
 
 
 # Scatter plot of veg weight vs height
