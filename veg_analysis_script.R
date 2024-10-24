@@ -9,6 +9,10 @@ library(patchwork)
 library(cowplot)
 library(tidyr)
 library(ggpattern)
+library(ARTool)
+library(lme4)
+library(lmerTest)
+library(plotrix)
 
 # Import data
 vegdung_lab <- read.csv("data/vegdung_lab_data.csv")
@@ -62,7 +66,9 @@ veg_combined <- veg_summary %>%
   ) %>%
   left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
   distinct() %>%
-  mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung)
+  mutate(estimated_biomass_plot = total_veg_weight * area_minus_dung,
+         Animal = as.factor(Animal),
+         treatment = as.factor(treatment))
 
 # get CN and plot_id from the lab data sheet and merge with the rest
 vegdung_data <- vegdung_lab %>% 
@@ -317,20 +323,63 @@ plot_by_code(veg_growth, "veg_growth", "veg_growth", "Vegetation growth (cm)")
 
 
 ### STATISTICS ------------------------------------------------------------------------
+#make subsets for the campaigns
+daily_veg_combined <- veg_combined %>% 
+  filter(Campaign == "Daily")
+daily_veg_growth <- veg_growth %>% 
+  filter(Campaign == "Daily")
+
+gradient_veg_combined <- veg_combined %>% 
+  filter(Campaign == "Gradient")
+gradient_veg_growth <- veg_growth %>% 
+  filter(Campaign == "Gradient")
+
+#residuals are not normally distributed so log transform the data
+veg_growth <- veg_growth %>% 
+  mutate(log_veg_growth = log(2+veg_growth))
+veg_combined <- veg_combined %>% 
+  mutate(log_total_veg_weight = log(total_veg_weight),
+         log_estimated_biomass_plot = log(estimated_biomass_plot))
+gradient_veg_growth <- gradient_veg_growth %>% 
+  mutate(log_veg_growth = log(2+veg_growth))
+gradient_veg_combined <- gradient_veg_combined %>% 
+  mutate(log_total_veg_weight = 1/(total_veg_weight),
+         log_estimated_biomass_plot = log(estimated_biomass_plot),
+         log_CN_ratio = log(CN_ratio))
+
 # T-tests and ANOVAs
 run_anova <- function(df, y_var) {
-  res.aov <- aov(as.formula(paste(y_var, "~ Animal_treatment")), data = df)
+  res.aov <- aov(as.formula(paste(y_var, "~ Animal + treatment")), data = df)
   print(summary(res.aov))
   print(TukeyHSD(res.aov))
   return(res.aov)
 }
 
-veg_aov <- run_anova(veg_combined, "total_veg_weight")
-height_aov <- run_anova(veg_growth, "veg_growth")
+#check if an anova with * is better than with +. not the case for any of the dailies and gradients
+compare_anova <- function(df, y_var) {
+  res.aov1 <- aov(as.formula(paste(y_var, "~ Animal + treatment")), data = df)
+  res.aov2 <- aov(as.formula(paste(y_var, "~ Animal * treatment")), data = df)
+  print(anova(res.aov1, res.aov2))
+}
 
-# Non-parametric tests due to non-normality
-kruskal.test(veg_growth ~ Animal_treatment, data = veg_growth)
-bartlett.test(veg_growth ~ Animal_treatment, data = veg_growth)
+veg_aov <- run_anova(veg_combined, "log_total_veg_weight")
+height_aov <- run_anova(veg_growth, "log_veg_growth")
+biomass_aov <- run_anova(veg_combined, "log_estimated_biomass_plot")
+
+daily_veg_aov <- run_anova(daily_veg_combined, "total_veg_weight")
+daily_height_aov <- run_anova(daily_veg_growth, "veg_growth")
+daily_biomass_aov <- run_anova(daily_veg_combined, "estimated_biomass_plot")
+daily_CN_ratio_aov <- run_anova(daily_veg_combined, "CN_ratio")
+
+gradient_veg_aov <- run_anova(gradient_veg_combined, "log_total_veg_weight")
+gradient_height_aov <- run_anova(gradient_veg_growth, "log_veg_growth")
+gradient_biomass_aov <- run_anova(gradient_veg_combined, "log_estimated_biomass_plot")
+gradient_CN_ratio_aov <- run_anova(gradient_veg_combined, "log_CN_ratio")
+
+# Non-parametric tests due to non-normality of CN data, transforming the data did not help
+CN_ratio_art <- art(CN_ratio ~ Animal * treatment, data = veg_combined)
+anova(CN_ratio_art)
+summary(CN_ratio_art) # good enough, they are all 0.00
 
 # Plot residuals
 plot_residuals <- function(aov_model) {
@@ -338,7 +387,63 @@ plot_residuals <- function(aov_model) {
   shapiro.test(residuals(aov_model))
 }
 
-plot_residuals(height_aov)
+plot_residuals(gradient_CN_ratio_aov)
+compare_anova(veg_combined_gradient, "log_CN_ratio")
+
+#summary stats
+daily_veg_combined <- daily_veg_combined %>% left_join(daily_veg_growth, by=intersect(names(daily_veg_combined), names(daily_veg_growth)))
+daily_veg_combined <- daily_veg_combined %>% left_join(final_species_data, by=intersect(names(daily_veg_combined), names(final_species_data)), multiple = "last")
+daily_summary_stats <- daily_veg_combined %>%
+  group_by(Animal, treatment) %>%
+  dplyr::summarise(
+    total_veg_weight_mean = mean(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_median = median(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_sd = sd(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_se = std.error(total_veg_weight),
+    veg_growth_mean = mean(veg_growth, na.rm = TRUE),
+    veg_growth_median = median(veg_growth, na.rm = TRUE),
+    veg_growth_sd = sd(veg_growth, na.rm = TRUE),
+    veg_growth_se = std.error(veg_growth),
+    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_median = median(CN_ratio, na.rm = TRUE),
+    CN_sd = sd(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio),
+    species_count_mean = mean(species_count, na.rm = TRUE),
+    species_count_median = median(species_count, na.rm = TRUE),
+    species_count_sd = sd(species_count, na.rm = TRUE),
+    species_count_se = std.error(species_count)
+  )
+
+gradient_veg_combined <- gradient_veg_combined %>% left_join(gradient_veg_growth, by=intersect(names(gradient_veg_combined), names(gradient_veg_growth)))
+gradient_veg_combined <- gradient_veg_combined %>% left_join(final_species_data, by=intersect(names(gradient_veg_combined), names(final_species_data)), multiple = "last")
+gradient_summary_stats <- gradient_veg_combined %>%
+  group_by(Animal, treatment) %>%
+  dplyr::summarise(
+    total_veg_weight_mean = mean(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_median = median(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_sd = sd(total_veg_weight, na.rm = TRUE),
+    total_veg_weight_se = std.error(total_veg_weight),
+    veg_growth_mean = mean(veg_growth, na.rm = TRUE),
+    veg_growth_median = median(veg_growth, na.rm = TRUE),
+    veg_growth_sd = sd(veg_growth, na.rm = TRUE),
+    veg_growth_se = std.error(veg_growth),
+    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_median = median(CN_ratio, na.rm = TRUE),
+    CN_sd = sd(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio),
+    species_count_mean = mean(species_count, na.rm = TRUE),
+    species_count_median = median(species_count, na.rm = TRUE),
+    species_count_sd = sd(species_count, na.rm = TRUE),
+    species_count_se = std.error(species_count)
+  )
 
 # Species data analysis
 species_summary <- species_list %>%
@@ -384,6 +489,12 @@ species_summary <- comb_data %>%
 # Join back to retain the original data frame structure, now with species added as a list per row
 final_species_data <- final_species_data %>%
   left_join(species_summary, by = c("plot_id", "veg_class"))
+
+# T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
+species_aov <- run_anova(final_species_data, "species_count")
+species_model <- lmer(species_per_vegclass ~ Animal * treatment + (1|veg_class), data = final_species_data)
+summary(species_model)
+shapiro.test(residuals(species_model))
 
 saveRDS(final_species_data, "data/species_data.rds")
 saveRDS(dung_data, "data/dung_data.rds")
