@@ -7,6 +7,7 @@ library(ggbreak)
 library(lubridate)
 library(knitr)
 library(gridExtra)
+library(patchwork)
 library(grid)
 library(gtable)
 library(lme4)
@@ -525,12 +526,14 @@ daily_cow_subset <- flux_data_ANOVA %>%
 
 ## Gradients
 gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
-  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +  # Suppress outliers in the boxplot
   geom_point(position = position_dodge(width = 0.8)) +
   labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
        title = "Best flux CH4 Gradients",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
+  scale_y_break(c(4, 25),c(30, 115), scales = c(0.2)) + 
+  # Breaks with scaling
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -544,36 +547,7 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
   )
 
 gradient_CH4_boxplot
-#ggsave(filename = "veg_plots/gradient_CH4_boxplot.jpeg", plot = gradient_CH4_boxplot, width = 6, height = 4)
-# Load necessary libraries
-library(ggplot2)
-library(ggbreak)  # Make sure you have ggbreak installed and loaded
-
-# Your existing ggplot code with adjusted y-axis breaks and scales
-gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
-  geom_boxplot(position = position_dodge(width = 0.8), outlier.shape = NA) +  # Suppress outliers in the boxplot
-  geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
-       title = "Best flux CH4 Gradients",
-       colour = "Treatment",
-       fill = "Treatment & Animal") +
-  scale_y_break(c(4, 25), c(30, 100), scales = c(3, 0.5)) +  # Breaks with scaling
-  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
-                               "F.Cow" = "#656D4A", 
-                               "C.Horse" = "#A68A64", 
-                               "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
-  theme_minimal() +
-  theme(
-    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
-    panel.border = element_blank(),
-    legend.position = "bottom"
-  )
-
-# Print the plot
-print(gradient_CH4_boxplot)
-
-
+ggsave(filename = "plots/gradient_CH4_boxplot.jpeg", plot = gradient_CH4_boxplot, width = 6, height = 5)
 
 # Gradient N2O boxplots
 gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
@@ -582,7 +556,8 @@ gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flu
   labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
        title = "Best flux N2O Gradients",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
+  scale_y_break(c(0.8, 1.15), scales = (0.4)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -596,6 +571,7 @@ gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flu
   )
 
 gradient_N2O_boxplot
+ggsave(filename = "plots/gradient_N2O_boxplot.jpeg", plot = gradient_N2O_boxplot, width = 6, height = 5)
 
 # Gradient CO2 boxplots
 gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
@@ -604,7 +580,8 @@ gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = be
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Best flux CO2 Photosynthesis Gradients",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
+  
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -618,6 +595,7 @@ gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = be
   )
 
 gradient_CO2_boxplot_PS
+ggsave(filename = "plots/gradient_CO2_PS_boxplot.jpeg", plot = gradient_CO2_boxplot_PS, width = 6, height = 5)
 
 gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
@@ -625,7 +603,8 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Best flux CO2 RE Gradients",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
+  ylim(0,30) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -639,7 +618,7 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
   )
 
 gradient_CO2_boxplot_RE
-
+ggsave(filename = "plots/gradient_CO2_RE_boxplot.jpeg", plot = gradient_CO2_boxplot_RE, width = 6, height = 5)
 ## DAILY BOXPLOTS -------------------------------------------------
 
 # Daily CO2 boxplots
@@ -649,7 +628,8 @@ daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flu
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Best flux CO2 Photosynthesis Daily",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
+  scale_y_continuous(limits = c(-15, 15), breaks = seq(-15, 15, 5)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -663,6 +643,7 @@ daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flu
   )
 
 daily_CO2_boxplot_PS
+ggsave(filename = "plots/daily_CO2_PS_boxplot.jpeg", plot = daily_CO2_boxplot_PS, width = 6, height = 5)
 
 daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
@@ -670,7 +651,7 @@ daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flu
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Best flux CO2 RE Daily",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -684,6 +665,7 @@ daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flu
   )
 
 daily_CO2_boxplot_RE
+ggsave(filename = "plots/daily_CO2_RE_boxplot.jpeg", plot = daily_CO2_boxplot_RE, width = 6, height = 5)
 
 # Daily N2O boxplots
 daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
@@ -692,7 +674,7 @@ daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fil
   labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
        title = "Best flux N2O Daily",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -706,16 +688,16 @@ daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fil
   )
 
 daily_N2O_boxplot
+ggsave(filename = "plots/daily_N2O_boxplot.jpeg", plot = daily_N2O_boxplot, width = 6, height = 5)
 
 # Daily CH4 boxplots
-
 daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
   labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
        title = "Best flux CH4 Daily",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
@@ -729,6 +711,55 @@ daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fil
   )
 
 daily_CH4_boxplot
+
+combined_plot_data <- daily_CH4_subset[daily_CH4_subset$treatment %in% c("C", "F") & 
+                                         !(daily_CH4_subset$Animal == "Cow" & daily_CH4_subset$treatment == "F"), ]
+
+# Combined plot for Cow control, Horse control, and Fresh
+NoCow_CH4_plot <- ggplot(combined_plot_data, aes(x = interaction(treatment, Animal), y = best.flux)) +
+  geom_boxplot(aes(fill = interaction(treatment, Animal)), position = position_dodge(), width = 0.7) +
+  geom_jitter(position = position_dodge(width = 0.8)) +  # Jittered points
+  labs(x = "Animal",  # Change the x-axis label here
+       y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       title = "Best flux CH4 for Cow Control, Horse Control, and Fresh",
+       fill = "Plot type") +
+  scale_y_break(c(1, 40), scales = (0.3)) +
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  #scale_x_discrete(labels = c("C.Cow" = "Cow", "C.Horse" = "Horse", "F.Horse" = "Horse")) +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_blank(),
+        legend.position = "bottom")
+
+# Display the plot
+NoCow_CH4_plot
+ggsave(filename = "plots/NoCow_CH4_boxplot.jpeg", plot = NoCow_CH4_plot, width = 6, height = 5)
+
+# Separate plot for Cow fresh
+# Subset for Cow Fresh data
+cow_fresh_plot_data <- daily_CH4_subset[daily_CH4_subset$treatment == "F" & daily_CH4_subset$Animal == "Cow", ]
+
+cow_fresh_CH4_plot <- ggplot(cow_fresh_plot_data, aes(x = treatment, y = best.flux)) +
+  geom_boxplot(aes(fill = interaction(treatment, Animal)), position = position_dodge(), width = 0.4) +
+  geom_jitter(position = position_dodge(width = 0.8)) + 
+  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       title = "Best flux CH4 for Cow Fresh",
+       fill = "Plot type") +
+  scale_fill_manual(values = c("F.Cow" = "#656D4A"),
+                    labels = c("Cow fresh")) +
+  scale_x_discrete(labels = c("F" = "Cow")) +
+  theme_minimal() +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_blank(),
+        axis.title.x = element_blank(),  # Remove x-axis title
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom")
+
+cow_fresh_CH4_plot
+ggsave(filename = "plots/Cow_fresh_CH4_boxplot.jpeg", plot = cow_fresh_CH4_plot, width = 4, height = 4.5)
 
 # creating the models for all the subsets
 gradient_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_PS_subset) #best model to use. using * instead of + was not significant when comparing with anova(), so we use the more simple model
