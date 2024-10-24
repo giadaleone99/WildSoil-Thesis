@@ -248,6 +248,7 @@ SWC_plot <- ggplot(flux_data, aes(x = factor(period), y = SWC_., colour = plotty
   geom_point(aes(color = plottype), position = position_dodge(width = 0.75), size = 2) +  # Align points with boxplots
   labs(x = "Sampling period", y = "Soil Water Content (%)", title = "Soil Water Content by Period",
        colour = "Plot type") +
+  scale_color_manual(values = c("Vegetated" = "black", "PIT" = "gray"))+
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -264,6 +265,7 @@ Stemp_plot <- ggplot(flux_data, aes(x = factor(period), y = S_temp, colour = plo
   labs(y = expression("Soil temperature"~(degree*C)), x = "Sampling period",
        title = "Soil temperature",
        colour = "Plot type") +
+  scale_color_manual(values = c("Vegetated" = "black", "PIT" = "gray"))+
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -330,6 +332,7 @@ dev.off()
 
 # Repeated measures ANOVA
 library(rstatix)
+library(ggbreak)
 library(reshape)
 library(tidyverse)
 library(dplyr)
@@ -542,6 +545,34 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
 
 gradient_CH4_boxplot
 #ggsave(filename = "veg_plots/gradient_CH4_boxplot.jpeg", plot = gradient_CH4_boxplot, width = 6, height = 4)
+# Load necessary libraries
+library(ggplot2)
+library(ggbreak)  # Make sure you have ggbreak installed and loaded
+
+# Your existing ggplot code with adjusted y-axis breaks and scales
+gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
+  geom_boxplot(position = position_dodge(width = 0.8), outlier.shape = NA) +  # Suppress outliers in the boxplot
+  geom_point(position = position_dodge(width = 0.8)) +
+  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       title = "Best flux CH4 Gradients",
+       colour = "Treatment",
+       fill = "Treatment & Animal") +
+  scale_y_break(c(4, 25), c(30, 100), scales = c(3, 0.5)) +  # Breaks with scaling
+  scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
+                               "F.Cow" = "#656D4A", 
+                               "C.Horse" = "#A68A64", 
+                               "F.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+  theme_minimal() +
+  theme(
+    axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
+    panel.border = element_blank(),
+    legend.position = "bottom"
+  )
+
+# Print the plot
+print(gradient_CH4_boxplot)
+
 
 
 # Gradient N2O boxplots
