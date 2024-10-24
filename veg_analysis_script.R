@@ -59,16 +59,16 @@ fieldwork_data <- fieldwork_data_raw %>%
   mutate(plot_id = str_remove(Plot_ID, "_[^_]+$"))
 
 veg_combined <- veg_summary %>%
-   left_join(fieldwork_data %>% select(plot_id, dung_area_cm2), by = "plot_id") #%>%
-  # mutate(
-  #   frame_area_cm2 = 3058.15,
-  #   area_minus_dung = frame_area_cm2 - dung_area_cm2
-  # ) %>%
-  # left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
-  # distinct() %>%
-  # mutate(biomass = total_veg_weight * area_minus_dung,
-  #        Animal = as.factor(Animal),
-  #        treatment = as.factor(treatment))
+   left_join(fieldwork_data %>% select(plot_id, dung_area_cm2), by = "plot_id", multiple = "first") %>%
+   mutate(
+     frame_area_cm2 = 3058.15,
+     area_minus_dung = frame_area_cm2 - dung_area_cm2
+   ) %>%
+   left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
+   distinct() %>%
+   mutate(biomass = total_veg_weight * area_minus_dung,
+          Animal = as.factor(Animal),
+          treatment = as.factor(treatment))
 
 # get CN and plot_id from the lab data sheet and merge with the rest
 vegdung_data <- vegdung_lab %>% 
