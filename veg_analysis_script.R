@@ -631,6 +631,30 @@ final_species_data <- final_species_data %>%
 final_species_data <- final_species_data %>%
   left_join(veg_new, by = c("plot_id", "veg_class"))
 
+#join dfs to add weight per species
+veg_weight <- veg_new %>% 
+  group_by(plot_id) %>% 
+  mutate(
+    weight_per_class = case_when(
+      veg_class == "Bryophytes" ~ dry_weight,
+      veg_class == "Graminoids" ~ dry_weight,
+      TRUE ~ sum(dry_weight[veg_class != "Bryophytes" & veg_class != "Graminoids"])
+    )
+  )
+veg_weight <- veg_weight %>% 
+  mutate(
+    veg_class = ifelse(veg_class %in% c("Bryophytes", "Graminoids"), veg_class, "Forbs")
+    ) 
+
+forb_unique <- veg_weight %>% 
+  filter(veg_class == "Forbs") %>% 
+  distinct(plot_id, .keep_all = TRUE)
+
+veg_weight <- veg_weight %>% 
+  filter(veg_class != "Forbs") %>% 
+  bind_rows(forb_unique) %>% 
+  select(-dry_weight)
+
 # T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
 species_aov <- run_anova(final_species_data, "species_count")
 species_model <- lmer(species_per_vegclass ~ Animal * treatment + (1|veg_class), data = final_species_data)
@@ -641,51 +665,29 @@ saveRDS(final_species_data, "data/species_data.rds")
 saveRDS(dung_data, "data/dung_data.rds")
 saveRDS(veg_combined, "data/vegetation_data.rds")
 
-species_plot <- ggplot(final_species_data, aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
-  geom_bar(stat = "identity") +  # Use stat = "identity" to plot the species counts
-  xlab("Plot ID") +
-  ylab("Species Count") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +
-  scale_fill_brewer(palette = "Set3")
-
-# Create the Fresh stacked bar plot
-fresh_plot <- ggplot(data = final_species_data %>% filter(treatment == "Fresh"), 
-                     aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
+# Create the stacked bar plots per campaign
+gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_id)), 
+                     aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
   geom_bar(stat = "identity") +
-  ggtitle("Species Count - Fresh Treatment") +
+  ggtitle("Gradient weight per vegetation class") +
   xlab("Plot ID") +
-  ylab("Species Count") +
+  ylab("Weight (g)") +
   scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        legend.position = "none")  # Hide legend for this plot
-
-print(fresh_plot)
-# Create the Control stacked bar plot without the legend
-control_plot <- ggplot(data = final_species_data %>% filter(treatment == "Control"), 
-                       aes(x = plot_id, y = species_per_vegclass, fill = veg_class)) +
+        plot.title = element_text(hjust = 0.5))
+        #legend.position = "none")  # Hide legend for this plot
+print(gradient_stacked_weights)
+daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
+                                   aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
   geom_bar(stat = "identity") +
-  ggtitle("Species Count - Control Treatment") +
+  ggtitle("Daily weight per vegetation class") +
   xlab("Plot ID") +
-  ylab("Species Count") +
+  ylab("Weight (g)") +
   scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        legend.position = "bottom")
+        plot.title = element_text(hjust = 0.5))
+print(daily_stacked_weights)
 
-control_plot
-# Print the combined plot
-
-combined_plot <- fresh_plot + control_plot 
-# print(combined_plot)
-print(combined_plot)
-
-
-# Save the final plot to the specified directory
-ggsave(plot = combined_plot, filename = "veg_plots/combined_species_count_plot.jpeg",
-       width = 10, 
-       height = 6, 
-       dpi = 300)
 
 # modelling Lasses way
 veg_height_m1 <- lm(veg_height_2 ~ Animal * treatment, data = veg_combined)
