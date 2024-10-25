@@ -9,10 +9,16 @@ library(patchwork)
 library(cowplot)
 library(tidyr)
 library(ggpattern)
-library(ARTool)
+#library(ARTool)
 library(lme4)
 library(lmerTest)
 library(plotrix)
+library(DHARMa)
+library(emmeans)
+library(car)
+library(glmmTMB)
+library(sjPlot)
+library(vegan)
 
 # Import data
 vegdung_lab <- read.csv("data/vegdung_lab_data.csv")
@@ -20,6 +26,11 @@ veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
 species_list <- read.csv("data/species_lists.csv")
 
+#dung_data <- readRDS("data/dung_data.rds")
+#gradient_soil_data <- readRDS("data/gradient_soil_data.rds")
+#daily_soil_data <- readRDS("data/daily_soil_data.rds")
+#species_data <- readRDS("data/species_data.rds")
+#vegetation_data <- readRDS("data/vegetation_data.rds")
 
 # Manipulating vegetation data
 veg_new <- veg_raw %>%
@@ -675,3 +686,28 @@ ggsave(plot = combined_plot, filename = "veg_plots/combined_species_count_plot.j
        width = 10, 
        height = 6, 
        dpi = 300)
+
+# modelling Lasses way
+veg_height_m1 <- lm(veg_height_2 ~ Animal * treatment, data = veg_combined)
+veg_height_m2 <- lmer(veg_height_2 ~ Animal * treatment + (1|base_code), data = veg_combined)
+veg_height_m3 <- glmmTMB(veg_height_2 ~ Animal * treatment, data = veg_combined)
+veg_height_m4 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = veg_combined)
+veg_height_m5 <- glmmTMB(veg_height_2 ~ Animal * treatment, family = poisson, data = veg_combined)
+summary(veg_height_daily_m1)
+Anova(veg_height_daily_m1)
+# Model validation
+simulationOutput <- simulateResiduals(fittedModel = veg_height_daily_m1, n = 1000)
+testDispersion(simulationOutput)
+
+plot(simulationOutput)
+plotResiduals(simulationOutput, form = daily_veg_combined$Animal)
+
+plotResiduals(simulationOutput, form = daily_veg_combined$treatment)
+
+# Post-hoc-test
+test <- emmeans(veg_height_daily_m1, ~ treatment|Animal)
+contrast(test, method = "pairwise") %>% as.data.frame()
+
+#per campaign
+veg_height_gradient_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+veg_height_daily_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = daily_veg_combined)
