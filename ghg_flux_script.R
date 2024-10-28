@@ -13,6 +13,8 @@ library(gtable)
 library(lme4)
 library(nlme)
 library(emmeans)
+library(car)
+library(glmmTMB)
 
 
 # Import data 
@@ -135,7 +137,7 @@ flux_data_ANOVA <- flux_data %>%
   filter(plottype != "PIT")
 
 # replace the best flux of NEE measurements of CO2 with photosynthesis flux
-flux_data <- flux_data %>%
+flux_data_ANOVA <- flux_data_ANOVA %>%
   mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
 
 
@@ -342,7 +344,7 @@ library(plyr)
 library(datarium)
 library(lmerTest)
 library(bestNormalize)
-library(ARTool)
+#library(ARTool)
 library(DHARMa)
 
 
@@ -378,6 +380,43 @@ ggplot(subset(flux_data, gastype %in% c("CH4", "N2O")), aes(x = as.factor(Days_S
                                "F.Horse" = "#7F4F24"))
 
 ### CREATING SUBSETS -------------------------------------------
+
+## SUBSETS WITH BOTH CAMPAIGNS
+CO2_PS_subset <- flux_data_ANOVA %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "NEE") %>%
+  convert_as_factor(period) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
+
+CO2_RE_subset <- flux_data_ANOVA %>% 
+  filter(gastype == "CO2") %>%
+  filter(NEERE == "RE") %>%
+  convert_as_factor(period) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
+         log_best.flux = log(best.flux))
+
+CH4_subset <- flux_data_ANOVA %>% 
+  filter(gastype == "CH4") %>%
+  convert_as_factor(period) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>%
+  convert_as_factor(Animal) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
+         normalized_best.flux = bestNormalize(best.flux)$x.t)
+
+N2O_subset <- flux_data_ANOVA %>% 
+  filter(gastype == "N2O") %>%
+  convert_as_factor(period) %>% 
+  convert_as_factor(gastype) %>% 
+  convert_as_factor(treatment) %>% 
+  convert_as_factor(Animal) %>% 
+  mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
+         normalized_best.flux = bestNormalize(best.flux)$x.t)
 
 ## GRADIENT SUBSETS --------------------
 gradient_subset <- flux_data_ANOVA %>% 
@@ -760,6 +799,29 @@ cow_fresh_CH4_plot <- ggplot(cow_fresh_plot_data, aes(x = treatment, y = best.fl
 
 cow_fresh_CH4_plot
 ggsave(filename = "plots/Cow_fresh_CH4_boxplot.jpeg", plot = cow_fresh_CH4_plot, width = 4, height = 4.5)
+
+# MODELLING ----------------------------------------------------
+# modelling Lasses way and combining the campaigns
+CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_PS_subset)
+CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_RE_subset)
+CH4_model1 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CH4_subset)
+CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = bell, data = CH4_subset)
+N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = N2O_subset)
+
+run_model <- function(dataset, model) {
+  #print(summary(model))
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  #testDispersion(simulationOutput)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = dataset$Animal)
+  plotResiduals(simuOutput, form = dataset$treatment)
+  plotResiduals(simuOutput, form = dataset$Campaign)
+  test <- emmeans(model, ~ Campaign|treatment|Animal)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+}
+run_model(N2O_subset, N2O_model)
+
 
 # creating the models for all the subsets
 gradient_CO2_PS_model <- lmer(best.flux ~ Animal + treatment + (1|period), data = gradient_CO2_PS_subset) #best model to use. using * instead of + was not significant when comparing with anova(), so we use the more simple model
