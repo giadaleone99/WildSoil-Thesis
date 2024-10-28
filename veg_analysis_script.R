@@ -341,55 +341,11 @@ daily_regression <- ggplot(veg_daily, aes(x = biomass, y = veg_height_2, color =
 print(daily_regression)
 
 combined_regression <- gradient_regression + daily_regression 
+# print(combined_plot)
 print(combined_regression)
 ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regression, width = 6, height = 4)
 
-# Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
-# Fit linear models for each dataset
-SjPlot_model_gradient <- glmmTMB(veg_height_2 ~ biomass * treatment + (1|base_code), data = veg_gradient)
 
-SjPlot_model_daily <- lm(veg_height_2 ~ biomass * treatment , data = veg_daily)
-
-
-# Effect plot with predicted values for gradient model
-plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
-           terms = c("biomass", "treatment"), 
-           title = "Gradient") +
-  theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
-  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
-       colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 30)) + 
-  theme(
-    panel.grid.minor = element_blank(),  # Remove minor grid
-    panel.grid.major.x = element_blank(),  # Remove x-axis grid
-    axis.line = element_line(color = "black",),
-    legend.position = "none"
-  )
-
-plot_gradient_effect
-
-# Effect plot with predicted values for daily model
-plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
-           terms = c("biomass", "treatment"), 
-           title = "Daily") +
-  theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
-  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
-       colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 15)) + 
-  theme(
-    panel.grid.minor = element_blank(),  # Remove minor grid
-    panel.grid.major.x = element_blank(),  # Remove x-axis grid
-    axis.line = element_line(color = "black"),
-    axis.title.y = element_blank()
-  )
-
-combined_model_plot <- plot_gradient_effect + plot_daily_effect
-combined_model_plot
-ggsave("veg_plots/model_biomass_vegheight_combined.jpeg", plot = combined_model_plot, width = 6, height = 4)
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -520,12 +476,12 @@ veg_growth <- veg_growth %>%
   mutate(log_veg_growth = log(2+veg_growth))
 veg_combined <- veg_combined %>% 
   mutate(log_total_veg_weight = log(total_veg_weight),
-         log_estimated_biomass_plot = log(biomass))
+         log_estimated_biomass_plot = log(estimated_biomass_plot))
 gradient_veg_growth <- gradient_veg_growth %>% 
   mutate(log_veg_growth = log(2+veg_growth))
 gradient_veg_combined <- gradient_veg_combined %>% 
   mutate(log_total_veg_weight = 1/(total_veg_weight),
-         log_estimated_biomass_plot = log(biomass),
+         log_estimated_biomass_plot = log(estimated_biomass_plot),
          log_CN_ratio = log(CN_ratio))
 
 # T-tests and ANOVAs
@@ -585,10 +541,10 @@ daily_summary_stats <- daily_veg_combined %>%
     veg_growth_median = median(veg_growth, na.rm = TRUE),
     veg_growth_sd = sd(veg_growth, na.rm = TRUE),
     veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
-    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(biomass),
+    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -612,10 +568,10 @@ gradient_summary_stats <- gradient_veg_combined %>%
     veg_growth_median = median(veg_growth, na.rm = TRUE),
     veg_growth_sd = sd(veg_growth, na.rm = TRUE),
     veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
-    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(biomass),
+    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -716,29 +672,20 @@ gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_
   ggtitle("Gradient weight per vegetation class") +
   xlab("Plot ID") +
   ylab("Weight (g)") +
-  theme_minimal() +
-  scale_fill_brewer(palette = "Set3", name = "Vegetation type") +
-  scale_y_continuous(limits = c(0, NA), expand = c(0, 0)) +
+  scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line())
+        plot.title = element_text(hjust = 0.5))
         #legend.position = "none")  # Hide legend for this plot
 print(gradient_stacked_weights)
-
 daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
                                    aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
   geom_bar(stat = "identity") +
   ggtitle("Daily weight per vegetation class") +
   xlab("Plot ID") +
   ylab("Weight (g)") +
-  theme_minimal()+
   scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
-  scale_y_continuous(limits = c(0, 20), expand = c(0, 0)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line())
+        plot.title = element_text(hjust = 0.5))
 print(daily_stacked_weights)
 
 
@@ -751,18 +698,72 @@ veg_height_m5 <- glmmTMB(veg_height_2 ~ Animal * treatment, family = poisson, da
 summary(veg_height_daily_m1)
 Anova(veg_height_daily_m1)
 # Model validation
-simulationOutput <- simulateResiduals(fittedModel = veg_height_daily_m1, n = 1000)
+simulationOutput <- simulateResiduals(fittedModel = veg_height_gradient_m1, n = 1000)
 testDispersion(simulationOutput)
 
 plot(simulationOutput)
-plotResiduals(simulationOutput, form = daily_veg_combined$Animal)
+plotResiduals(simulationOutput, form = gradient_veg_combined$Animal)
 
-plotResiduals(simulationOutput, form = daily_veg_combined$treatment)
-
+plotResiduals(simulationOutput, form = gradient_veg_combined$treatment)
 # Post-hoc-test
-test <- emmeans(veg_height_daily_m1, ~ treatment|Animal)
+test <- emmeans(veg_height_gradient_m1, ~ treatment|Animal)
 contrast(test, method = "pairwise") %>% as.data.frame()
 
-#per campaign
-veg_height_gradient_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+# make it into a function
+run_model <- function(dataset, model) {
+  #print(summary(model))
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = dataset$Animal)
+  plotResiduals(simuOutput, form = dataset$treatment)
+  test <- emmeans(model, ~ treatment|Animal)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+}
+
+#dailies
+veg_weight_daily_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment + (1|base_code), data = daily_veg_combined)
 veg_height_daily_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = daily_veg_combined)
+veg_growth_daily_m1 <- glmmTMB(veg_growth ~ Animal * treatment + (1|base_code), data = daily_veg_growth)
+veg_biomass_daily_m1 <- glmmTMB(biomass ~ Animal * treatment + (1|base_code), data = daily_veg_combined)
+veg_cn_daily_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + (1|base_code), data = daily_veg_combined)
+
+#gradients
+veg_weight_gradient_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+veg_height_gradient_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+veg_growth_gradient_m1 <- glmmTMB(veg_growth ~ Animal * treatment + (1|base_code), data = gradient_veg_growth)
+veg_biomass_gradient_m1 <- glmmTMB(biomass ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+veg_cn_gradient_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
+
+#both campaigns together
+veg_weight_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
+veg_height_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment + * Campaign (1|base_code), data = veg_combined)
+veg_growth_m1 <- glmmTMB(veg_growth ~ Animal * treatment + * Campaign (1|base_code), data = veg_growth)
+veg_biomass_m1 <- glmmTMB(biomass ~ Animal * treatment + * Campaign (1|base_code), data = veg_combined)
+veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + * Campaign (1|base_code), data = veg_combined)
+
+run_model(veg_combined, veg_weight_m1)
+
+#dung data
+dung_data <- dung_data %>%
+  mutate(
+    campaign = case_when(
+      Kode_1 %in% c("CG dung", "HG dung") ~ "gradient",
+      Kode_1 %in% c("HOD dung", "COD dung", "HND dung", "CND dung") ~ "daily"
+    ),
+    Animal = case_when(
+      Kode_1 %in% c("CG dung", "COD dung", "CND dung") ~ "cow",
+      Kode_1 %in% c("HG dung", "HOD dung", "HND dung") ~ "horse"
+    )
+  )
+
+dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)
+summary(dung_cn_m1)
+Anova(dung_cn_m1)
+simulationOutput <- simulateResiduals(fittedModel = dung_cn_m1, n = 1000)
+testDispersion(simulationOutput)
+plot(simulationOutput)
+plotResiduals(simulationOutput, form = dung_data$Animal)
+plotResiduals(simulationOutput, form = dung_data$campaign)
+test <- emmeans(dung_cn_m1, ~ campaign|Animal)
+contrast(test, method = "pairwise") %>% as.data.frame()
