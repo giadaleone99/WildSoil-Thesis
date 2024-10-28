@@ -742,7 +742,7 @@ daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)
 print(daily_stacked_weights)
 
 
-# modelling Lasses way
+# modelling Lasses way xD
 veg_height_m1 <- lm(veg_height_2 ~ Animal * treatment, data = veg_combined)
 veg_height_m2 <- lmer(veg_height_2 ~ Animal * treatment + (1|base_code), data = veg_combined)
 veg_height_m3 <- glmmTMB(veg_height_2 ~ Animal * treatment, data = veg_combined)
