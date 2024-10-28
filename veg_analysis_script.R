@@ -699,6 +699,13 @@ veg_weight <- veg_weight %>%
   bind_rows(forb_unique) %>% 
   select(-dry_weight)
 
+veg_weight <- veg_weight %>% 
+  mutate(harvested_area_m2 = harvested_area / 10000) %>% 
+  mutate(adjweight_per_class = weight_per_class/harvested_area_m2) %>% 
+  mutate(Animal = case_when(grepl("^C", plot_id) ~ "Cow", grepl("^H", plot_id) ~ "Horse")) %>% 
+  mutate(Animal = factor(Animal))
+
+
 # T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
 species_aov <- run_anova(final_species_data, "species_count")
 species_model <- lmer(species_per_vegclass ~ Animal * treatment + (1|veg_class), data = final_species_data)
@@ -709,16 +716,18 @@ saveRDS(final_species_data, "data/species_data.rds")
 saveRDS(dung_data, "data/dung_data.rds")
 saveRDS(veg_combined, "data/vegetation_data.rds")
 
+
+
 # Create the stacked bar plots per campaign
 gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_id)), 
-                                   aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
+                                   aes(x = plot_id, y = adjweight_per_class, fill = veg_class)) +
   geom_bar(stat = "identity") +
   ggtitle("Gradient weight per vegetation class") +
   xlab("Plot ID") +
-  ylab("Weight (g)") +
+  ylab(expression("Adjusted Weight (g/m"^2*")")) +
   theme_minimal() +
   scale_fill_brewer(palette = "Set3", name = "Vegetation type") +
-  scale_y_continuous(limits = c(0, NA), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 500), expand = c(0, 0)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
         plot.title = element_text(hjust = 0.5),
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
@@ -726,21 +735,82 @@ gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_
 #legend.position = "none")  # Hide legend for this plot
 print(gradient_stacked_weights)
 
-daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
-                                aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
+## New working plot
+# Gradient
+gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_id)), 
+                                   aes(x = plot_id, y = adjweight_per_class, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
-  ggtitle("Daily weight per vegetation class") +
-  xlab("Plot ID") +
-  ylab("Weight (g)") +
-  theme_minimal()+
-  scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
-  scale_y_continuous(limits = c(0, 20), expand = c(0, 0)) +
+  facet_wrap("Animal", scales = "free") +
+  geom_bar_pattern(aes(pattern = veg_class), 
+                   position = "stack", 
+                   stat = "identity", 
+                   pattern_fill = "black",     
+                   pattern_density = 0.1, 
+                   pattern_spacing = 0.03) +
+  ggtitle("Gradient weight per vegetation class") +
+  xlab("\nPlot ID") +
+  ylab(expression("Adjusted Weight (g/m"^2*")")) +
+  theme_minimal() +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
+                               "Control.Cow" = "#A4AC86", 
+                               "Fresh.Horse" = "#7F4F24",
+                               "Control.Horse" = "#A68A64"),
+                    labels = c("Cow fresh", "Cow control", "Horse fresh", "Horse control"),
+                    guide = guide_legend(override.aes = list(pattern = "none"))) +  # No patterns in fill legend
+  scale_pattern_manual(name = "Vegetation class",
+                       values = c("Bryophytes" = "stripe", "Graminoids" = "crosshatch", "Forbs" = "circle"), # Customize as needed
+                       guide = guide_legend(override.aes = list(fill = "transparent", 
+                                                                color = "black"))) + # Custom pattern legend
+  scale_y_continuous(limits = c(0, NA), expand = c(0, 0)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
         plot.title = element_text(hjust = 0.5),
-        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line())
+        panel.grid.minor.x = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), 
+        axis.line = element_line())
+
+print(gradient_stacked_weights)
+
+ggsave(filename = "veg_plots/gradientvegweightperclass.jpeg", plot = gradient_stacked_weights, width = 6, height = 4)
+
+## Need to make new Daily plot
+daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
+                                   aes(x = plot_id, y = adjweight_per_class, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  geom_bar_pattern(aes(pattern = veg_class), 
+                   position = "stack", 
+                   stat = "identity", 
+                   pattern_fill = "black",     
+                   pattern_density = 0.1, 
+                   pattern_spacing = 0.03) +
+  ggtitle("Daily weight per vegetation class") +
+  xlab("\nPlot ID") +
+  ylab(expression("Adjusted Weight (g/m"^2*")")) +
+  theme_minimal() +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
+                               "Control.Cow" = "#A4AC86", 
+                               "Fresh.Horse" = "#7F4F24",
+                               "Control.Horse" = "#A68A64"),
+                    labels = c("Cow fresh", "Cow control", "Horse fresh", "Horse control"),
+                    guide = guide_legend(override.aes = list(pattern = "none"))) +  # No patterns in fill legend
+  scale_pattern_manual(name = "Vegetation class",
+                       values = c("Bryophytes" = "stripe", "Graminoids" = "crosshatch", "Forbs" = "circle"), # Customize as needed
+                       guide = guide_legend(override.aes = list(fill = "transparent", 
+                                                                color = "black"))) + # Custom pattern legend
+  scale_y_continuous(limits = c(0, 400), expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor.x = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), 
+        axis.line = element_line())
+
 print(daily_stacked_weights)
 
+ggsave(filename = "veg_plots/dailyvegweightperclass.jpeg", plot = daily_stacked_weights, width = 6, height = 4)
 
 
 # modelling Lasses way xD
