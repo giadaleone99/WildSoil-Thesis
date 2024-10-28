@@ -341,11 +341,55 @@ daily_regression <- ggplot(veg_daily, aes(x = biomass, y = veg_height_2, color =
 print(daily_regression)
 
 combined_regression <- gradient_regression + daily_regression 
-# print(combined_plot)
 print(combined_regression)
 ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regression, width = 6, height = 4)
 
+# Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
+# Fit linear models for each dataset
+SjPlot_model_gradient <- glmmTMB(veg_height_2 ~ biomass * treatment + (1|base_code), data = veg_gradient)
 
+SjPlot_model_daily <- lm(veg_height_2 ~ biomass * treatment , data = veg_daily)
+
+
+# Effect plot with predicted values for gradient model
+plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
+           terms = c("biomass", "treatment"), 
+           title = "Gradient") +
+  theme_minimal() +  
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
+  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
+  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
+       colour = "Treatment") + 
+  scale_y_continuous(limits = c(0, 30)) + 
+  theme(
+    panel.grid.minor = element_blank(),  # Remove minor grid
+    panel.grid.major.x = element_blank(),  # Remove x-axis grid
+    axis.line = element_line(color = "black",),
+    legend.position = "none"
+  )
+
+plot_gradient_effect
+
+# Effect plot with predicted values for daily model
+plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
+           terms = c("biomass", "treatment"), 
+           title = "Daily") +
+  theme_minimal() +  
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
+  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
+  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
+       colour = "Treatment") + 
+  scale_y_continuous(limits = c(0, 15)) + 
+  theme(
+    panel.grid.minor = element_blank(),  # Remove minor grid
+    panel.grid.major.x = element_blank(),  # Remove x-axis grid
+    axis.line = element_line(color = "black"),
+    axis.title.y = element_blank()
+  )
+
+combined_model_plot <- plot_gradient_effect + plot_daily_effect
+combined_model_plot
+ggsave("veg_plots/model_biomass_vegheight_combined.jpeg", plot = combined_model_plot, width = 6, height = 4)
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -476,12 +520,12 @@ veg_growth <- veg_growth %>%
   mutate(log_veg_growth = log(2+veg_growth))
 veg_combined <- veg_combined %>% 
   mutate(log_total_veg_weight = log(total_veg_weight),
-         log_estimated_biomass_plot = log(estimated_biomass_plot))
+         log_estimated_biomass_plot = log(biomass))
 gradient_veg_growth <- gradient_veg_growth %>% 
   mutate(log_veg_growth = log(2+veg_growth))
 gradient_veg_combined <- gradient_veg_combined %>% 
   mutate(log_total_veg_weight = 1/(total_veg_weight),
-         log_estimated_biomass_plot = log(estimated_biomass_plot),
+         log_estimated_biomass_plot = log(biomass),
          log_CN_ratio = log(CN_ratio))
 
 # T-tests and ANOVAs
@@ -541,10 +585,10 @@ daily_summary_stats <- daily_veg_combined %>%
     veg_growth_median = median(veg_growth, na.rm = TRUE),
     veg_growth_sd = sd(veg_growth, na.rm = TRUE),
     veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
+    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
+    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(biomass),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -568,10 +612,10 @@ gradient_summary_stats <- gradient_veg_combined %>%
     veg_growth_median = median(veg_growth, na.rm = TRUE),
     veg_growth_sd = sd(veg_growth, na.rm = TRUE),
     veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_median = median(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(estimated_biomass_plot, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(estimated_biomass_plot),
+    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
+    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
+    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
+    estimated_biomass_plot_se = std.error(biomass),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -672,20 +716,29 @@ gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_
   ggtitle("Gradient weight per vegetation class") +
   xlab("Plot ID") +
   ylab("Weight (g)") +
-  scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set3", name = "Vegetation type") +
+  scale_y_continuous(limits = c(0, NA), expand = c(0, 0)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line())
         #legend.position = "none")  # Hide legend for this plot
 print(gradient_stacked_weights)
+
 daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
                                    aes(x = plot_id, y = weight_per_class, fill = veg_class)) +
   geom_bar(stat = "identity") +
   ggtitle("Daily weight per vegetation class") +
   xlab("Plot ID") +
   ylab("Weight (g)") +
+  theme_minimal()+
   scale_fill_brewer(palette = "Set3", name = "Vegetation type") +  # Set the legend title
+  scale_y_continuous(limits = c(0, 20), expand = c(0, 0)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line())
 print(daily_stacked_weights)
 
 
