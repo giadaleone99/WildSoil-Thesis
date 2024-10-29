@@ -5,6 +5,10 @@ library(dplyr)
 library(patchwork)
 library(ARTool)
 library(plotrix)
+library(glmmTMB)
+library(car)
+library(emmeans)
+library(DHARMa)
 
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
 
@@ -31,6 +35,14 @@ daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil",
 saveRDS(daily_soil, "data/daily_soil_data.rds")
 
 summary(gradient_soil)
+
+combined_soil <- full_join(gradient_soil, daily_soil, by = intersect(names(gradient_soil), names(daily_soil)))
+
+combined_soil <- combined_soil %>% 
+  mutate(Campaign = as.factor(case_when(
+    grepl("G", base_code) ~ "Gradient",
+    grepl("D", base_code) ~ "Daily")
+  ))
 
 # create some plots 
 
@@ -378,5 +390,30 @@ daily_stats_fresh <- daily_soil %>%
 
 combined_stats <- bind_rows(gradient_stats_fresh, daily_stats_fresh)
 
+# Lasses's method 
+
+# Function for modelling 
+run_model <- function(dataset, model) {
+  #print(summary(model))
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  testDispersion(simuOutput)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = dataset$Animal)
+  plotResiduals(simuOutput, form = dataset$sample_type)
+  plotResiduals(simuOutput, form = dataset$Campaign)
+  test <- emmeans(model, ~ Campaign|sample_type|Animal)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+}
+
+# Soil parameters
+Soil_CNratio_m1 <- glmmTMB(CN_ratio ~ Animal * sample_type * Campaign + (1|base_code), data = combined_soil)
+
+Soil_pH_m1 <- glmmTMB(pH ~ Animal * sample_type * Campaign + (1|base_code), data = combined_soil)
+
+Soil_PO4.P_m1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign + (1|base_code), data = combined_soil)
+
+# Change this accordingly 
+run_model(combined_soil, Soil_PO4.P_m1)
 
 
