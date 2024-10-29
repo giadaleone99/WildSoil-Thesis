@@ -19,6 +19,7 @@ library(car)
 library(glmmTMB)
 library(sjPlot)
 library(vegan)
+library(paletteer)
 
 # Import data
 vegdung_lab <- read.csv("data/vegdung_lab_data.csv")
@@ -40,6 +41,10 @@ veg_new <- veg_raw %>%
       grepl("_F$", plot_id) ~ "Fresh",
       grepl("_C$", plot_id) ~ "Control",
       TRUE ~ NA_character_
+    ),
+    Campaign = case_when(
+      grepl("G", plot_id) ~ "Gradient",
+      grepl("D", plot_id) ~ "Daily"
     )
   )
 
@@ -306,6 +311,26 @@ ggplot(veg_gradient, aes(x = plot_id, y = CN_ratio)) +
 
 barplot(veg_gradient$biomass)
 
+# Percent stacked barplot for veg weight per species
+veg_class_order <- c("Bryophytes", "Graminoids", "Achillea millefolium", "Campanula rotundifolia", "Cerastium fontanum", "Dandelions and false dandelions", "Daucus carota", 
+                     "Euphrasia stricta", "Galium verum", "Hypericum perforatum", "Jacobaea vulgaris", "Knautia arvensis", "Pilosella officinarum", "Pimpinella saxifraga", 
+                     "Plantago lanceolata", "Ranunculus sp.", "Rosa canina", "Rumex acetosa", "Rumex acetosella", "Stellaria graminea", "Trifolium arvense", 
+                     "Trifolium campestre", "Trifolium pratense", "Trifolium repens", "Veronica chamaedrys", "Veronica officinalis", "Vicia sativa")
+veg_new <- veg_new %>% mutate(veg_class = factor(veg_class, levels = veg_class_order))
+percentspecies <- ggplot(veg_new, aes(x = plot_id, y = dry_weight, fill = veg_class)) +
+  geom_bar(position = "fill", stat = "identity") +
+  facet_wrap("Campaign", scales = "free") +
+  xlab("\nPlot ID") + ylab("Proportion of total weight") +
+  theme_minimal() +
+  scale_fill_paletteer_d("Polychrome::palette36") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Vegetation species/groups") +
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Proportions of vegetation species/groups per campaign")
+percentspecies
+ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 6, height = 4)
 
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = treatment)) +
