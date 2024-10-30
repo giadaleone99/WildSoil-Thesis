@@ -140,6 +140,9 @@ flux_data_ANOVA <- flux_data %>%
 flux_data_ANOVA <- flux_data_ANOVA %>%
   mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
 
+flux_data <- flux_data %>%
+  mutate(best.flux = ifelse(!is.na(corr_photosynthesis), corr_photosynthesis, best.flux))
+
 
 # DO NOT RUN -------------------------------------------------------------------------
 
@@ -179,10 +182,12 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
         geom_point(size = 2) +
         geom_line() +
         facet_wrap(~base_code, scales = "free") +
-        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Date", y = gas$y_label,
-             color = "RE/Photosynthesis",         # Changed title for the color legend
+        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Days since first", y = gas$y_label,
+             color = "Measurement type",         # Changed title for the color legend
              shape = "Treatment") +
-        scale_color_manual(values = c("NEE" = "gray", "RE" = "black")) +
+        scale_color_manual(values = c("NEE" = "gray", "RE" = "black"),
+                           labels = c("Photosynthesis",
+                                      "RE")) +
         scale_shape_manual(values = c(16, 17)) +
         theme_minimal() +
         theme(
@@ -219,25 +224,27 @@ generate_plots("Cow", "Gradient", gradient_date_filter, "G")
 
 
 # Photosynthesis plot 
-photosynthesis_data <- flux_data %>% filter(gastype == "CO2", Campaign == "Daily", NEERE == "NEE")
+photosynthesis_data <- flux_data %>% filter(gastype == "CO2", Campaign %in% c("Daily", "Gradient"), NEERE == "NEE")
 
 photosynthesis_plot <- ggplot(photosynthesis_data, aes(x = Animal, y = corr_photosynthesis, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8))+
+  facet_wrap(~Campaign) +
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Photosynthesis",
        colour = "Treatment",
-       fill = "Treatment & Animal") +
+       fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
   theme_minimal() +
+  scale_y_continuous() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank(),
-    legend.position = "bottom"
+    panel.grid.major.x = element_blank()
   )
   
 
@@ -799,6 +806,14 @@ cow_fresh_CH4_plot <- ggplot(cow_fresh_plot_data, aes(x = treatment, y = best.fl
 
 cow_fresh_CH4_plot
 ggsave(filename = "plots/Cow_fresh_CH4_boxplot.jpeg", plot = cow_fresh_CH4_plot, width = 4, height = 4.5)
+
+# combine the plots per campaign
+CH4_boxplots = NoCow_CH4_plot + cow_fresh_CH4_plot + gradient_CH4_boxplot
+
+
+
+
+
 
 # MODELLING ----------------------------------------------------
 # modelling Lasses way and combining the campaigns
