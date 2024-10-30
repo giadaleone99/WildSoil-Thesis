@@ -279,7 +279,7 @@ Stemp_plot
 
 ggsave("plots/Stemp_plot.jpeg", plot = Stemp_plot, width = 6, height = 5, dpi = 300, units = "in")
 
-### SUMMARY STATISTICS THSI CRAP ISNT WORKING!! FIX NEXT TIME
+### SUMMARY STATISTICS THSI CRAP ISNT WORKING!! FIX NEXT TIME ADD Standard ERROR!
 Soil_temp_stats <- flux_data %>%
   group_by(period) %>%  # Group by 'period' column
   summarize(
@@ -805,8 +805,9 @@ ggsave(filename = "plots/Cow_fresh_CH4_boxplot.jpeg", plot = cow_fresh_CH4_plot,
 CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_PS_subset)
 CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_RE_subset)
 CH4_model1 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CH4_subset)
-CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = bell, data = CH4_subset)
+CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = gaussian, data = CH4_subset)
 N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = N2O_subset)
+
 
 run_model <- function(dataset, model) {
   #print(summary(model))
@@ -820,7 +821,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ Campaign|treatment|Animal)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
-run_model(N2O_subset, N2O_model)
+run_model(CH4_subset, CH4_model2)
 
 
 # creating the models for all the subsets

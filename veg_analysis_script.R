@@ -387,8 +387,8 @@ plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred",
        colour = "Treatment") + 
   scale_y_continuous(limits = c(0, 30)) + 
   theme(
-    panel.grid.minor = element_blank(),  # Remove minor grid
-    panel.grid.major.x = element_blank(),  # Remove x-axis grid
+    panel.grid.minor = element_blank(),  
+    panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black",),
     legend.position = "none"
   )
@@ -406,8 +406,8 @@ plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred",
        colour = "Treatment") + 
   scale_y_continuous(limits = c(0, 15)) + 
   theme(
-    panel.grid.minor = element_blank(),  # Remove minor grid
-    panel.grid.major.x = element_blank(),  # Remove x-axis grid
+    panel.grid.minor = element_blank(),  
+    panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black"),
     axis.title.y = element_blank()
   )
