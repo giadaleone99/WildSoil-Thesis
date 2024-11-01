@@ -569,7 +569,13 @@ daily_cow_subset <- flux_data_ANOVA %>%
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 ### PLOTTING SUBSETS --------------------------------------------------
-
+give.n <- function(x){
+  return(c(y = median(x)*1.05, label = length(x))) 
+  # experiment with the multiplier to find the perfect position
+}
+give.n <- function(x){
+  return(c(y = mean(x), label = paste0("n = ",length(x))))
+}
 ## Gradients
 gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8), width = 0.5) +  # Suppress outliers in the boxplot
@@ -579,12 +585,14 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_break(c(4, 25),c(30, 115), scales = c(0.2)) + 
+  stat_summary(fun.data = give.n, geom = "text", fun = median, position = position_dodge(width = 0.75)) +
+  #stat_summary(fun.data = give.n, geom = "text") +
   # Breaks with scaling
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -607,7 +615,7 @@ gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flu
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -625,12 +633,12 @@ gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = be
        title = "Long term campaign",
        colour = "Treatment",
        fill = "Plot type") +
-  
+  scale_y_continuous(limits = c(-1, 36)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -648,11 +656,12 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
        colour = "Treatment",
        fill = "Plot type") +
   ylim(0,30) +
+  scale_y_continuous(limits = c(4, 30)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -671,12 +680,12 @@ daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flu
        title = "Short term campaign",
        colour = "Treatment",
        fill = "Plot type") +
-  #scale_y_continuous(limits = c(-15, 15), breaks = seq(-15, 15, 5)) +
+  scale_y_continuous(limits = c(-1, 36)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -690,6 +699,7 @@ ggsave(filename = "plots/daily_CO2_PS_boxplot.jpeg", plot = daily_CO2_boxplot_PS
 daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
+  scale_y_continuous(limits = c(4, 30)) +
   labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
        title = "Short term campaign",
        colour = "Treatment",
@@ -698,7 +708,7 @@ daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flu
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -721,7 +731,7 @@ daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fil
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -744,7 +754,7 @@ daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fil
                                "F.Cow" = "#656D4A", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Cow fresh", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
   theme(
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
@@ -769,7 +779,7 @@ NoCow_CH4_plot <- ggplot(combined_plot_data, aes(x = interaction(treatment, Anim
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "C.Horse" = "#A68A64", 
                                "F.Horse" = "#7F4F24"),
-                    labels = c("Cow control", "Horse control", "Horse fresh")) +
+                    labels = c("Cow control", "Horse control", "Horse dung")) +
   theme_minimal() +
   #scale_x_discrete(labels = c("C.Cow" = "Cow", "C.Horse" = "Horse", "F.Horse" = "Horse")) +
   theme(axis.line = element_line(colour = "black"),
@@ -792,7 +802,7 @@ cow_fresh_CH4_plot <- ggplot(cow_fresh_plot_data, aes(x = treatment, y = best.fl
        title = "",
        fill = "Plot type") +
   scale_fill_manual(values = c("F.Cow" = "#656D4A"),
-                    labels = c("Cow fresh")) +
+                    labels = c("Cow dung")) +
   scale_x_discrete(labels = c("F" = "Cow")) +
   theme_minimal() +
   theme(axis.line = element_line(colour = "black"),
