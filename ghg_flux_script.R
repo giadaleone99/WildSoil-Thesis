@@ -570,13 +570,7 @@ daily_cow_subset <- flux_data_ANOVA %>%
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 ### PLOTTING SUBSETS --------------------------------------------------
-give.n <- function(x){
-  return(c(y = median(x)*1.05, label = length(x))) 
-  # experiment with the multiplier to find the perfect position
-}
-give.n <- function(x){
-  return(c(y = mean(x), label = paste0("n = ",length(x))))
-}
+
 ## Gradients
 gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8), width = 0.5) +  # Suppress outliers in the boxplot
@@ -586,8 +580,6 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_break(c(4, 25),c(30, 115), scales = c(0.2)) + 
-  stat_summary(fun.data = give.n, geom = "text", fun = median, position = position_dodge(width = 0.75)) +
-  #stat_summary(fun.data = give.n, geom = "text") +
   # Breaks with scaling
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
                                "F.Cow" = "#656D4A", 
