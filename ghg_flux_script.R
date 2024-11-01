@@ -187,8 +187,9 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
              shape = "Treatment") +
         scale_color_manual(values = c("NEE" = "gray", "RE" = "black"),
                            labels = c("Photosynthesis",
-                                      "RE")) +
-        scale_shape_manual(values = c(16, 17)) +
+                                      "Respiration")) +
+        scale_shape_manual(values = c("C" = 16, "F" = 17),  # 16 and 17 are shape codes for circles and triangles
+                           labels = c("Control", "Dung")) +
         theme_minimal() +
         theme(
           legend.position.inside = c(0.75, 0.25),
