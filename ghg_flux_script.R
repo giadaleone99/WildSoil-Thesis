@@ -995,3 +995,9 @@ summary(model)
 
 
 ### Consider running the models without control treatment rows and just look at Animal (cow, horse)
+
+# remove trash and save for combined analysis
+gas_data <- flux_data_ANOVA %>% 
+  subset(select = -c(model, photosynthesis, plotNEERE, date, plottype, corr_photosynthesis, date_formatted, Plotname_cleaned, Unique_ANOVA))
+
+saveRDS(gas_data, file = "flux_data/clean_flux_data.rds")
