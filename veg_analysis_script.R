@@ -48,6 +48,14 @@ veg_new <- veg_raw %>%
     )
   )
 
+veg_new <- veg_new %>% 
+  mutate(veg_category = case_when(
+    veg_class == "Bryophytes" ~ "Bryophytes",
+    veg_class == "Graminoids" ~ "Graminoids",
+    TRUE ~ "Forbs"
+    
+  ))
+
 veg_summary <- veg_new %>%
   group_by(plot_id) %>%
   dplyr::summarise(
@@ -392,8 +400,18 @@ percentspecies <- ggplot(veg_new, aes(x = plot_id, y = dry_weight, fill = veg_cl
   labs(fill = "Vegetation species/groups") +
   scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Proportions of vegetation species/groups per campaign")
+
+
+percentspecies <- percentspecies +
+  geom_text(aes(label = forb_count, y = 1.05), # Place forb count just above the bar
+            color = "black", vjust = -0.5, size = 3, fontface = "italic") +
+  geom_text(aes(label = graminoid_count, y = 1.1), # Place graminoid count slightly higher
+            color = "darkblue", vjust = -0.5, size = 3, fontface = "italic")
+
 percentspecies
 ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 11, height = 8)
+
+
 
 # Scatter plot of veg weight vs height
 scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = treatment)) +
@@ -702,7 +720,7 @@ gradient_summary_stats <- gradient_veg_combined %>%
     species_count_se = std.error(species_count)
   )
 
-# Species data analysis
+# Species data analysis # HERE!
 species_summary <- species_list %>%
   group_by(plot_id) %>%
   dplyr::summarise(species_count = n_distinct(species_list)) %>% 
@@ -711,7 +729,18 @@ species_summary <- species_list %>%
 species_data <- species_list %>%
   group_by(plot_id, veg_class) %>%
   dplyr::summarise(species_per_vegclass = n_distinct(species_list)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(veg_category = veg_class) %>% 
+  mutate(veg_cat = case_when(veg_category == "Bryophytes" ~ "Bryophytes",
+                             veg_category == "Graminoids" ~ "Graminoids", 
+                             TRUE ~ "Forbs"))
+
+veg_forbs <- species_data %>% 
+  filter(veg_cat == "Forbs")
+
+veg_non_forbs <- species_data %>% filter(veg_cat != "Forbs")
+
+veg_merged <- bind_rows(veg_forbs, veg_non_forbs)
 
 final_species_data <- left_join(species_data, species_summary, by = "plot_id")
 
