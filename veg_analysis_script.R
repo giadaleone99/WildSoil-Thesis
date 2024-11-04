@@ -387,7 +387,16 @@ veg_class_order <- c("Bryophytes", "Graminoids", "Achillea millefolium", "Campan
                      "Euphrasia stricta", "Galium verum", "Hypericum perforatum", "Jacobaea vulgaris", "Knautia arvensis", "Pilosella officinarum", "Pimpinella saxifraga", 
                      "Plantago lanceolata", "Ranunculus sp.", "Rosa canina", "Rumex acetosa", "Rumex acetosella", "Stellaria graminea", "Trifolium arvense", 
                      "Trifolium campestre", "Trifolium pratense", "Trifolium repens", "Veronica chamaedrys", "Veronica officinalis", "Vicia sativa")
+
 veg_new <- veg_new %>% mutate(veg_class = factor(veg_class, levels = veg_class_order))
+
+lookup_species <- with(species_data, setNames(species_per_vegclass, paste(plot_id, veg_category, sep = "_")))
+
+veg_new <- veg_new %>%
+  dplyr::mutate(
+    species_per_vegclass = lookup_species[paste(plot_id, veg_category, sep = "_")]
+  )
+
 percentspecies <- ggplot(veg_new, aes(x = plot_id, y = dry_weight, fill = veg_class)) +
   geom_bar(position = "fill", stat = "identity") +
   facet_wrap("Campaign", scales = "free") +
@@ -401,14 +410,8 @@ percentspecies <- ggplot(veg_new, aes(x = plot_id, y = dry_weight, fill = veg_cl
   scale_y_continuous(expand = c(0, 0)) +
   ggtitle("Proportions of vegetation species/groups per campaign")
 
-
-percentspecies <- percentspecies +
-  geom_text(aes(label = forb_count, y = 1.05), # Place forb count just above the bar
-            color = "black", vjust = -0.5, size = 3, fontface = "italic") +
-  geom_text(aes(label = graminoid_count, y = 1.1), # Place graminoid count slightly higher
-            color = "darkblue", vjust = -0.5, size = 3, fontface = "italic")
-
 percentspecies
+
 ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 11, height = 8)
 
 
@@ -733,7 +736,9 @@ species_data <- species_list %>%
   mutate(veg_category = veg_class) %>% 
   mutate(veg_cat = case_when(veg_category == "Bryophytes" ~ "Bryophytes",
                              veg_category == "Graminoids" ~ "Graminoids", 
-                             TRUE ~ "Forbs"))
+                             TRUE ~ "Forbs")) %>% 
+  select(!veg_category) %>% 
+  mutate(veg_category = veg_cat)
 
 veg_forbs <- species_data %>% 
   filter(veg_cat == "Forbs")
@@ -742,7 +747,7 @@ veg_non_forbs <- species_data %>% filter(veg_cat != "Forbs")
 
 veg_merged <- bind_rows(veg_forbs, veg_non_forbs)
 
-final_species_data <- left_join(species_data, species_summary, by = "plot_id")
+final_species_data <- left_join(species_data, species_summary, by = c("plot_id", "veg_cat"))
 
 final_species_data <- final_species_data %>%
   mutate(
