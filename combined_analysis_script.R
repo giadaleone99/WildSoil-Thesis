@@ -34,4 +34,6 @@ flux_data <- flux_data %>%
   left_join(N2O_data, by = c("plotID", "longdate")) %>% 
   dplyr::select(-1:-5, -7:-9, -12:-17, -20, -26)
 flux_data <- flux_data[, c(6, 7, 2, 8, 9, 11, 12, 13, 3, 17, 18, 1, 4, 5, 10, 14, 15, 16)]
-            
+
+flux_data <- flux_data %>% 
+  pivot_wider(names_from = gastype, values_fromc(CO2_PS, CO2_RE, CH4, N2O))

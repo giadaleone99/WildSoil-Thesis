@@ -120,8 +120,8 @@ first_HD5_date <- as.Date("2024-07-30")
 
 flux_data <- flux_data %>%
   mutate(Days_Since_First = case_when(
-    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date_1_3),
-    Campaign == "Gradient" ~ as.numeric(date_formatted - first_gradient_date_4_5),
+    Campaign == "Gradient" & !(base_code %in% c("CG4", "CG5", "HG4", "HG5")) ~ as.numeric(date_formatted - first_gradient_date_1_3),
+    Campaign == "Gradient" & base_code %in% c("CG4", "CG5", "HG4", "HG5") ~ as.numeric(date_formatted - first_gradient_date_4_5),
     Campaign == "Daily" & base_code == "HD5" ~ as.numeric(date_formatted - first_HD5_date),
     Campaign == "Daily" & date_formatted <= first_daily_date_1_2 ~ as.numeric(date_formatted - first_daily_date_1_2),
     Campaign == "Daily" & date_formatted >= first_daily_date_1_2 & date_formatted < first_daily_date_3_4 ~ as.numeric(date_formatted - first_daily_date_1_2),  # Adjusted this condition
@@ -474,18 +474,6 @@ gradient_N2O_subset <- flux_data_ANOVA %>%
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = bestNormalize(best.flux)$x.t)
 
-gradient_horse_subset <- flux_data_ANOVA %>% 
-  filter(Campaign == "Gradient") %>% 
-  filter(Animal == "Horse") %>% 
-  convert_as_factor(period) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
-
-gradient_cow_subset <- flux_data_ANOVA %>% 
-  filter(Campaign == "Gradient") %>% 
-  filter(Animal == "Cow") %>% 
-  convert_as_factor(period) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
-
 ## DAILY SUBSETS -----------------
 
 daily_subset <- flux_data_ANOVA %>% 
@@ -550,24 +538,6 @@ daily_N2O_subset <- flux_data_ANOVA %>%
   convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = log(0.4 + best.flux))
-
-daily_horse_subset <- flux_data_ANOVA %>% 
-  filter(Campaign == "Daily") %>% 
-  filter(Animal == "Horse") %>% 
-  filter(!(
-    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
-  )) %>%
-  convert_as_factor(Days_Since_First) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
-
-daily_cow_subset <- flux_data_ANOVA %>% 
-  filter(Campaign == "Daily") %>% 
-  filter(Animal == "Cow") %>% 
-  filter(!(
-    base_code %in% c("CD1", "CD2", "HD1", "HD2") | as.integer(Days_Since_First) > 10
-  )) %>%
-  convert_as_factor(Days_Since_First) %>% 
-  mutate(Unique_ANOVA = as.factor(Unique_ANOVA))
 
 ### PLOTTING SUBSETS --------------------------------------------------
 
@@ -824,7 +794,7 @@ ggsave(filename = "plots/CO2_PS_boxplots.jpeg", plot = CO2_PS_boxplots, width = 
 # MODELLING ----------------------------------------------------
 # modelling Lasses way and combining the campaigns
 CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_PS_subset)
-CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_RE_subset)
+CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = tweedie, data = CO2_RE_subset)
 CH4_model1 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CH4_subset)
 CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = gaussian, data = CH4_subset)
 N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = N2O_subset)
@@ -842,7 +812,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ Campaign|treatment|Animal)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
-run_model(CH4_subset, CH4_model2)
+run_model(CO2_RE_subset, CO2_RE_model)
 
 
 # creating the models for all the subsets
