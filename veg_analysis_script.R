@@ -22,7 +22,7 @@ library(vegan)
 library(paletteer)
 
 # Import data
-vegdung_lab <- read.csv("data/vegdung_lab_data.csv")
+vegdung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";")
 veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
 species_list <- read.csv("data/species_lists.csv")

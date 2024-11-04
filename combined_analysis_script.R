@@ -35,5 +35,21 @@ flux_data <- flux_data %>%
   dplyr::select(-1:-5, -7:-9, -12:-17, -20, -26)
 flux_data <- flux_data[, c(6, 7, 2, 8, 9, 11, 12, 13, 3, 17, 18, 1, 4, 5, 10, 14, 15, 16)]
 
-flux_data <- flux_data %>% 
-  pivot_wider(names_from = gastype, values_fromc(CO2_PS, CO2_RE, CH4, N2O))
+# Run gas flux models with soil moisture and temperature as random factors
+CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign + SWC_. + S_temp + (1|Days_Since_First), data = flux_data)
+CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Campaign + SWC_. + S_temp + (1|Days_Since_First), data = flux_data)
+
+run_model <- function(dataset, model) {
+  #print(summary(model))
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  #testDispersion(simulationOutput)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = dataset$Animal)
+  plotResiduals(simuOutput, form = dataset$treatment)
+  plotResiduals(simuOutput, form = dataset$Campaign)
+  test <- emmeans(model, ~ Campaign|treatment|Animal)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+}
+
+run_model(flux_data, CO2_RE_model)

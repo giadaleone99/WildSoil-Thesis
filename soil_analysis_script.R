@@ -413,7 +413,14 @@ Soil_pH_m1 <- glmmTMB(pH ~ Animal * sample_type * Campaign + (1|base_code), data
 
 Soil_PO4.P_m1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign + (1|base_code), data = combined_soil)
 
+# With bulk density as a random factor
+Soil_CNratio_b1 <- glmmTMB(CN_ratio ~ Animal * sample_type * Campaign + bulk_density + (1|base_code), data = combined_soil)
+
+Soil_pH_b1 <- glmmTMB(pH ~ Animal * sample_type * Campaign + bulk_density + (1|base_code), data = combined_soil)
+
+Soil_PO4.P_b1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign + bulk_density + (1|base_code), data = combined_soil)
+
 # Change this accordingly 
-run_model(combined_soil, Soil_PO4.P_m1)
+run_model(combined_soil, Soil_CNratio_b1)
 
 
