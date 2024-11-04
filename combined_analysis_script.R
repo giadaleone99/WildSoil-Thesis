@@ -8,6 +8,7 @@ library(DHARMa)
 
 # Import data
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
+soil_data_raw <- read.csv("data/soil_data_raw.csv")
 
 # Combine data
 CO2_PS_data <- allflux_data %>% 
@@ -22,7 +23,7 @@ CH4_data <- allflux_data %>%
 N2O_data <- allflux_data %>% 
   filter(gastype == "N2O") %>% 
   dplyr::rename(N2O_flux = best.flux)
-
+# Join gas data per date
 flux_data <- CO2_PS_data %>% 
   left_join(CO2_RE_data, by = c("plotID", "longdate")) %>% 
   dplyr::select(-18:-22, -24:-32)

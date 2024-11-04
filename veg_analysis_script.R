@@ -284,7 +284,7 @@ gradientvegheights <- ggplot(veg_heightdatagradient, aes(x = plot_id, y = height
                        ))) + 
   theme(legend.key = element_rect(fill = "transparent", color = NA),
         legend.background = element_rect(fill = "transparent", color = NA)) +
-  scale_y_continuous(limits = c(0, 25), breaks = seq(0, 25, by = 5), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 20), breaks = seq(0, 20, by = 5), expand = c(0, 0)) +
   ggtitle("Vegetation height and growth of the long term campaign")
 
 
@@ -992,3 +992,9 @@ plotResiduals(simulationOutput, form = dung_data$Animal)
 plotResiduals(simulationOutput, form = dung_data$campaign)
 test <- emmeans(dung_cn_m1, ~ campaign|Animal)
 contrast(test, method = "pairwise") %>% as.data.frame()
+
+# Remove trash and save for combined analysis
+clean_veg_data <- veg_combined %>% 
+  subset(select = -c(Animal, Animal_treatment, Campaign, frame_area_cm2))
+
+saveRDS(clean_veg_data, file = "data/clean_veg_data.rds")
