@@ -54,7 +54,7 @@ gradientphplot <- ggplot(gradient_soil, aes(x = Animal, y = pH, fill = interacti
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 
@@ -77,7 +77,7 @@ dailyphplot <- ggplot(daily_soil, aes(x = Animal, y = pH, fill = interaction(sam
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 
@@ -100,7 +100,7 @@ gradientpo4plot <- ggplot(gradient_soil, aes(x = Animal, y = PO4.P, fill = inter
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 
@@ -122,7 +122,7 @@ dailypo4plot <- ggplot(daily_soil, aes(x = Animal, y = PO4.P, fill = interaction
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 
@@ -145,7 +145,7 @@ gradientcnplot <- ggplot(gradient_soil, aes(x = Animal, y = CN_ratio, fill = int
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 
@@ -167,7 +167,7 @@ dailycnplot <- ggplot(daily_soil, aes(x = Animal, y = CN_ratio, fill = interacti
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
         axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type") +
+  labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Dung soil.Cow"= "#333D29", 

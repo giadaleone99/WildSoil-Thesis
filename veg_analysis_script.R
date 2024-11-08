@@ -95,19 +95,35 @@ veg_combined <- veg_summary %>%
          treatment = as.factor(treatment))
 
 # get CN and plot_id from the lab data sheet and merge with the rest
-vegdung_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio) %>% 
+veglab_data <- vegdung_lab %>% 
+  select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(!Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
-colnames(vegdung_data) <- c("plot_id", "CN_ratio")
+colnames(veglab_data)[1] <- c("plot_id")
 
 veg_combined <- veg_combined %>% 
-  left_join(vegdung_data, by = "plot_id")
+  left_join(veglab_data, by = "plot_id")
 
 # create a df for dung
 dung_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio) %>% 
+  select(Kode_1, CN_ratio, pH, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
-colnames(vegdung_data) <- c("plot_id", "CN_ratio")
+colnames(dung_data)[1] <- c("plot_id")
+
+vegdung_data <- vegdung_lab %>% 
+  select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  filter(!grepl("_C$", Kode_1)) %>% 
+  mutate(cordung = case_when(
+    grepl("dung", Kode_1) ~ Kode_1,
+    grepl("CG", Kode_1) ~ "CG dung",
+    grepl("HG", Kode_1) ~ "HG dung",
+    Kode_1 %in% c("CD1_F", "CD2_F") ~ "COD dung",
+    Kode_1 %in% c("HD1_F", "HD2_F") ~ "HOD dung",
+    Kode_1 %in% c("CD3_F", "CD4_F") ~ "CND dung",
+    Kode_1 %in% c("HD3_F", "HD4_F", "HD5_F") ~ "HND dung"
+  )) %>% 
+  mutate(Animal = case_when(grepl("^C", Kode_1) ~ "Cow", grepl("^H", Kode_1) ~ "Horse"))
+
+colnames(vegdung_data)[1] <- c("plot_id")
 
 # mutating the data for the stacked height bar plots
 veg_combined2 <- veg_combined
@@ -1003,3 +1019,65 @@ clean_veg_data <- veg_combined %>%
   subset(select = -c(Animal, Animal_treatment, Campaign, frame_area_cm2))
 
 saveRDS(clean_veg_data, file = "data/clean_veg_data.rds")
+
+# Vegetation elemental properties ------------------------------------------------------
+
+
+
+
+
+veg_phosphorus <- ggplot(veg_combined, aes(x = plot_id, y = P, fill = interaction(treatment, Animal))) +
+  geom_bar(stat = "identity") +
+  facet_wrap("Animal", scales = "free") +
+  xlab("\nPlot ID") + ylab("P (mg/kg)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_fill_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))+
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("P  graph")
+veg_phosphorus
+
+phosphorus <- ggplot(veg_combined, aes(x = plot_id, y = P, colour = interaction(treatment, Animal))) +
+  geom_point(stat = "identity") +
+  xlab("\nPlot ID") + ylab("P (mg/kg)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_colour_manual(values = c("Control.Cow" = "#A4AC86", 
+                               "Fresh.Cow" = "#656D4A", 
+                               "Control.Horse" = "#A68A64", 
+                               "Fresh.Horse" = "#7F4F24"),
+                    labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))+
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("P  graph")
+phosphorus
+
+dung_phosphorus <- ggplot(dung_data, aes(x = plot_id, y = P)) +
+  geom_bar(stat = "identity") +
+  xlab("\nPlot ID") + ylab("P (mg/kg)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(fill = "Plot type") +
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Dung P  graph")
+dung_phosphorus
+
+# Create the nested bar chart
+level_order <- c("CG dung", "CG1_F", "CG2_F", "CG3_F", "CG4_F", "CG5_F", "COD dung", "CD1_F", "CD2_F", "CND dung", "CD3_F", "CD4_F", "HG dung", "HG1_F", "HG2_F", "HG3_F", "HG4_F", "HG5_F", "HOD dung", "HD1_F", "HD2_F", "HND dung", "HD3_F", "HD4_F", "HD5_F") 
+ggplot(vegdung_data, aes(x = plot_id, y = Pb, fill = cordung)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  scale_x_discrete(limits = level_order) +
+  #facet_wrap("Animal", scales = "free_x") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
