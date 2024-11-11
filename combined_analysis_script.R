@@ -9,6 +9,8 @@ library(DHARMa)
 # Import data
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
+veg_growth_data <- readRDS("plant_data/veg_growth_data.rds") %>% 
+  rename("plotID"= "plot_id")
 
 # Combine data
 CO2_PS_data <- allflux_data %>% 
@@ -35,9 +37,32 @@ flux_data <- flux_data %>%
   dplyr::select(-1:-5, -7:-9, -12:-17, -20, -26)
 flux_data <- flux_data[, c(6, 7, 2, 8, 9, 11, 12, 13, 3, 17, 18, 1, 4, 5, 10, 14, 15, 16)]
 
+# create a df summing the gas data on the diff days for each plot
+plot_flux_data <- flux_data %>% 
+  group_by(plotID) %>% 
+  dplyr::summarise(CO2_PS_sum = sum(CO2_PS_flux), 
+                   CO2_RE_sum = sum(CO2_RE_flux), 
+                   CH4_sum = sum(CH4_flux), 
+                   N2O_sum = sum(N2O_flux), .groups = 'drop')
+
+# join with veg growth
+plot_flux_data <- plot_flux_data %>% 
+  left_join(veg_growth_data, by = "plotID")
+
+plot(plot_flux_data$CO2_PS_sum, plot_flux_data$height_value)
+
+model <- glmmTMB(height_value ~ CO2_PS_sum, data = plot_flux_data)
+summary(model)
+
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  #testDispersion(simulationOutput)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = plot_flux_data$CO2_PS_sum)
+
 # Run gas flux models with soil moisture and temperature as random factors
-CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign + SWC_. + S_temp + (1|Days_Since_First), data = flux_data)
-CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Campaign + SWC_. + S_temp + (1|Days_Since_First), data = flux_data)
+CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
+CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data)
 
 run_model <- function(dataset, model) {
   #print(summary(model))
@@ -48,7 +73,8 @@ run_model <- function(dataset, model) {
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$treatment)
   plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ Campaign|treatment|Animal)
+  plotResiduals(simuOutput, form = dataset$S_temp)
+  test <- emmeans(model, ~ Campaign|treatment|Animal|S_temp)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
 

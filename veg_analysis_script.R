@@ -125,6 +125,19 @@ vegdung_data <- vegdung_lab %>%
 
 colnames(vegdung_data)[1] <- c("plot_id")
 
+#dung data
+dung_data <- dung_data %>%
+  mutate(
+    campaign = case_when(
+      plot_id %in% c("CG dung", "HG dung") ~ "gradient",
+      plot_id %in% c("HOD dung", "COD dung", "HND dung", "CND dung") ~ "daily"
+    ),
+    Animal = case_when(
+      plot_id %in% c("CG dung", "COD dung", "CND dung") ~ "cow",
+      plot_id %in% c("HG dung", "HOD dung", "HND dung") ~ "horse"
+    )
+  )
+
 # mutating the data for the stacked height bar plots
 veg_combined2 <- veg_combined
 na_index <- is.na(veg_combined2$veg_height) & !is.na(veg_combined2$veg_height_2)
@@ -739,6 +752,29 @@ gradient_summary_stats <- gradient_veg_combined %>%
     species_count_se = std.error(species_count)
   )
 
+dung_summary_stats <- dung_data %>%
+  group_by(Animal) %>% 
+  dplyr::summarise(
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_median = median(CN_ratio, na.rm = TRUE),
+    CN_sd = sd(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio),
+    pH_mean = mean(pH, na.rm = TRUE),
+    pH_median = median(pH, na.rm = TRUE),
+    pH_sd = sd(pH, na.rm = TRUE),
+    pH_se = std.error(pH),
+    P_mean = mean(P, na.rm = TRUE),
+    P_se = std.error(P),
+    K_mean = mean(K, na.rm = TRUE),
+    K_se = std.error(K),
+    Ca_mean = mean(Ca, na.rm = TRUE),
+    Ca_se = std.error(Ca),
+    S_mean = mean(S, na.rm = TRUE),
+    S_se = std.error(S),
+    Mg_mean = mean(Mg, na.rm = TRUE),
+    Mg_se = std.error(Mg)
+  )
+
 # Species data analysis # HERE!
 species_summary <- species_list %>%
   group_by(plot_id) %>%
@@ -990,18 +1026,6 @@ veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), d
 
 run_model(veg_combined, veg_cn_m1)
 
-#dung data
-dung_data <- dung_data %>%
-  mutate(
-    campaign = case_when(
-      Kode_1 %in% c("CG dung", "HG dung") ~ "gradient",
-      Kode_1 %in% c("HOD dung", "COD dung", "HND dung", "CND dung") ~ "daily"
-    ),
-    Animal = case_when(
-      Kode_1 %in% c("CG dung", "COD dung", "CND dung") ~ "cow",
-      Kode_1 %in% c("HG dung", "HOD dung", "HND dung") ~ "horse"
-    )
-  )
 
 dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)
 summary(dung_cn_m1)
@@ -1081,3 +1105,6 @@ ggplot(vegdung_data, aes(x = plot_id, y = Pb, fill = cordung)) +
   #facet_wrap("Animal", scales = "free_x") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+saveRDS(veg_growth, file = "plant_data/veg_growth_data.rds")
+_
