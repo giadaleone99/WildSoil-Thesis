@@ -28,7 +28,6 @@ daily_soil <- soil_data_raw %>%
   filter(grepl("D.", base_code)) %>% 
   mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
   mutate(Animal = as.factor(Animal)) %>% 
-  mutate(log_PO4.P = log(PO4.P))
 
 daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 

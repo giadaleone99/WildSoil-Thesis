@@ -5,12 +5,20 @@ library(glmmTMB)
 library(emmeans)
 library(car)
 library(DHARMa)
+library(interactions)
 
 # Import data
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
 veg_growth_data <- readRDS("plant_data/veg_growth_data.rds") %>% 
-  rename("plotID"= "plot_id")
+  rename("plotID"= "plot_id") %>% 
+  dplyr::select(-2:-9)
+soil_data_raw <- read.csv("data/soil_data_raw.csv")
+veg_combined_data <- readRDS("plant_data/veg_combined_data.rds")%>% 
+  rename("plotID"= "plot_id",
+         "plant_CN" = "CN_ratio") %>% 
+  dplyr::select(-5)
+  
 
 # Combine data
 CO2_PS_data <- allflux_data %>% 
@@ -49,16 +57,36 @@ plot_flux_data <- flux_data %>%
 plot_flux_data <- plot_flux_data %>% 
   left_join(veg_growth_data, by = "plotID")
 
-plot(plot_flux_data$CO2_PS_sum, plot_flux_data$height_value)
 
-model <- glmmTMB(height_value ~ CO2_PS_sum, data = plot_flux_data)
+soil_data <- soil_data_raw %>% 
+  filter(sample_type %in% c("Fresh", "Control"))
+
+plot_flux_data <- plot_flux_data %>% 
+  left_join(veg_combined_data, by = "plotID") %>% 
+  left_join(soil_data, by = "plotID")
+
+growth_model_data <- plot_flux_data %>% 
+  filter(!is.na(height_value))
+
+mod <- glmmTMB(P ~ PO4.P, data = growth_model_data)
+summary(mod)
+print(Anova(mod))
+
+model <- glmmTMB(height_value ~ treatment * Animal * CN_ratio * PO4.P, data = growth_model_data)
 summary(model)
 
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  #testDispersion(simulationOutput)
+  testDispersion(simuOutput)
   plot(simuOutput)
-  plotResiduals(simuOutput, form = plot_flux_data$CO2_PS_sum)
+  plotResiduals(simuOutput, form = growth_model_data$Animal)
+  plotResiduals(simuOutput, form = growth_model_data$treatment)
+  plotResiduals(simuOutput, form = growth_model_data$CN_ratio)
+  plotResiduals(simuOutput, form = growth_model_data$PO4.P)
+  plotResiduals(simuOutput, form = growth_model_data$P)
+  test <- emmeans(model, ~ Animal|treatment*PO4.P*CN_ratio)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+  interactions::interact_plot(model, pred = PO4.P, modx = Animal)
 
 # Run gas flux models with soil moisture and temperature as random factors
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
