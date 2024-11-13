@@ -13,7 +13,12 @@ soil_data_raw <- read.csv("data/soil_data_raw.csv")
 veg_growth_data <- readRDS("plant_data/veg_growth_data.rds") %>% 
   rename("plotID"= "plot_id") %>% 
   dplyr::select(-2:-9)
-soil_data_raw <- read.csv("data/soil_data_raw.csv")
+dung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.names = FALSE) %>% 
+  filter(Kode_3 %in% "Dung") %>% 
+  rename("base_code" = "Kode_2",
+         "sample_type" = "Kode_3",
+         "plotID" = "Kode_1") %>% 
+  dplyr::select(-4,-5,-9)
 veg_combined_data <- readRDS("plant_data/veg_combined_data.rds")%>% 
   rename("plotID"= "plot_id",
          "plant_CN" = "CN_ratio") %>% 
@@ -57,7 +62,6 @@ plot_flux_data <- flux_data %>%
 plot_flux_data <- plot_flux_data %>% 
   left_join(veg_growth_data, by = "plotID")
 
-
 soil_data <- soil_data_raw %>% 
   filter(sample_type %in% c("Fresh", "Control"))
 
@@ -68,6 +72,67 @@ plot_flux_data <- plot_flux_data %>%
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
 
+#create df with dung soil data
+dung_soil_data <- soil_data_raw %>% 
+  filter(sample_type %in% "Dung soil")
+
+dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>% 
+  select(-4,-8,-14:-18, -20:-38) %>% 
+  mutate(Animal = case_when(
+    grepl("^C", base_code) ~ "Cow",
+    grepl("^H", base_code) ~ "Horse"))
+
+
+#Comparing pH in the dung and in the soil beneath the dung
+ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
+  geom_col() +  
+  labs(
+    x = "Plot ID",        
+    y = "pH",        
+    color = "Plot type",
+    fill = "Sample type") +
+  theme_minimal() +               
+  scale_fill_manual(values = c("Dung.Cow" = "#656D4A",
+                               "Dung soil.Cow"= "#333D29", 
+                               "Dung.Horse" = "#7F4F24",
+                               "Dung soil.Horse" = "#582F0E"),
+                    labels = c("Cow dung", "Soil below cow dung", "Horse dung", "Soil below horse dung"))+
+  theme(
+    panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+    panel.border = element_blank(), axis.line = element_line(),
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  scale_y_continuous(expand = c(0, 0))+
+  ggtitle("Dung and Dung Soil pH")+
+  facet_wrap(~ Animal, scales = "free_x")
+
+#Comparing CN ratio in dungs and in soils beneath the dung
+ggplot(dungsoil_dung_data, aes(x = plotID, y = CN_ratio, fill = interaction(sample_type, Animal))) +
+  geom_col() +  
+  labs(
+    x = "Plot ID",        
+    y = "CN ratio",        
+    color = "Plot type",
+    fill = "Sample type") +
+  theme_minimal() +               
+  scale_fill_manual(values = c("Dung.Cow" = "#656D4A",
+                               "Dung soil.Cow"= "#333D29", 
+                               "Dung.Horse" = "#7F4F24",
+                               "Dung soil.Horse" = "#582F0E"),
+                    labels = c("Cow dung", "Soil below cow dung", "Horse dung", "Soil below horse dung"))+
+  theme(
+    panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+    panel.border = element_blank(), axis.line = element_line(),
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  scale_y_continuous(expand = c(0, 0))+
+  ggtitle("Dung and Dung Soil CN ratio")+
+  facet_wrap(~ Animal, scales = "free_x")
+
+
+# Modeling
 mod <- glmmTMB(P ~ PO4.P, data = growth_model_data)
 summary(mod)
 print(Anova(mod))
@@ -96,7 +161,7 @@ run_model <- function(dataset, model) {
   #print(summary(model))
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  #testDispersion(simulationOutput)
+  testDispersion(simulationOutput)
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$treatment)
@@ -107,3 +172,104 @@ run_model <- function(dataset, model) {
 }
 
 run_model(flux_data, CO2_RE_model)
+
+# Relate fluxes to dung dimensions
+ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
+        aes(x = dung_area_cm2, y = CH4_sum, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "CH4 flux sum",        
+    color = "Plot type"           
+  ) +
+  theme_minimal() +               
+  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
+                               "Fresh.Horse" = "#7F4F24"),
+                     labels = c("Cow dung", "Horse dung")) +
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ggtitle("CH4 flux by dung area and plot type")
+
+ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
+       aes(x = dung_area_cm2, y = N2O_sum, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "N2O flux sum",        
+    color = "Plot type"           
+  ) +
+  theme_minimal() +               
+  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
+                                "Fresh.Horse" = "#7F4F24"),
+                     labels = c("Cow dung", "Horse dung"))+
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ggtitle("N2O flux by dung area and plot type")
+
+ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
+       aes(x = dung_area_cm2, y = CO2_RE_sum, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "CO2 RE flux sum",        
+    color = "Plot type"           
+  ) +
+  theme_minimal() +               
+  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
+                                "Fresh.Horse" = "#7F4F24"),
+                     labels = c("Cow dung", "Horse dung"))+
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ggtitle("CO2 RE flux by dung area and plot type")
+
+ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
+       aes(x = dung_area_cm2, y = CO2_PS_sum, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "CO2 PS flux sum",        
+    color = "Plot type"           
+  ) +
+  theme_minimal() +               
+  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
+                                "Fresh.Horse" = "#7F4F24"),
+                     labels = c("Cow dung", "Horse dung"))+
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ggtitle("CO2 PS flux by dung area and plot type")
+
+dung_fluxes <- plot_flux_data %>% filter(treatment == "Fresh")
+
+PS_dungarea_model <- glmmTMB(CO2_PS_sum ~ Animal * dung_area_cm2 * Campaign, data = dung_fluxes)
+RE_dungarea_model <- glmmTMB(CO2_RE_sum ~ Animal * dung_area_cm2 + Campaign, data = dung_fluxes)
+CH4_dungarea_model <- glmmTMB(CH4_sum ~ Animal * dung_area_cm2 + Campaign, data = dung_fluxes)
+N2O_dungarea_model <- glmmTMB(N2O_sum ~ Animal * dung_area_cm2 * Campaign, data = dung_fluxes)
+
+
+run_model2 <- function(dataset, model) {
+  #print(summary(model))
+  print(Anova(model))
+  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  testDispersion(simuOutput)
+  plot(simuOutput)
+  plotResiduals(simuOutput, form = dataset$Animal)
+  plotResiduals(simuOutput, form = dataset$Campaign)
+  plotResiduals(simuOutput, form = dataset$dung_area_cm2)
+  test <- emmeans(model, ~ Campaign||Animal|dung_area_cm2)
+  contrast(test, method = "pairwise") %>% as.data.frame()
+  interactions::interact_plot(model, pred = dung_area_cm2, modx = Animal)
+  
+}
+
+run_model2(dung_fluxes, N2O_dungarea_model)
+
+
+# Relate dung parameters to dung soil parameters
