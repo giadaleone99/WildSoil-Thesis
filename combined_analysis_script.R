@@ -6,6 +6,8 @@ library(emmeans)
 library(car)
 library(DHARMa)
 library(interactions)
+library(plotrix)
+
 
 # Import data
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
@@ -74,13 +76,39 @@ growth_model_data <- plot_flux_data %>%
 
 #create df with dung soil data
 dung_soil_data <- soil_data_raw %>% 
-  filter(sample_type %in% "Dung soil")
+  filter(sample_type %in% "Dung soil") %>% 
+  mutate(dung_name =  case_when(
+    grepl("^CG", base_code) ~ "CG",
+    grepl("^HG", base_code) ~ "HG",
+    base_code %in% c("CD1", "CD2") ~ "COD",
+    base_code %in% c("CD3", "CD4") ~ "CND",
+    base_code %in% c("HD1", "HD2") ~ "HOD",
+    base_code %in% c("HD3", "HD4", "HD5") ~ "HND"))
+
+summary_dung_soil <- dung_soil_data %>% 
+  group_by(dung_name) %>% 
+  summarise(
+    pH_mean = mean(pH, na.rm = TRUE),
+    pH_se = std.error(pH),
+    PO4.P_mean = mean(PO4.P, na.rm = TRUE),
+    PO4.P_se = std.error(PO4.P),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio)) %>% 
+  ungroup() %>% 
+  rename("base_code" = "dung_name")
+  
+
+summary_dung_soil <- summary_dung_soil %>% 
+  full_join(dung_lab, by = "base_code")
+
 
 dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>% 
   select(-4,-8,-14:-18, -20:-38) %>% 
   mutate(Animal = case_when(
     grepl("^C", base_code) ~ "Cow",
-    grepl("^H", base_code) ~ "Horse"))
+    grepl("^H", base_code) ~ "Horse")) 
+
+
 
 
 #Comparing pH in the dung and in the soil beneath the dung
@@ -154,24 +182,54 @@ summary(model)
   interactions::interact_plot(model, pred = PO4.P, modx = Animal)
 
 # Run gas flux models with soil moisture and temperature as random factors
+  run_model <- function(dataset, model) {
+    #print(summary(model))
+    print(Anova(model))
+    simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+    testDispersion(simuOutput)
+    plot(simuOutput)
+    plotResiduals(simuOutput, form = dataset$Animal)
+    plotResiduals(simuOutput, form = dataset$treatment)
+    plotResiduals(simuOutput, form = dataset$Campaign)
+    plotResiduals(simuOutput, form = dataset$S_temp)
+    #plotResiduals(simuOutput, form = dataset$dung_area_cm2)
+    test <- emmeans(model, ~ treatment|Animal|Campaign|S_temp)
+    contrast(test, method = "pairwise") %>% as.data.frame()
+  }
+  
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
-CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data)
+CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + (1|Days_Since_First), data = flux_data)
 
-run_model <- function(dataset, model) {
+CH4_model <- glmmTMB(CH4_flux ~ Animal * treatment * Campaign * SWC_. + dung_area_cm2 + (1|Days_Since_First), data = flux_data)
+N2O_model <- glmmTMB(N2O_flux ~ Animal * treatment * Campaign * SWC_. + dung_area_cm2 + (1|Days_Since_First), data = flux_data)
+
+
+
+run_model(flux_data, CO2_PS_model)
+
+
+dung_fluxes <- flux_data %>% filter(treatment == "F")
+RE_dungarea_model <- glmmTMB(CO2_RE_flux ~ Animal * dung_area_cm2 + (1|Days_Since_First), data = dung_fluxes)
+CH4_dungarea_model <- glmmTMB(CH4_flux ~ Animal * dung_area_cm2 + Campaign + (1|Days_Since_First), data = dung_fluxes)
+N2O_dungarea_model <- glmmTMB(N2O_flux ~ Animal * dung_area_cm2 + Campaign + (1|Days_Since_First), data = dung_fluxes)
+
+
+run_model2 <- function(dataset, model) {
   #print(summary(model))
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  testDispersion(simulationOutput)
+  testDispersion(simuOutput)
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
-  plotResiduals(simuOutput, form = dataset$treatment)
-  plotResiduals(simuOutput, form = dataset$Campaign)
-  plotResiduals(simuOutput, form = dataset$S_temp)
-  test <- emmeans(model, ~ Campaign|treatment|Animal|S_temp)
+  #plotResiduals(simuOutput, form = dataset$Campaign)
+  plotResiduals(simuOutput, form = dataset$dung_area_cm2)
+  test <- emmeans(model, ~ Animal|dung_area_cm2)
   contrast(test, method = "pairwise") %>% as.data.frame()
+  interactions::interact_plot(model, pred = dung_area_cm2, modx = Animal)
+  
 }
 
-run_model(flux_data, CO2_RE_model)
+run_model2(dung_fluxes, RE_dungarea_model)
 
 # Relate fluxes to dung dimensions
 ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
@@ -246,30 +304,6 @@ ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
   ) +
   ggtitle("CO2 PS flux by dung area and plot type")
 
-dung_fluxes <- plot_flux_data %>% filter(treatment == "Fresh")
-
-PS_dungarea_model <- glmmTMB(CO2_PS_sum ~ Animal * dung_area_cm2 * Campaign, data = dung_fluxes)
-RE_dungarea_model <- glmmTMB(CO2_RE_sum ~ Animal * dung_area_cm2 + Campaign, data = dung_fluxes)
-CH4_dungarea_model <- glmmTMB(CH4_sum ~ Animal * dung_area_cm2 + Campaign, data = dung_fluxes)
-N2O_dungarea_model <- glmmTMB(N2O_sum ~ Animal * dung_area_cm2 * Campaign, data = dung_fluxes)
 
 
-run_model2 <- function(dataset, model) {
-  #print(summary(model))
-  print(Anova(model))
-  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  testDispersion(simuOutput)
-  plot(simuOutput)
-  plotResiduals(simuOutput, form = dataset$Animal)
-  plotResiduals(simuOutput, form = dataset$Campaign)
-  plotResiduals(simuOutput, form = dataset$dung_area_cm2)
-  test <- emmeans(model, ~ Campaign||Animal|dung_area_cm2)
-  contrast(test, method = "pairwise") %>% as.data.frame()
-  interactions::interact_plot(model, pred = dung_area_cm2, modx = Animal)
-  
-}
 
-run_model2(dung_fluxes, N2O_dungarea_model)
-
-
-# Relate dung parameters to dung soil parameters
