@@ -27,7 +27,7 @@ saveRDS(gradient_soil, "data/gradient_soil_data.rds")
 daily_soil <- soil_data_raw %>% 
   filter(grepl("D.", base_code)) %>% 
   mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
-  mutate(Animal = as.factor(Animal)) %>% 
+  mutate(Animal = as.factor(Animal))
 
 daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 
@@ -393,7 +393,7 @@ combined_stats <- bind_rows(gradient_stats_fresh, daily_stats_fresh)
 
 # Function for modelling 
 run_model <- function(dataset, model) {
-  #print(summary(model))
+  print(summary(model))
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
   testDispersion(simuOutput)
@@ -401,8 +401,9 @@ run_model <- function(dataset, model) {
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$sample_type)
   plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ Campaign|sample_type|Animal)
-  contrast(test, method = "pairwise") %>% as.data.frame()
+  plotResiduals(simuOutput, form = dataset$bulk_density)
+  test2 <- emmeans(model, ~ Campaign|bulk_density)
+  contrast(test2, method = "pairwise") %>% as.data.frame()
 }
 
 # Soil parameters
@@ -420,6 +421,6 @@ Soil_pH_b1 <- glmmTMB(pH ~ Animal * sample_type * Campaign * bulk_density + (1|b
 Soil_PO4.P_b1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign * bulk_density + (1|base_code), data = combined_soil)
 
 # Change this accordingly 
-run_model(combined_soil, Soil_CNratio_b1)
+run_model(combined_soil, Soil_PO4.P_b1)
 
 

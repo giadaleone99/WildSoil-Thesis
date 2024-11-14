@@ -1099,7 +1099,7 @@ dung_phosphorus
 
 # Create the nested bar chart
 level_order <- c("CG dung", "CG1_F", "CG2_F", "CG3_F", "CG4_F", "CG5_F", "COD dung", "CD1_F", "CD2_F", "CND dung", "CD3_F", "CD4_F", "HG dung", "HG1_F", "HG2_F", "HG3_F", "HG4_F", "HG5_F", "HOD dung", "HD1_F", "HD2_F", "HND dung", "HD3_F", "HD4_F", "HD5_F") 
-ggplot(vegdung_data, aes(x = plot_id, y = Pb, fill = cordung)) +
+ggplot(vegdung_data, aes(x = plot_id, y = Ca, fill = cordung)) +
   geom_bar(stat = 'identity', position = 'dodge') +
   scale_x_discrete(limits = level_order) +
   #facet_wrap("Animal", scales = "free_x") +
