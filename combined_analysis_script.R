@@ -69,8 +69,12 @@ soil_data <- soil_data_raw %>%
   filter(sample_type %in% c("Fresh", "Control"))
 
 plot_flux_data <- plot_flux_data %>% 
-  left_join(veg_combined_data, by = "plotID") %>% 
-  left_join(soil_data, by = "plotID")
+  left_join(veg_combined_data, by = "plotID")
+plot_flux_data <- plot_flux_data %>% 
+  full_join(soil_data, by = "plotID")
+
+soil_data_test <- soil_data %>% 
+  left_join(plot_flux_data, by = "plotID")
 
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
@@ -120,12 +124,31 @@ dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>%
 soil_data_nooutlier <- soil_data_raw %>% 
   filter(bulk_density < 4)
 
-ggplot(soil_data_nooutlier, aes(bulk_density, TC)) +
+C_bulkdensity <- ggplot(soil_data_nooutlier, aes(bulk_density, TC)) +
   geom_point() +
-  stat_poly_line() +
+  stat_poly_line(colour = "black") +
   stat_poly_eq(use_label(c("eq", "R2"))) +
   theme_minimal() +
   labs(x = "Bulk density (g/cm3)", y = "Total carbon")
+
+ggsave(C_bulkdensity, file = "plots/C_bulkdensity.jpeg",  width = 6, height = 4)
+
+# comparing plant and soil CN
+soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio, plant_CN)) +
+  geom_point(aes(color = interaction(treatment, Animal)), size = 2) +
+  stat_poly_line(color = "black") +
+  stat_poly_eq(use_label(c("eq", "R2"))) +
+  theme_minimal() +
+  scale_y_continuous(expand = c(0, 5)) +
+  labs(x = "Soil CN ratio", y = "Vegetation CN ratio",
+       colour = "Plot type")+
+  scale_colour_manual(values = c("Control.Cow" = "#a4ac86",
+                                 "Fresh.Cow" = "#656d4a",
+                                 "Control.Horse" = "#a68a64",
+                                 "Fresh.Horse" = "#7f4f24"),
+                      labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))
+ggsave(soilCNvegCN, file = "plots/soilCNvegCN.jpeg",  width = 6, height = 4)
+  
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
