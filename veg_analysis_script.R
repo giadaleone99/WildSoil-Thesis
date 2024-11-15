@@ -105,13 +105,15 @@ veg_combined <- veg_combined %>%
 
 # create a df for dung
 dung_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio, pH, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  rename(Nperc = "N%") %>% 
+  select(Kode_1, CN_ratio, Nperc, pH, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
 colnames(dung_data)[1] <- c("plot_id")
 
 vegdung_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
-  filter(!grepl("_C$", Kode_1)) %>% 
+  select(Kode_1, CN_ratio, "N%", B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  filter(!grepl("_C$", Kode_1)) %>%
+  rename(Nperc = "N%") %>% 
   mutate(cordung = case_when(
     grepl("dung", Kode_1) ~ Kode_1,
     grepl("CG", Kode_1) ~ "CG dung",
@@ -1042,13 +1044,9 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 clean_veg_data <- veg_combined %>% 
   subset(select = -c(Animal, Animal_treatment, Campaign, frame_area_cm2))
 
-saveRDS(clean_veg_data, file = "data/clean_veg_data.rds")
+#saveRDS(clean_veg_data, file = "data/clean_veg_data.rds")
 
 # Vegetation elemental properties ------------------------------------------------------
-
-
-
-
 
 veg_phosphorus <- ggplot(veg_combined, aes(x = plot_id, y = P, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
@@ -1107,4 +1105,58 @@ ggplot(vegdung_data, aes(x = plot_id, y = Ca, fill = cordung)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 saveRDS(veg_growth, file = "plant_data/veg_growth_data.rds")
+
+
+## Plotting relationship between CN ratio in the dung compared to the CN ratio of the vegetation
+vegCN <- vegdung_lab %>% 
+  filter(Kode_3 != "Dung") %>% 
+  select(Kode_1, CN_ratio, "N%") %>% 
+  filter(grepl(".F", Kode_1)) %>% 
+  mutate(dung_name =  case_when(
+    grepl("^CG", Kode_1) ~ "CG",
+    grepl("^HG", Kode_1) ~ "HG",
+    Kode_1 %in% c("CD1_F", "CD2_F") ~ "COD",
+    Kode_1 %in% c("CD3_F", "CD4_F") ~ "CND",
+    Kode_1 %in% c("HD1_F", "HD2_F") ~ "HOD",
+    Kode_1 %in% c("HD3_F", "HD4_F", "HD5_F") ~ "HND")) %>% 
+  rename(base_code = Kode_1,
+         N_perc = "N%") %>% 
+  group_by(dung_name) %>% 
+  summarise(
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio),
+    Nperc_mean = mean(N_perc, na.rm = TRUE),
+    Nperc_se = std.error(N_perc)) %>% 
+  ungroup() 
+
+dung_data <- dung_data %>% 
+  mutate(dung_name =
+    case_when(
+    plot_id %in% "CG dung" ~ "CG",
+    plot_id %in% "HG dung" ~ "HG",
+    plot_id %in% "HOD dung" ~ "HOD",
+    plot_id %in% "COD dung" ~ "COD",
+    plot_id %in% "HND dung" ~ "HND",
+    plot_id %in% "CND dung" ~ "CND",
+  )) %>% 
+  select(-5:-28)
+
+vegdungCN <- left_join(vegCN, dung_data, by = "dung_name" )
+
+
+Npercentage <- ggplot(vegdungCN, aes(x = Nperc, y = Nperc_mean, colour = Animal)) +
+  geom_point(stat = "identity") +
+  xlab("Dung N%") + ylab("Plant N%") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+        panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line()) +
+  labs(colour = "Animal") +
+  scale_colour_manual(values = c( 
+                                 "cow" = "#656D4A", 
+                                 "horse" = "#7F4F24"),
+                      labels = c("Cow dung", "Horse dung"))+
+  scale_y_continuous(expand = c(0, 0)) +
+  ggtitle("Dung and plant N%")
+Npercentage
 _
