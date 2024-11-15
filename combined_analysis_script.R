@@ -232,17 +232,18 @@ run_model2 <- function(dataset, model) {
 run_model2(dung_fluxes, RE_dungarea_model)
 
 # Relate fluxes to dung dimensions
-ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
-        aes(x = dung_area_cm2, y = CH4_sum, colour = interaction(treatment, Animal))) +
+ggplot(flux_data %>% filter(treatment == "F"),
+        aes(x = dung_area_cm2, y = CH4_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
+  geom_smooth(method = "lm")+
   labs(
     x = "Dung Area (cm²)",        
-    y = "CH4 flux sum",        
+    y = "CH4 flux",        
     color = "Plot type"           
   ) +
   theme_minimal() +               
-  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
-                               "Fresh.Horse" = "#7F4F24"),
+  scale_color_manual(values = c("F.Cow" = "#656D4A",
+                               "F.Horse" = "#7F4F24"),
                      labels = c("Cow dung", "Horse dung")) +
   theme(
     legend.position = "right",    
@@ -250,17 +251,19 @@ ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
   ) +
   ggtitle("CH4 flux by dung area and plot type")
 
-ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
-       aes(x = dung_area_cm2, y = N2O_sum, colour = interaction(treatment, Animal))) +
+
+ggplot(flux_data %>% filter(treatment == "F"),
+       aes(x = dung_area_cm2, y = N2O_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
+  geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
-    y = "N2O flux sum",        
+    y = "N2O flux",        
     color = "Plot type"           
   ) +
   theme_minimal() +               
-  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
-                                "Fresh.Horse" = "#7F4F24"),
+  scale_color_manual(values = c("F.Cow" = "#656D4A",
+                                "F.Horse" = "#7F4F24"),
                      labels = c("Cow dung", "Horse dung"))+
   theme(
     legend.position = "right",    
@@ -268,17 +271,18 @@ ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
   ) +
   ggtitle("N2O flux by dung area and plot type")
 
-ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
-       aes(x = dung_area_cm2, y = CO2_RE_sum, colour = interaction(treatment, Animal))) +
+ggplot(flux_data %>% filter(treatment == "F"),
+       aes(x = dung_area_cm2, y = CO2_RE_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
+  geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
-    y = "CO2 RE flux sum",        
+    y = "CO2 RE flux",        
     color = "Plot type"           
   ) +
   theme_minimal() +               
-  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
-                                "Fresh.Horse" = "#7F4F24"),
+  scale_color_manual(values = c("F.Cow" = "#656D4A",
+                                "F.Horse" = "#7F4F24"),
                      labels = c("Cow dung", "Horse dung"))+
   theme(
     legend.position = "right",    
@@ -286,23 +290,6 @@ ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
   ) +
   ggtitle("CO2 RE flux by dung area and plot type")
 
-ggplot(plot_flux_data %>% filter(treatment == "Fresh"),
-       aes(x = dung_area_cm2, y = CO2_PS_sum, colour = interaction(treatment, Animal))) +
-  geom_point() + 
-  labs(
-    x = "Dung Area (cm²)",        
-    y = "CO2 PS flux sum",        
-    color = "Plot type"           
-  ) +
-  theme_minimal() +               
-  scale_color_manual(values = c("Fresh.Cow" = "#656D4A",
-                                "Fresh.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung"))+
-  theme(
-    legend.position = "right",    
-    plot.title = element_text(hjust = 0.5)
-  ) +
-  ggtitle("CO2 PS flux by dung area and plot type")
 
 
 
