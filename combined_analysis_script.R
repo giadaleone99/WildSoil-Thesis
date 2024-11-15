@@ -7,6 +7,7 @@ library(car)
 library(DHARMa)
 library(interactions)
 library(plotrix)
+library(ggpmisc)
 
 
 # Import data
@@ -25,7 +26,7 @@ veg_combined_data <- readRDS("plant_data/veg_combined_data.rds")%>%
   rename("plotID"= "plot_id",
          "plant_CN" = "CN_ratio") %>% 
   dplyr::select(-5)
-  
+
 
 # Combine data
 CO2_PS_data <- allflux_data %>% 
@@ -74,6 +75,13 @@ plot_flux_data <- plot_flux_data %>%
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
 
+# add bulk density to gas data
+bulkdensity <- soil_data %>% 
+  select(plotID, bulk_density)
+
+flux_data <- flux_data %>% 
+  left_join(bulkdensity, by = "plotID")
+
 #create df with dung soil data
 dung_soil_data <- soil_data_raw %>% 
   filter(sample_type %in% "Dung soil") %>% 
@@ -108,8 +116,16 @@ dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>%
     grepl("^C", base_code) ~ "Cow",
     grepl("^H", base_code) ~ "Horse")) 
 
+# regression plot of bulk density and %C
+soil_data_nooutlier <- soil_data_raw %>% 
+  filter(bulk_density < 4)
 
-
+ggplot(soil_data_nooutlier, aes(bulk_density, TC)) +
+  geom_point() +
+  stat_poly_line() +
+  stat_poly_eq(use_label(c("eq", "R2"))) +
+  theme_minimal() +
+  labs(x = "Bulk density (g/cm3)", y = "Total carbon")
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
@@ -192,16 +208,16 @@ summary(model)
     plotResiduals(simuOutput, form = dataset$treatment)
     plotResiduals(simuOutput, form = dataset$Campaign)
     plotResiduals(simuOutput, form = dataset$S_temp)
-    #plotResiduals(simuOutput, form = dataset$dung_area_cm2)
+    #plotResiduals(simuOutput, form = dataset$bulk_density)
     test <- emmeans(model, ~ treatment|Animal|Campaign|S_temp)
     contrast(test, method = "pairwise") %>% as.data.frame()
   }
   
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
-CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + (1|Days_Since_First), data = flux_data)
+CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + Campaign + SWC_. + bulk_density + (1|Days_Since_First), data = flux_data)
 
-CH4_model <- glmmTMB(CH4_flux ~ Animal * treatment * Campaign * SWC_. + dung_area_cm2 + (1|Days_Since_First), data = flux_data)
-N2O_model <- glmmTMB(N2O_flux ~ Animal * treatment * Campaign * SWC_. + dung_area_cm2 + (1|Days_Since_First), data = flux_data)
+CH4_model <- glmmTMB(CH4_flux ~ Animal + treatment + Campaign + bulk_density + (1|Days_Since_First), data = flux_data)
+N2O_model <- glmmTMB(N2O_flux ~ Animal + treatment + Campaign + bulk_density + (1|Days_Since_First), data = flux_data)
 
 
 
