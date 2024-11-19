@@ -20,8 +20,9 @@ library(glmmTMB)
 library(sjPlot)
 library(vegan)
 library(paletteer)
+library(effects)
 
-# Import data
+# Importeffects# Import data
 vegdung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.names = FALSE)
 veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
@@ -801,7 +802,7 @@ veg_non_forbs <- species_data %>% filter(veg_cat != "Forbs")
 
 veg_merged <- bind_rows(veg_forbs, veg_non_forbs)
 
-final_species_data <- left_join(species_data, species_summary, by = c("plot_id", "veg_cat"))
+final_species_data <- left_join(species_data, species_summary, by = c("plot_id"))
 
 final_species_data <- final_species_data %>%
   mutate(
@@ -994,15 +995,16 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 
 # make it into a function
 run_model <- function(dataset, model) {
-  #print(summary(model))
+  print(summary(model))
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$treatment)
   plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ Campaign|treatment|Animal)
-  contrast(test, method = "pairwise") %>% as.data.frame()
+  test <- emmeans(model, ~ treatment|Animal|Campaign)
+  test2 <- emmeans(model, ~ Animal|treatment|Campaign)
+  contrast(test2, method = "pairwise") %>% as.data.frame()
 }
 
 #dailies
@@ -1020,13 +1022,20 @@ veg_biomass_gradient_m1 <- glmmTMB(biomass ~ Animal * treatment + (1|base_code),
 veg_cn_gradient_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + (1|base_code), data = gradient_veg_combined)
 
 #both campaigns together
-veg_weight_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
+#veg_weight_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_height_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_growth_m1 <- glmmTMB(height_value ~ Animal * treatment * Campaign + (1|base_code), data = veg_growth)
 veg_biomass_m1 <- glmmTMB(biomass ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 
 run_model(veg_combined, veg_cn_m1)
+
+#test model effects
+veg_height_effects <- allEffects(veg_height_m1)
+veg_growth_effects <- allEffects(veg_growth_m1)
+veg_biomass_effects <- allEffects(veg_biomass_m1)
+veg_cn_effects <- allEffects(veg_cn_m1)
+plot(veg_cn_effects)
 
 
 dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)
