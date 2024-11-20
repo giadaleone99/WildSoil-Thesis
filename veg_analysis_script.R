@@ -92,6 +92,7 @@ veg_combined <- veg_summary %>%
   left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
   distinct() %>%
   mutate(biomass = total_veg_weight * area_minus_dung,
+         total_veg_weight_gm2 = total_veg_weight * 10000,
          Animal = as.factor(Animal),
          treatment = as.factor(treatment))
 
@@ -373,10 +374,10 @@ ggplot(veg_gradient, aes(x = plot_id, y = CN_ratio)) +
 
 barplot(veg_gradient$biomass)
 # Biomass per campaign boxplots
-dailyvegbiomassbox <- ggplot(veg_daily, aes(x = Animal, y = biomass, fill = interaction(treatment, Animal))) +
+dailyvegbiomassbox <- ggplot(veg_daily, aes(x = Animal, y = total_veg_weight_gm2, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1)) +
-  xlab("\nAnimal") + ylab("Estimated biomass (g)") +
+  xlab("\nAnimal") + ylab(expression("Adjusted harvested biomass (g/m"^2*")")) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
@@ -388,11 +389,11 @@ dailyvegbiomassbox <- ggplot(veg_daily, aes(x = Animal, y = biomass, fill = inte
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung","Horse control", "Horse dung"))+
   ggtitle("Short term campaign") +
-  scale_y_continuous(limits = c(20, 140), breaks = seq(20, 140, by = 20)) +
+  scale_y_continuous(limits = c(80, 450), breaks = seq(100, 400, by = 100)) +
   theme(legend.position = "none")
 dailyvegbiomassbox
 
-gradientvegbiomassbox <- ggplot(veg_gradient, aes(x = Animal, y = biomass, fill = interaction(treatment, Animal))) +
+gradientvegbiomassbox <- ggplot(veg_gradient, aes(x = Animal, y = total_veg_weight_gm2, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1)) +
   xlab("\nAnimal") + ylab(NULL) +
@@ -406,7 +407,7 @@ gradientvegbiomassbox <- ggplot(veg_gradient, aes(x = Animal, y = biomass, fill 
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung","Horse control", "Horse dung"))+
-  scale_y_continuous(limits = c(20, 140), breaks = seq(20, 140, by = 20)) +
+  scale_y_continuous(limits = c(80, 450), breaks = seq(100, 400, by = 100)) +
   ggtitle("Long term campaign")
 gradientvegbiomassbox
 
@@ -710,14 +711,14 @@ daily_summary_stats <- daily_veg_combined %>%
     total_veg_weight_median = median(total_veg_weight, na.rm = TRUE),
     total_veg_weight_sd = sd(total_veg_weight, na.rm = TRUE),
     total_veg_weight_se = std.error(total_veg_weight),
-    veg_growth_mean = mean(veg_growth, na.rm = TRUE),
-    veg_growth_median = median(veg_growth, na.rm = TRUE),
-    veg_growth_sd = sd(veg_growth, na.rm = TRUE),
-    veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
-    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(biomass),
+    veg_growth_mean = mean(height_value, na.rm = TRUE),
+    veg_growth_median = median(height_value, na.rm = TRUE),
+    veg_growth_sd = sd(height_value, na.rm = TRUE),
+    veg_growth_se = std.error(height_value),
+    estimated_harvested_biomass_plot_mean = mean(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_median = median(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_sd = sd(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_se = std.error(total_veg_weight_gm2),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -737,14 +738,14 @@ gradient_summary_stats <- gradient_veg_combined %>%
     total_veg_weight_median = median(total_veg_weight, na.rm = TRUE),
     total_veg_weight_sd = sd(total_veg_weight, na.rm = TRUE),
     total_veg_weight_se = std.error(total_veg_weight),
-    veg_growth_mean = mean(veg_growth, na.rm = TRUE),
-    veg_growth_median = median(veg_growth, na.rm = TRUE),
-    veg_growth_sd = sd(veg_growth, na.rm = TRUE),
-    veg_growth_se = std.error(veg_growth),
-    estimated_biomass_plot_mean = mean(biomass, na.rm = TRUE),
-    estimated_biomass_plot_median = median(biomass, na.rm = TRUE),
-    estimated_biomass_plot_sd = sd(biomass, na.rm = TRUE),
-    estimated_biomass_plot_se = std.error(biomass),
+    veg_growth_mean = mean(height_value, na.rm = TRUE),
+    veg_growth_median = median(height_value, na.rm = TRUE),
+    veg_growth_sd = sd(height_value, na.rm = TRUE),
+    veg_growth_se = std.error(height_value),
+    estimated_harvested_biomass_plot_mean = mean(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_median = median(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_sd = sd(total_veg_weight_gm2, na.rm = TRUE),
+    estimated_harvested_biomass_plot_se = std.error(total_veg_weight_gm2),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
@@ -1004,7 +1005,8 @@ run_model <- function(dataset, model) {
   plotResiduals(simuOutput, form = dataset$Campaign)
   test <- emmeans(model, ~ treatment|Animal|Campaign)
   test2 <- emmeans(model, ~ Animal|treatment|Campaign)
-  contrast(test2, method = "pairwise") %>% as.data.frame()
+  test3 <- emmeans(model, ~ Campaign|Animal|treatment)
+  contrast(test3, method = "pairwise") %>% as.data.frame()
 }
 
 #dailies
@@ -1025,17 +1027,17 @@ veg_cn_gradient_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + (1|base_code), dat
 #veg_weight_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_height_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_growth_m1 <- glmmTMB(height_value ~ Animal * treatment * Campaign + (1|base_code), data = veg_growth)
-veg_biomass_m1 <- glmmTMB(biomass ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
+veg_biomass_m1 <- glmmTMB(total_veg_weight_gm2 ~ treatment * Animal * Campaign + (1|base_code), data = veg_combined)
 veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 
-run_model(veg_combined, veg_cn_m1)
+run_model(veg_combined, veg_biomass_m1)
 
 #test model effects
 veg_height_effects <- allEffects(veg_height_m1)
 veg_growth_effects <- allEffects(veg_growth_m1)
 veg_biomass_effects <- allEffects(veg_biomass_m1)
 veg_cn_effects <- allEffects(veg_cn_m1)
-plot(veg_cn_effects)
+plot(veg_biomass_effects)
 
 
 dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)

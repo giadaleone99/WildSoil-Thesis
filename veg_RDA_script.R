@@ -68,21 +68,24 @@ print(r2_individual)
 names(r2_individual) <- c("bulk_density", "pH", "PO4.P", "CN_ratio", "Campaign", "sample_type", "Animal")
 print(r2_individual)
 
-# Check for multicollinearity 
+# Check for multicollinearity - not working
 vif_model <- lm(species_df ~ bulk_density + pH + PO4.P + CN_ratio + Campaign + sample_type + Animal, data = soil_df)
 
-
+# total R2 value
 (r2 <- RsquareAdj(rda_model)$adj.r.squared)
 print(r2)
 plot(rda_model, scaling = 3)
+
+# model P value
 anova_result <- anova.cca(rda_model)
 print(anova_result)
 
 
 
-
+# get P values for the variables
 anova_terms <- anova.cca(rda_model, by = "term")
 print(anova_terms)
 
+# get P values for something...
 anova_axes <- anova.cca(rda_model, by = "axis")
 print(anova_axes)
