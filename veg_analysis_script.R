@@ -377,7 +377,7 @@ barplot(veg_gradient$biomass)
 dailyvegbiomassbox <- ggplot(veg_daily, aes(x = Animal, y = total_veg_weight_gm2, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1)) +
-  xlab("\nAnimal") + ylab(expression("Adjusted harvested biomass (g/m"^2*")")) +
+  xlab("\nAnimal") + ylab(expression("Adjusted biomass (g/m"^2*")")) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
@@ -421,31 +421,33 @@ veg_class_order <- c("Bryophytes", "Graminoids", "Achillea millefolium", "Campan
                      "Plantago lanceolata", "Ranunculus sp.", "Rosa canina", "Rumex acetosa", "Rumex acetosella", "Stellaria graminea", "Trifolium arvense", 
                      "Trifolium campestre", "Trifolium pratense", "Trifolium repens", "Veronica chamaedrys", "Veronica officinalis", "Vicia sativa")
 
-veg_new <- veg_new %>% mutate(veg_class = factor(veg_class, levels = veg_class_order))
+veg_percent <- veg_new %>% 
+  mutate(veg_class = factor(veg_class, levels = veg_class_order)) %>% 
+  filter(veg_category == "Forbs")
 
 lookup_species <- with(species_data, setNames(species_per_vegclass, paste(plot_id, veg_category, sep = "_")))
 
-veg_new <- veg_new %>%
+veg_percent <- veg_percent %>%
   dplyr::mutate(
     species_per_vegclass = lookup_species[paste(plot_id, veg_category, sep = "_")]
   )
 
-percentspecies <- ggplot(veg_new, aes(x = plot_id, y = dry_weight, fill = veg_class)) +
+percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = veg_class)) +
   geom_bar(position = "fill", stat = "identity") +
-  facet_wrap("Campaign", scales = "free") +
-  xlab("\nPlot ID") + ylab("Proportion of total weight") +
+  facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="Short temporal campaign", Gradient="Long temporal campaign"))) +
+  xlab("\nPlot ID") + ylab("Proportion of total forb weight") +
   theme_minimal() +
   scale_fill_paletteer_d("Polychrome::palette36") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), strip.text = element_text(size=13),
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), legend.position = "bottom") +
-  labs(fill = "Vegetation species/groups") +
+  labs(fill = "Forb species") +
   scale_y_continuous(expand = c(0, 0)) +
-  ggtitle("Proportions of vegetation species/groups per campaign")
+  ggtitle("Proportions of forb species per campaign")
 
 percentspecies
 
-ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 11, height = 8)
+ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 10, height = 8)
 
 
 
@@ -489,21 +491,23 @@ ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regressi
 
 # Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
 # Fit linear models for each dataset
-SjPlot_model_gradient <- glmmTMB(veg_height_2 ~ biomass * treatment + (1|base_code), data = veg_gradient)
+SjPlot_model_gradient <- lm(veg_height_2 ~ total_veg_weight_gm2 * treatment, data = veg_gradient)
 
-SjPlot_model_daily <- lm(veg_height_2 ~ biomass * treatment , data = veg_daily)
+SjPlot_model_daily <- lm(veg_height_2 ~ total_veg_weight_gm2 * treatment, data = veg_daily)
 
 
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
-                                   terms = c("biomass", "treatment"), 
-                                   title = "Gradient") +
+                                   terms = c("total_veg_weight_gm2", "treatment"), 
+                                   title = "Gradient", show.p = TRUE) +
   theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray")) +
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
-       colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 30)) + 
+  xlab(expression("Adjusted biomass (g/m"^2*")")) +
+  ylab("Predicted vegetation height (cm)") +
+  labs(colour = "Treatment") + 
+  #scale_y_continuous(limits = c(0, 20)) + 
+  #scale_x_continuous(limits = c(100, 400)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
@@ -515,15 +519,17 @@ plot_gradient_effect
 
 # Effect plot with predicted values for daily model
 plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
-                                terms = c("biomass", "treatment"), 
+                                terms = c("total_veg_weight_gm2", "treatment"), 
                                 title = "Daily") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  labs(x = "Estimated biomass per plot (g)", y = "Predicted vegetation height (cm)",
-       colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 15)) + 
+  xlab(expression("Adjusted biomass (g/m"^2*")")) +
+  ylab("Predicted vegetation height (cm)") +
+  labs(colour = "Treatment") +  
+  scale_y_continuous(limits = c(0, 20)) + 
+  #scale_x_continuous(limits = c(100, 400)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
@@ -533,7 +539,7 @@ plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred",
 
 combined_model_plot <- plot_daily_effect + plot_gradient_effect
 combined_model_plot
-ggsave("veg_plots/model_biomass_vegheight_combined.jpeg", plot = combined_model_plot, width = 6, height = 4)
+ggsave("veg_plots/model_biomass_vegheight_combined.jpeg", plot = combined_model_plot, width = 7, height = 4)
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -908,9 +914,9 @@ gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_
                    pattern_fill = "black",     
                    pattern_density = 0.1, 
                    pattern_spacing = 0.03) +
-  ggtitle("Gradient weight per vegetation class") +
+  ggtitle("Biomass per vegetation class of the long term campaign") +
   xlab("\nPlot ID") +
-  ylab(expression("Adjusted Weight (g/m"^2*")")) +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
   theme_minimal() +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
@@ -946,9 +952,9 @@ daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)
                    pattern_fill = "black",     
                    pattern_density = 0.1, 
                    pattern_spacing = 0.03) +
-  ggtitle("Daily weight per vegetation class") +
+  ggtitle("Biomass per vegetation class of the short term campaign") +
   xlab("\nPlot ID") +
-  ylab(expression("Adjusted Weight (g/m"^2*")")) +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
   theme_minimal() +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
@@ -1006,7 +1012,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ treatment|Animal|Campaign)
   test2 <- emmeans(model, ~ Animal|treatment|Campaign)
   test3 <- emmeans(model, ~ Campaign|Animal|treatment)
-  contrast(test3, method = "pairwise") %>% as.data.frame()
+  contrast(test, method = "pairwise") %>% as.data.frame()
 }
 
 #dailies
@@ -1025,12 +1031,12 @@ veg_cn_gradient_m1 <- glmmTMB(CN_ratio ~ Animal * treatment + (1|base_code), dat
 
 #both campaigns together
 #veg_weight_m1 <- glmmTMB(total_veg_weight ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
-veg_height_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
+#veg_height_m1 <- glmmTMB(veg_height_2 ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 veg_growth_m1 <- glmmTMB(height_value ~ Animal * treatment * Campaign + (1|base_code), data = veg_growth)
 veg_biomass_m1 <- glmmTMB(total_veg_weight_gm2 ~ treatment * Animal * Campaign + (1|base_code), data = veg_combined)
 veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 
-run_model(veg_combined, veg_biomass_m1)
+run_model(gradient_veg_combined, veg_height_gradient_m1)
 
 #test model effects
 veg_height_effects <- allEffects(veg_height_m1)
