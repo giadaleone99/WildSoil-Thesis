@@ -793,11 +793,18 @@ ggsave(filename = "plots/CO2_RE_boxplots.jpeg", plot = CO2_RE_boxplots, width = 
 ggsave(filename = "plots/CO2_PS_boxplots.jpeg", plot = CO2_PS_boxplots, width = 10, height = 5)
 # MODELLING ----------------------------------------------------
 # modelling Lasses way and combining the campaigns
+
+CH4_subset$Days_Since_First <- as.factor(CH4_subset$Days_Since_First)
+CH4_subset$Campaign <- as.factor(CH4_subset$Campaign)
+
 CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_PS_subset)
 CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = tweedie, data = CO2_RE_subset)
-CH4_model1 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CH4_subset)
-CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = gaussian, data = CH4_subset)
-N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = N2O_subset)
+CH4_model1 <- glmmTMB(scale(best.flux) ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                      data = CH4_subset)
+CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                      family = gaussian, data = CH4_subset)
+N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                     data = N2O_subset)
 
 
 run_model <- function(dataset, model) {
@@ -812,7 +819,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ Campaign|treatment|Animal)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
-run_model(CO2_RE_subset, CO2_RE_model)
+run_model(CH4_subset, CH4_model1)
 
 
 # creating the models for all the subsets
