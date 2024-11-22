@@ -82,7 +82,7 @@ for(i in 1:(nrow(flux_data) - 1)) {  # Loop until n-1 to avoid going out of boun
 
 frame_area <- 3058.15 #cm2
 
-flux_data <- flux_data %>% select(...1, UniqueID, base_code, treatment, NEERE, date, best.flux, model, gastype, Animal, Campaign, plotID, longdate, plotNEERE, photosynthesis)
+flux_data <- flux_data %>% dplyr::select(...1, UniqueID, base_code, treatment, NEERE, date, best.flux, model, gastype, Animal, Campaign, plotID, longdate, plotNEERE, photosynthesis)
 
 flux_data <- left_join(flux_data, dung_area_data, by = "UniqueID")
 
@@ -415,7 +415,10 @@ CH4_subset <- flux_data_ANOVA %>%
   convert_as_factor(treatment) %>%
   convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
-         normalized_best.flux = bestNormalize(best.flux)$x.t)
+         normalized_best.flux = bestNormalize(best.flux)$x.t) %>% 
+  mutate(ranked_best.flux = rank(best.flux))
+
+hist(CH4_subset$ranked_best.flux, breaks = 20)
 
 N2O_subset <- flux_data_ANOVA %>% 
   filter(gastype == "N2O") %>%
@@ -793,13 +796,13 @@ ggsave(filename = "plots/CO2_RE_boxplots.jpeg", plot = CO2_RE_boxplots, width = 
 ggsave(filename = "plots/CO2_PS_boxplots.jpeg", plot = CO2_PS_boxplots, width = 10, height = 5)
 # MODELLING ----------------------------------------------------
 # modelling Lasses way and combining the campaigns
-
+# HERE
 CH4_subset$Days_Since_First <- as.factor(CH4_subset$Days_Since_First)
 CH4_subset$Campaign <- as.factor(CH4_subset$Campaign)
 
 CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), data = CO2_PS_subset)
 CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = tweedie, data = CO2_RE_subset)
-CH4_model1 <- glmmTMB(scale(best.flux) ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+CH4_model1 <- glmmTMB(ranked_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
                       data = CH4_subset)
 CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
                       family = gaussian, data = CH4_subset)

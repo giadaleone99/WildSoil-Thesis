@@ -34,6 +34,19 @@ veg_new <- veg_raw %>%
 
 species_df <- veg_new[c("plot_id", "veg_class", "weight")]
 
+# Create a presence absence matrix for another RDA
+sp_presence <- species_df %>% 
+  mutate(presence = 1)
+
+# Get a full list of the species
+unique_species <- unique(species_df$veg_class)
+
+# Create presence absence matrix
+presence_absence_matrix <- sp_presence %>%
+  dplyr::select(plot_id, veg_class, presence) %>%  
+  pivot_wider(names_from = veg_class, values_from = presence, values_fill = list(presence = 0))
+
+# Create species weight matrix
 species_df <- species_df %>% 
   pivot_wider(names_from = veg_class, values_from = weight, values_fill = 0)
 
@@ -55,7 +68,10 @@ rownames(soil_df) <- NULL
 
 soil_df <- soil_df[c("bulk_density", "pH", "PO4.P", "CN_ratio", "Campaign", "Animal", "sample_type")]
 
-# RDA
+
+
+
+# RDA ----------------------------------------------------------------------------------
 species_df.hell <- decostand(species_df, "hellinger") #hellinger-transform the species dataset
 
 rda_model <- rda(species_df ~ ., soil_df)
@@ -74,7 +90,6 @@ anova(rda_model, permutations = how(nperm = 999))
 vif.cca(rda_model) # watch for things >10
 
 # variable selection
-
 mod0 <- rda(species_df.hell ~ 1, data = soil_df)
 
 step.forward <- ordistep(mod0,
@@ -121,30 +136,21 @@ anova(rda(species_df.hell, PO4.P, cbind(ph, cn, bulk)), permutation = how(nperm 
 anova(rda(species.hel, ph, permutation = how(nperm = 9999)))
 
 # Fraction [b], pure PO4
-
 anova(rda(species.hel, ph, cbind(po4.p, cn, clay_content)), permutation = how(nperm = 9999))
 
-
-
 # Test C:N
-
 anova(rda(species.hel, cn, permutation = how(nperm = 9999)))
 
 # Fraction [c], pure PO4
-
 anova(rda(species.hel, cn, cbind(po4.p, ph, clay_content)), permutation = how(nperm = 9999))
 
 
 
 # Test Clay content
-
 anova(rda(species.hel, clay_content, permutation = how(nperm = 9999)))
 
 # Fraction [d], pure PO4
-
 anova(rda(species.hel, clay_content, cbind(po4.p, ph, cn)), permutation = how(nperm = 9999))
-
-
 
 # Soil and other variables
 
@@ -158,26 +164,17 @@ anova(rda(species_df.hell, soil, permutation = how(nperm = 9999)))
 # Fraction [a], pure soil
 anova(rda(species_df.hell, soil, cbind(campaign, sample_type, Animal)), permutation = how(nperm = 9999))
 
-
-
 # Test years with grazing
-
 anova(rda(species.hel, years_grazed, permutation = how(nperm = 9999)))
 
 # Fraction [a], pure soil
-
 anova(rda(species.hel, years_grazed, cbind(soil_chem, years_since_lr)), permutation = how(nperm = 9999))
 
-
-
 # Test years since last resetting
-
 anova(rda(species.hel, years_since_lr, permutation = how(nperm = 9999)))
 
 # Fraction [a], pure soil
-
 anova(rda(species.hel, years_since_lr, cbind(soil_chem, years_grazed)), permutation = how(nperm = 9999))
-
 
 # Checking the R2 values of the separate variables to see which ones are not explaining the data
 eigenvalues <- summary_rda$cont$importance[2, ]

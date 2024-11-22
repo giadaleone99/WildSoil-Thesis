@@ -84,12 +84,12 @@ fieldwork_data <- fieldwork_data_raw %>%
   mutate(plot_id = str_remove(Plot_ID, "_[^_]+$"))
 
 veg_combined <- veg_summary %>%
-  left_join(fieldwork_data %>% select(plot_id, dung_area_cm2), by = "plot_id", multiple = "first") %>%
+  left_join(fieldwork_data %>% dplyr::select(plot_id, dung_area_cm2), by = "plot_id", multiple = "first") %>%
   mutate(
     frame_area_cm2 = 3058.15,
     area_minus_dung = frame_area_cm2 - dung_area_cm2
   ) %>%
-  left_join(select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
+  left_join(dplyr::select(veg_new, plot_id, harvested_area), by = "plot_id") %>%
   distinct() %>%
   mutate(biomass = total_veg_weight * area_minus_dung,
          total_veg_weight_gm2 = total_veg_weight * 10000,
@@ -98,7 +98,7 @@ veg_combined <- veg_summary %>%
 
 # get CN and plot_id from the lab data sheet and merge with the rest
 veglab_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  dplyr::select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(!Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
 colnames(veglab_data)[1] <- c("plot_id")
 
@@ -107,15 +107,15 @@ veg_combined <- veg_combined %>%
 
 # create a df for dung
 dung_data <- vegdung_lab %>% 
-  rename(Nperc = "N%") %>% 
-  select(Kode_1, CN_ratio, Nperc, pH, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  dplyr::rename(Nperc = "N%") %>% 
+  dplyr::select(Kode_1, CN_ratio, Nperc, pH, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
 colnames(dung_data)[1] <- c("plot_id")
 
 vegdung_data <- vegdung_lab %>% 
-  select(Kode_1, CN_ratio, "N%", B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  dplyr::select(Kode_1, CN_ratio, "N%", B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(!grepl("_C$", Kode_1)) %>%
-  rename(Nperc = "N%") %>% 
+  dplyr::rename(Nperc = "N%") %>% 
   mutate(cordung = case_when(
     grepl("dung", Kode_1) ~ Kode_1,
     grepl("CG", Kode_1) ~ "CG dung",
@@ -175,6 +175,10 @@ gradient_veg_combined <- veg_combined %>%
 gradient_veg_growth <- veg_growth %>% 
   filter(Campaign == "Gradient")
 
+veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
+veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
+
+
 ##-----------------------------------------------------------------------------
 
 # Plotting function for weight and height
@@ -192,7 +196,6 @@ save_plot(veg_filtered, "total_veg_weight", "veg_plots/Dung_veg_weight.jpeg", "T
 save_plot(veg_filtered, "veg_height_2", "veg_plots/Dung_veg_height.jpeg", "Veg Height")
 
 # plots for veg weight grouped together per campaign
-veg_daily <- veg_combined %>% filter(grepl("D.", base_code))
 dailyvegweight <- ggplot(veg_daily, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   facet_wrap("Animal", scales = "free") +
@@ -212,7 +215,6 @@ dailyvegweight <- ggplot(veg_daily, aes(x = plot_id, y = total_veg_weight, fill 
 dailyvegweight
 ggsave(filename = "veg_plots/dailyvegweight.jpeg", plot = dailyvegweight, width = 6, height = 4)
 
-veg_gradient <- veg_combined %>% filter(grepl("G.", base_code))
 gradientvegweight <- ggplot(veg_gradient, aes(x = plot_id, y = total_veg_weight, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
   facet_wrap("Animal", scales = "free") +
@@ -425,6 +427,17 @@ veg_percent <- veg_new %>%
   mutate(veg_class = factor(veg_class, levels = veg_class_order)) %>% 
   filter(veg_category == "Forbs")
 
+species_data <- species_list %>%
+  group_by(plot_id, veg_class) %>%
+  dplyr::summarise(species_per_vegclass = n_distinct(species_list)) %>% 
+  ungroup() %>% 
+  mutate(veg_category = veg_class) %>% 
+  mutate(veg_cat = case_when(veg_category == "Bryophytes" ~ "Bryophytes",
+                             veg_category == "Graminoids" ~ "Graminoids", 
+                             TRUE ~ "Forbs")) %>% 
+  dplyr::select(!veg_category) %>% 
+  mutate(veg_category = veg_cat)
+
 lookup_species <- with(species_data, setNames(species_per_vegclass, paste(plot_id, veg_category, sep = "_")))
 
 veg_percent <- veg_percent %>%
@@ -448,7 +461,6 @@ percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = ve
 percentspecies
 
 ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 10, height = 8)
-
 
 
 # Scatter plot of veg weight vs height
@@ -491,23 +503,34 @@ ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regressi
 
 # Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
 # Fit linear models for each dataset
-SjPlot_model_gradient <- lm(veg_height_2 ~ total_veg_weight_gm2 * treatment, data = veg_gradient)
+SjPlot_model_gradient <- glmmTMB(total_veg_weight_gm2 ~  veg_height_2  * treatment, data = veg_gradient)
 
-SjPlot_model_daily <- lm(veg_height_2 ~ total_veg_weight_gm2 * treatment, data = veg_daily)
+SjPlot_model_daily <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2  * treatment, data = veg_daily)
 
+#Validate modelsAnova(veg_height_daily_m1)
+# Model validation
+simulationOutput <- simulateResiduals(fittedModel = SjPlot_model_daily, n = 1000)
+testDispersion(simulationOutput)
+
+plot(simulationOutput)
+plotResiduals(simulationOutput, form = SjPlot_model_gradient$treatment)
+#plotResiduals(simulationOutput, form = gradient_veg_combined$treatment)
+# Post-hoc-test
+test <- emmeans(SjPlot_model_gradient, ~ treatment)
+contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
-                                   terms = c("total_veg_weight_gm2", "treatment"), 
+                                   terms = c("veg_height_2", "treatment"), 
                                    title = "Gradient", show.p = TRUE) +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab(expression("Adjusted biomass (g/m"^2*")")) +
-  ylab("Predicted vegetation height (cm)") +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
+  xlab("Predicted vegetation height (cm)") +
   labs(colour = "Treatment") + 
-  #scale_y_continuous(limits = c(0, 20)) + 
-  #scale_x_continuous(limits = c(100, 400)) +
+  scale_y_continuous(limits = c(0, 650)) + 
+  scale_x_continuous(limits = c(0, 16)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
@@ -519,23 +542,24 @@ plot_gradient_effect
 
 # Effect plot with predicted values for daily model
 plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
-                                terms = c("total_veg_weight_gm2", "treatment"), 
+                                terms = c("veg_height_2", "treatment"), 
                                 title = "Daily") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab(expression("Adjusted biomass (g/m"^2*")")) +
-  ylab("Predicted vegetation height (cm)") +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
+  xlab("Predicted vegetation height (cm)") +
   labs(colour = "Treatment") +  
-  scale_y_continuous(limits = c(0, 20)) + 
-  #scale_x_continuous(limits = c(100, 400)) +
+  scale_y_continuous(limits = c(0, 500)) + 
+  #scale_x_continuous(limits = c(0, 13)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black"),
     legend.position = "none"
   )
+plot_daily_effect
 
 combined_model_plot <- plot_daily_effect + plot_gradient_effect
 combined_model_plot
@@ -791,16 +815,6 @@ species_summary <- species_list %>%
   dplyr::summarise(species_count = n_distinct(species_list)) %>% 
   ungroup()
 
-species_data <- species_list %>%
-  group_by(plot_id, veg_class) %>%
-  dplyr::summarise(species_per_vegclass = n_distinct(species_list)) %>% 
-  ungroup() %>% 
-  mutate(veg_category = veg_class) %>% 
-  mutate(veg_cat = case_when(veg_category == "Bryophytes" ~ "Bryophytes",
-                             veg_category == "Graminoids" ~ "Graminoids", 
-                             TRUE ~ "Forbs")) %>% 
-  select(!veg_category) %>% 
-  mutate(veg_category = veg_cat)
 
 veg_forbs <- species_data %>% 
   filter(veg_cat == "Forbs")
@@ -866,7 +880,7 @@ veg_weight <- veg_new %>%
       TRUE ~ forb_weight
     )
   ) %>%
-  select(-forb_weight)
+  dplyr::dplyr::select(-forb_weight)
 
 veg_weight <- veg_weight %>% 
   mutate(
@@ -880,7 +894,7 @@ forb_unique <- veg_weight %>%
 veg_weight <- veg_weight %>% 
   filter(veg_class != "Forbs") %>% 
   bind_rows(forb_unique) %>% 
-  select(-dry_weight)
+  dplyr::dplyr::select(-dry_weight)
 
 veg_weight <- veg_weight %>% 
   mutate(harvested_area_m2 = harvested_area / 10000) %>% 
@@ -1059,7 +1073,7 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Remove trash and save for combined analysis
 clean_veg_data <- veg_combined %>% 
-  subset(select = -c(Animal, Animal_treatment, Campaign, frame_area_cm2))
+  subset(dplyr::dplyr::select = -c(Animal, Animal_treatment, Campaign, frame_area_cm2))
 
 #saveRDS(clean_veg_data, file = "data/clean_veg_data.rds")
 
@@ -1127,7 +1141,7 @@ saveRDS(veg_growth, file = "plant_data/veg_growth_data.rds")
 ## Plotting relationship between CN ratio in the dung compared to the CN ratio of the vegetation
 vegCN <- vegdung_lab %>% 
   filter(Kode_3 != "Dung") %>% 
-  select(Kode_1, CN_ratio, "N%") %>% 
+  dplyr::dplyr::select(Kode_1, CN_ratio, "N%") %>% 
   filter(grepl(".F", Kode_1)) %>% 
   mutate(dung_name =  case_when(
     grepl("^CG", Kode_1) ~ "CG",
@@ -1156,7 +1170,7 @@ dung_data <- dung_data %>%
     plot_id %in% "HND dung" ~ "HND",
     plot_id %in% "CND dung" ~ "CND",
   )) %>% 
-  select(-5:-28)
+  dplyr::select(-5:-28)
 
 vegdungCN <- left_join(vegCN, dung_data, by = "dung_name" )
 
