@@ -8,6 +8,7 @@ library(DHARMa)
 library(interactions)
 library(plotrix)
 library(ggpmisc)
+library(bestNormalize)
 
 
 # Import data
@@ -74,7 +75,7 @@ plot_flux_data <- plot_flux_data %>%
   full_join(soil_data, by = "plotID")
 
 soil_data_test <- soil_data %>% 
-  left_join(plot_flux_data, by = "plotID")
+  left_join(plot_flux_data, by = "plotID", suffix = c("_soil", "_veg"))
 
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
@@ -122,7 +123,7 @@ summary_dung_soil <- summary_dung_soil %>%
 
 
 dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>% 
-  select(-4,-8,-14:-18, -20:-38) %>% 
+  dplyr::select(-4,-8,-14:-18, -20:-38) %>% 
   mutate(Animal = case_when(
     grepl("^C", base_code) ~ "Cow",
     grepl("^H", base_code) ~ "Horse")) 
@@ -141,7 +142,7 @@ C_bulkdensity <- ggplot(soil_data_nooutlier, aes(bulk_density, TC)) +
 ggsave(C_bulkdensity, file = "plots/C_bulkdensity.jpeg",  width = 6, height = 4)
 
 # comparing plant and soil CN
-soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio, plant_CN)) +
+soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio_soil, plant_CN)) +
   geom_point(aes(color = interaction(treatment, Animal)), size = 2) +
   stat_poly_line(color = "black") +
   stat_poly_eq(use_label(c("eq", "R2"))) +
@@ -154,8 +155,47 @@ soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio, plant_CN)) +
                                  "Control.Horse" = "#a68a64",
                                  "Fresh.Horse" = "#7f4f24"),
                       labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))
+soilCNvegCN
 ggsave(soilCNvegCN, file = "plots/soilCNvegCN.jpeg",  width = 6, height = 4)
   
+# Creating model with soil CN and plant CN
+mod_soilveg_CN <- glmmTMB(CN_ratio_soil ~ plant_CN * treatment * Animal , data = soil_data_test)
+
+# Model validation
+simulationOutput <- simulateResiduals(fittedModel = mod_soilveg_CN, n = 1000)
+testDispersion(simulationOutput)
+
+plot(simulationOutput)
+plotResiduals(simulationOutput, form = mod_soilveg_CN$CN_ratio_soil)
+plotResiduals(simulationOutput, form = mod_soilveg_CN$plant_CN)
+plotResiduals(simulationOutput, form = mod_soilveg_CN$treatment)
+plotResiduals(simulationOutput, form = mod_soilveg_CN$Animal)
+
+# Post-hoc-test
+test <- emmeans(mod_soilveg_CN, ~ treatment)
+contrast(test, method = "pairwise") %>% as.data.frame()
+
+# Making a plot
+soilvegCN_plot <- plot_model(mod_soilveg_CN, type = "pred", 
+                                   terms = c("plant_CN", "treatment", "Animal")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
+scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
+  xlab("Vegetation CN ratio") +
+  ylab("Soil CN ratio") +
+  labs(colour = "Treatment") + 
+  scale_y_continuous(limits = c(10,16)) + 
+  scale_x_continuous(limits = c(10, 40)) +
+  theme(panel.grid.minor = element_blank(),  
+        panel.grid.major.x = element_blank(),  
+        axis.line = element_line(color = "black")) +
+  geom_point(aes(x = plant_CN, y = CN_ratio_soil, color = treatment),
+             data = soil_data_test,
+             inherit.aes = FALSE)
+
+
+soilvegCN_plot
+
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
@@ -346,7 +386,31 @@ ggplot(flux_data %>% filter(treatment == "F"),
   ) +
   ggtitle("CO2 RE flux by dung area and plot type")
 
+# Modelling the fluxes in relation to dung size
+dung_flux_data <- flux_data %>% filter(treatment == "F")
 
 
+N2O_dungsize_model <- glmmTMB(N2O_flux ~ dung_area_cm2 * Animal, dung_flux_data)
+
+# Making a plot
+N2O_dungsize_plot <- plot_model(N2O_dungsize_model, type = "pred", 
+                             terms = c("dung_area_cm2", "Animal")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
+  scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
+  xlab(expression("Dung area (cm"^2*")")) +
+  ylab("N2O flux (units)")
+  # finish editing 
+  # scale_y_continuous(limits = c(10,16)) + 
+  # scale_x_continuous(limits = c(10, 40)) +
+  # theme(panel.grid.minor = element_blank(),  
+  #       panel.grid.major.x = element_blank(),  
+  #       axis.line = element_line(color = "black")) +
+  # geom_point(aes(x = plant_CN, y = CN_ratio_soil, color = treatment),
+  #            data = soil_data_test,
+  #            inherit.aes = FALSE)
+
+
+N2O_dungsize_plot
 
 

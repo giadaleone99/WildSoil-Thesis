@@ -503,18 +503,9 @@ ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regressi
 
 # Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
 # Fit linear models for each dataset
-SjPlot_model_gradient <- glmmTMB(veg_height_2 ~ total_veg_weight_gm2  * treatment, data = veg_gradient)
+SjPlot_model_gradient <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2   * treatment, data = veg_gradient)
 
-SjPlot_model_daily <- glmmTMB(veg_height_2 ~ total_veg_weight_gm2  * treatment, data = veg_daily)
-
-fixed_effects <- fixef(SjPlot_model_gradient)
-intercept <- fixed_effects[1]
-model_equation <- paste0("veg_height_2 = ", 
-                         round(intercept$cond[1], 2),
-                         " + ", round(intercept$cond[2], 2), " * total_veg_weight_gm2",
-                         " + ", round(intercept$cond[3], 2), " * treatment",
-                         " + ", round(intercept$cond[4], 2), " * total_veg_weight_gm2:treatment")
-cat("Model equation: ", model_equation)
+SjPlot_model_daily <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2    * treatment, data = veg_daily)
 
 #Validate modelsAnova(veg_height_daily_m1)
 # Model validation
@@ -530,44 +521,49 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
-                                   terms = c("total_veg_weight_gm2", "treatment"), 
-                                   title = "Gradient", show.p = TRUE) +
+                                   terms = c("veg_height_2", "treatment"), 
+                                   title = "Gradient" +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab(expression("Adjusted biomass (g/m"^2*")")) +
-  ylab("Predicted vegetation height (cm)") +
+  xlab("Predicted vegetation height (cm)") +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") + 
-  #scale_y_continuous(limits = c(0, 600)) + 
-  #scale_x_continuous(limits = c(0, 16)) +
+  scale_y_continuous(limits = c(0, 650)) + 
+  scale_x_continuous(breaks = seq(0, 18, by = 2)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black",),
-    axis.title.y = element_blank(),
-  )
+    axis.title.y = element_blank()) +
+  geom_point(aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment),
+             data = veg_gradient,
+             inherit.aes = FALSE))
 
 plot_gradient_effect
 
-7# Effect plot with predicted values for daily model
-plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
-                                terms = c("total_veg_weight_gm2", "treatment"), 
+# Effect plot with predicted values for daily model 
+plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", show.values = TRUE,
+                                terms = c("veg_height_2", "treatment"), 
                                 title = "Daily") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab(expression("Adjusted biomass (g/m"^2*")")) +
-  ylab("Predicted vegetation height (cm)") +
+  xlab("Predicted vegetation height (cm)") +
+  ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") +  
-  #scale_y_continuous(limits = c(0, 600)) + 
-  #scale_x_continuous(limits = c(0, 13)) +
+  scale_y_continuous(limits = c(0, 600)) + 
+  scale_x_continuous(breaks = seq(0, 13, by = 2)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black"),
-    legend.position = "none"
-  )
+   legend.position = "none") +
+  geom_point(aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment),
+                                        data = veg_daily,
+                                        inherit.aes = FALSE)
+   
 plot_daily_effect
 
 combined_model_plot <- plot_daily_effect + plot_gradient_effect
