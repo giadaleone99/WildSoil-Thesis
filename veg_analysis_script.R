@@ -503,17 +503,26 @@ ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regressi
 
 # Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
 # Fit linear models for each dataset
-SjPlot_model_gradient <- glmmTMB(total_veg_weight_gm2 ~  veg_height_2  * treatment, data = veg_gradient)
+SjPlot_model_gradient <- glmmTMB(veg_height_2 ~ total_veg_weight_gm2  * treatment, data = veg_gradient)
 
-SjPlot_model_daily <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2  * treatment, data = veg_daily)
+SjPlot_model_daily <- glmmTMB(veg_height_2 ~ total_veg_weight_gm2  * treatment, data = veg_daily)
+
+fixed_effects <- fixef(SjPlot_model_gradient)
+intercept <- fixed_effects[1]
+model_equation <- paste0("veg_height_2 = ", 
+                         round(intercept$cond[1], 2),
+                         " + ", round(intercept$cond[2], 2), " * total_veg_weight_gm2",
+                         " + ", round(intercept$cond[3], 2), " * treatment",
+                         " + ", round(intercept$cond[4], 2), " * total_veg_weight_gm2:treatment")
+cat("Model equation: ", model_equation)
 
 #Validate modelsAnova(veg_height_daily_m1)
 # Model validation
-simulationOutput <- simulateResiduals(fittedModel = SjPlot_model_daily, n = 1000)
+simulationOutput <- simulateResiduals(fittedModel = SjPlot_model_gradient, n = 1000)
 testDispersion(simulationOutput)
 
 plot(simulationOutput)
-plotResiduals(simulationOutput, form = SjPlot_model_gradient$treatment)
+plotResiduals(simulationOutput, form = SjPlot_model_daily$treatment)
 #plotResiduals(simulationOutput, form = gradient_veg_combined$treatment)
 # Post-hoc-test
 test <- emmeans(SjPlot_model_gradient, ~ treatment)
@@ -521,16 +530,16 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
-                                   terms = c("veg_height_2", "treatment"), 
+                                   terms = c("total_veg_weight_gm2", "treatment"), 
                                    title = "Gradient", show.p = TRUE) +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  ylab(expression("Adjusted biomass (g/m"^2*")")) +
-  xlab("Predicted vegetation height (cm)") +
+  xlab(expression("Adjusted biomass (g/m"^2*")")) +
+  ylab("Predicted vegetation height (cm)") +
   labs(colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 650)) + 
-  scale_x_continuous(limits = c(0, 16)) +
+  #scale_y_continuous(limits = c(0, 600)) + 
+  #scale_x_continuous(limits = c(0, 16)) +
   theme(
     panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
@@ -540,18 +549,18 @@ plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred",
 
 plot_gradient_effect
 
-# Effect plot with predicted values for daily model
+7# Effect plot with predicted values for daily model
 plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", 
-                                terms = c("veg_height_2", "treatment"), 
+                                terms = c("total_veg_weight_gm2", "treatment"), 
                                 title = "Daily") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  ylab(expression("Adjusted biomass (g/m"^2*")")) +
-  xlab("Predicted vegetation height (cm)") +
+  xlab(expression("Adjusted biomass (g/m"^2*")")) +
+  ylab("Predicted vegetation height (cm)") +
   labs(colour = "Treatment") +  
-  scale_y_continuous(limits = c(0, 500)) + 
+  #scale_y_continuous(limits = c(0, 600)) + 
   #scale_x_continuous(limits = c(0, 13)) +
   theme(
     panel.grid.minor = element_blank(),  
@@ -563,7 +572,7 @@ plot_daily_effect
 
 combined_model_plot <- plot_daily_effect + plot_gradient_effect
 combined_model_plot
-ggsave("veg_plots/model_biomass_vegheight_combined.jpeg", plot = combined_model_plot, width = 7, height = 4)
+ggsave("veg_plots/model_biomass_vegheight_combined1.jpeg", plot = combined_model_plot, width = 7, height = 4)
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -789,6 +798,8 @@ gradient_summary_stats <- gradient_veg_combined %>%
 dung_summary_stats <- dung_data %>%
   group_by(Animal) %>% 
   dplyr::summarise(
+    Nperc_mean = mean(Nperc, na.rm = TRUE),
+    Nperc_se = std.error(Nperc),
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),

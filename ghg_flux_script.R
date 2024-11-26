@@ -427,7 +427,9 @@ N2O_subset <- flux_data_ANOVA %>%
   convert_as_factor(treatment) %>% 
   convert_as_factor(Animal) %>% 
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
-         normalized_best.flux = bestNormalize(best.flux)$x.t)
+         normalized_best.flux = bestNormalize(best.flux)$x.t) %>% 
+  mutate(ranked_best.flux = rank(best.flux)) %>% 
+  mutate(logged_best.flux = log(0.48 + best.flux))
 
 ## GRADIENT SUBSETS --------------------
 gradient_subset <- flux_data_ANOVA %>% 
@@ -804,10 +806,14 @@ CO2_PS_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Sinc
 CO2_RE_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), family = tweedie, data = CO2_RE_subset)
 CH4_model1 <- glmmTMB(ranked_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
                       data = CH4_subset)
-CH4_model2 <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
-                      family = gaussian, data = CH4_subset)
-N2O_model <- glmmTMB(best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+CH4_model2 <- glmmTMB(normalized_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                      data = CH4_subset)
+N2O_model1 <- glmmTMB(ranked_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
                      data = N2O_subset)
+N2O_model2 <- glmmTMB(normalized_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                      data = N2O_subset)
+N2O_model3 <- glmmTMB(logged_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
+                      data = N2O_subset)
 
 
 run_model <- function(dataset, model) {
@@ -822,7 +828,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ Campaign|treatment|Animal)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
-run_model(CH4_subset, CH4_model1)
+run_model(N2O_subset, N2O_model3)
 
 
 # creating the models for all the subsets
