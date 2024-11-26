@@ -246,20 +246,23 @@ summary(model)
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
 CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + Campaign + SWC_. + bulk_density + (1|Days_Since_First), data = flux_data)
 
-CH4_model1 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data) #close
-CH4_model2 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment + Campaign + SWC_. + (1|Days_Since_First), data = flux_data) #everything works except for SWC
-CH4_model3 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #close
+#CH4_model1 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data) #close
+#CH4_model2 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment + Campaign + SWC_. + (1|Days_Since_First), data = flux_data) #everything works except for SWC
+#CH4_model3 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #close
 CH4_model4 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #good
 
-N2O_model1 <- glmmTMB(ranked_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
+#N2O_model1 <- glmmTMB(ranked_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 
-# more failed attempts
-CH4_model1 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * bulk_density * SWC_. + (1|Days_Since_First), data = flux_data)
-CH4_model2 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density * SWC_. + (1|Days_Since_First), data = flux_data)
+# more attempts
+CH4_model1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density * SWC_. + (1|Days_Since_First), data = flux_data)
 
-run_model(flux_data, N2O_model1)
+run_model(flux_data, CH4_model4)
 
+
+plot_model(CH4_model4, type = "pred", 
+           terms = c("Animal", "treatment"), 
+           title = "Gradient", show.p = TRUE)
 
 dung_fluxes <- flux_data %>% filter(treatment == "F")
 RE_dungarea_model <- glmmTMB(CO2_RE_flux ~ Animal * dung_area_cm2 + (1|Days_Since_First), data = dung_fluxes)
