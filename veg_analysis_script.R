@@ -522,7 +522,7 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
                                    terms = c("veg_height_2", "treatment"), 
-                                   title = "Gradient" +
+                                   title = "Gradient") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
@@ -538,7 +538,7 @@ plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred",
     axis.title.y = element_blank()) +
   geom_point(aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment),
              data = veg_gradient,
-             inherit.aes = FALSE))
+             inherit.aes = FALSE)
 
 plot_gradient_effect
 
