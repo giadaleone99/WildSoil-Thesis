@@ -159,7 +159,7 @@ soilCNvegCN
 ggsave(soilCNvegCN, file = "plots/soilCNvegCN.jpeg",  width = 6, height = 4)
   
 # Creating model with soil CN and plant CN
-mod_soilveg_CN <- glmmTMB(CN_ratio_soil ~ plant_CN * treatment * Animal , data = soil_data_test)
+mod_soilveg_CN <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment * Animal , data = soil_data_test)
 
 # Model validation
 simulationOutput <- simulateResiduals(fittedModel = mod_soilveg_CN, n = 1000)
@@ -177,19 +177,19 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Making a plot
 soilvegCN_plot <- plot_model(mod_soilveg_CN, type = "pred", 
-                                   terms = c("plant_CN", "treatment", "Animal")) +
+                                   terms = c("CN_ratio_soil", "treatment", "Animal")) +
   theme_minimal() +
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
 scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab("Vegetation CN ratio") +
-  ylab("Soil CN ratio") +
-  labs(colour = "Treatment") + 
-  scale_y_continuous(limits = c(10,16)) + 
-  scale_x_continuous(limits = c(10, 40)) +
-  theme(panel.grid.minor = element_blank(),  
-        panel.grid.major.x = element_blank(),  
+  xlab("Soil CN ratio") +
+  ylab("Vegetation CN ratio") +
+  labs(colour = "Treatment") +
+  scale_x_continuous(breaks = seq(10, 16, by = 1)) +
+  scale_y_continuous(breaks = seq(10, 50, by = 5)) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
         axis.line = element_line(color = "black")) +
-  geom_point(aes(x = plant_CN, y = CN_ratio_soil, color = treatment),
+  geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
              data = soil_data_test,
              inherit.aes = FALSE)
 
