@@ -93,7 +93,9 @@ flux_data <- flux_data %>%
          normalized_CH4_flux = bestNormalize(CH4_flux)$x.t) %>% 
   mutate(ranked_N2O_flux = rank(N2O_flux),
          normalized_N2O_flux = bestNormalize(N2O_flux)$x.t)
-
+hist(flux_data$normalized_N2O_flux)
+normalizeCH4 <- orderNorm(flux_data$N2O_flux)$x.t
+hist(normalizeCH4)
 #create df with dung soil data
 dung_soil_data <- soil_data_raw %>% 
   filter(sample_type %in% "Dung soil") %>% 
@@ -277,10 +279,11 @@ summary(model)
     plotResiduals(simuOutput, form = dataset$Animal)
     plotResiduals(simuOutput, form = dataset$treatment)
     plotResiduals(simuOutput, form = dataset$Campaign)
-    plotResiduals(simuOutput, form = dataset$SWC_.)
     plotResiduals(simuOutput, form = dataset$bulk_density)
-    test <- emmeans(model, ~ treatment|Animal|Campaign|SWC_.|bulk_density)
-    contrast(test, method = "pairwise") %>% as.data.frame()
+    test1 <- emmeans(model, ~ treatment|Animal|Campaign|bulk_density)
+    test2 <- emmeans(model, ~ Animal|Campaign|treatment|bulk_density)
+    test3 <- emmeans(model, ~ Campaign|treatment|Animal|bulk_density)
+    contrast(test1, method = "pairwise") %>% as.data.frame()
   }
   
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
@@ -289,13 +292,12 @@ CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + Campaign + SWC_. + bu
 #CH4_model1 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data) #close
 #CH4_model2 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment + Campaign + SWC_. + (1|Days_Since_First), data = flux_data) #everything works except for SWC
 #CH4_model3 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #close
-CH4_model4 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #good
+CH4_model4 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density + (1|Days_Since_First), data = flux_data) #best
+CH4_model5 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign + bulk_density + S_temp + (1|Days_Since_First), data = flux_data) #good
 
 #N2O_model1 <- glmmTMB(ranked_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
-
-# more attempts
-CH4_model1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_density * SWC_. + (1|Days_Since_First), data = flux_data)
+N2O_model3 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
 run_model(flux_data, CH4_model4)
 
