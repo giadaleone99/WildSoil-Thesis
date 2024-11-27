@@ -183,8 +183,8 @@ soilvegCN_plot <- plot_model(mod_soilveg_CN, type = "pred",
 scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
   xlab("Soil CN ratio") +
   ylab("Vegetation CN ratio") +
-  labs(colour = "Treatment") +
-  scale_x_continuous(breaks = seq(10, 16, by = 1)) +
+  labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  scale_x_continuous(breaks = seq(10, 18, by = 1)) +
   scale_y_continuous(breaks = seq(10, 50, by = 5)) +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -195,7 +195,7 @@ scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
 
 
 soilvegCN_plot
-
+ggsave(soilvegCN_plot, file = "veg_plots/soilvegCN_plot.jpeg",  width = 6, height = 4)
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
@@ -299,33 +299,9 @@ CH4_model1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk
 
 run_model(flux_data, CH4_model4)
 
-
 plot_model(CH4_model4, type = "pred", 
            terms = c("Animal", "treatment"), 
            title = "Gradient", show.p = TRUE)
-
-dung_fluxes <- flux_data %>% filter(treatment == "F")
-RE_dungarea_model <- glmmTMB(CO2_RE_flux ~ Animal * dung_area_cm2 + (1|Days_Since_First), data = dung_fluxes)
-CH4_dungarea_model <- glmmTMB(CH4_flux ~ Animal * dung_area_cm2 + Campaign + (1|Days_Since_First), data = dung_fluxes)
-N2O_dungarea_model <- glmmTMB(N2O_flux ~ Animal * dung_area_cm2 + Campaign + (1|Days_Since_First), data = dung_fluxes)
-
-
-run_model2 <- function(dataset, model) {
-  #print(summary(model))
-  print(Anova(model))
-  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  testDispersion(simuOutput)
-  plot(simuOutput)
-  plotResiduals(simuOutput, form = dataset$Animal)
-  #plotResiduals(simuOutput, form = dataset$Campaign)
-  plotResiduals(simuOutput, form = dataset$dung_area_cm2)
-  test <- emmeans(model, ~ Animal|dung_area_cm2)
-  contrast(test, method = "pairwise") %>% as.data.frame()
-  interactions::interact_plot(model, pred = dung_area_cm2, modx = Animal)
-  
-}
-
-run_model2(dung_fluxes, RE_dungarea_model)
 
 # Relate fluxes to dung dimensions
 ggplot(flux_data %>% filter(treatment == "F"),
@@ -343,8 +319,7 @@ ggplot(flux_data %>% filter(treatment == "F"),
                      labels = c("Cow dung", "Horse dung")) +
   theme(
     legend.position = "right",    
-    plot.title = element_text(hjust = 0.5)
-  ) +
+    plot.title = element_text(hjust = 0.5)) +
   ggtitle("CH4 flux by dung area and plot type")
 
 
@@ -355,16 +330,14 @@ ggplot(flux_data %>% filter(treatment == "F"),
   labs(
     x = "Dung Area (cm²)",        
     y = "N2O flux",        
-    color = "Plot type"           
-  ) +
+    color = "Plot type") +
   theme_minimal() +               
   scale_color_manual(values = c("F.Cow" = "#656D4A",
                                 "F.Horse" = "#7F4F24"),
                      labels = c("Cow dung", "Horse dung"))+
   theme(
     legend.position = "right",    
-    plot.title = element_text(hjust = 0.5)
-  ) +
+    plot.title = element_text(hjust = 0.5)) +
   ggtitle("N2O flux by dung area and plot type")
 
 ggplot(flux_data %>% filter(treatment == "F"),
@@ -374,43 +347,95 @@ ggplot(flux_data %>% filter(treatment == "F"),
   labs(
     x = "Dung Area (cm²)",        
     y = "CO2 RE flux",        
-    color = "Plot type"           
-  ) +
+    color = "Plot type") +
   theme_minimal() +               
   scale_color_manual(values = c("F.Cow" = "#656D4A",
                                 "F.Horse" = "#7F4F24"),
                      labels = c("Cow dung", "Horse dung"))+
   theme(
     legend.position = "right",    
-    plot.title = element_text(hjust = 0.5)
-  ) +
+    plot.title = element_text(hjust = 0.5)) +
   ggtitle("CO2 RE flux by dung area and plot type")
 
 # Modelling the fluxes in relation to dung size
 dung_flux_data <- flux_data %>% filter(treatment == "F")
 
-
 N2O_dungsize_model <- glmmTMB(N2O_flux ~ dung_area_cm2 * Animal, dung_flux_data)
+CH4_dungsize_model <- glmmTMB(CH4_flux ~ dung_area_cm2 * Animal, dung_flux_data)
+CO2_RE_dungsize_model <- glmmTMB(CO2_RE_flux ~ dung_area_cm2 * Animal, dung_flux_data)
 
-# Making a plot
+print(Anova(CO2_RE_dungsize_model))
+simuOutput <- simulateResiduals(fittedModel = CO2_RE_dungsize_model, n = 1000)
+testDispersion(simuOutput)
+plot(simuOutput)
+plotResiduals(simuOutput, form = dung_flux_data$Animal)
+plotResiduals(simuOutput, form = dung_flux_data$dung_area_cm2)
+test <- emmeans(CO2_RE_dungsize_model, ~ Animal|dung_area_cm2)
+contrast(test, method = "pairwise") %>% as.data.frame()
+
+# Making N2O  plot
 N2O_dungsize_plot <- plot_model(N2O_dungsize_model, type = "pred", 
                              terms = c("dung_area_cm2", "Animal")) +
   theme_minimal() +
   scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
   scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
   xlab(expression("Dung area (cm"^2*")")) +
-  ylab("N2O flux (units)")
-  # finish editing 
-  # scale_y_continuous(limits = c(10,16)) + 
-  # scale_x_continuous(limits = c(10, 40)) +
-  # theme(panel.grid.minor = element_blank(),  
-  #       panel.grid.major.x = element_blank(),  
-  #       axis.line = element_line(color = "black")) +
-  # geom_point(aes(x = plant_CN, y = CN_ratio_soil, color = treatment),
-  #            data = soil_data_test,
-  #            inherit.aes = FALSE)
+  ylab(expression("nmol N2O m"^{-2} * " s"^{-1})) +
+  labs(title = "Predicted values of N2O flux") +
+  scale_y_continuous(breaks = seq(-5,10, by = 5)) + 
+  scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
+  theme(panel.grid.minor = element_blank(),  
+  panel.grid.major.x = element_blank(),  
+  axis.line = element_line(color = "black")) +
+  geom_point(aes(x = dung_area_cm2, y = N2O_flux, color = Animal),
+                data = subset(dung_flux_data, N2O_flux <= 10),
+                inherit.aes = FALSE)
 
 
 N2O_dungsize_plot
+ggsave(N2O_dungsize_plot, file = "plots/N2O_dungsize_plot.jpeg",  width = 6, height = 4)
 
+# Making CH4  plot
+CH4_dungsize_plot <- plot_model(CH4_dungsize_model, type = "pred", 
+                                terms = c("dung_area_cm2", "Animal")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
+  scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
+  xlab(expression("Dung area (cm"^2*")")) +
+  ylab(expression("nmol CH4 m"^{-2} * " s"^{-1})) +
+  labs(title = "Predicted values of CH4 flux") +
+  scale_y_continuous(breaks = seq(-5,160, by = 25)) + 
+  scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
+  theme(panel.grid.minor = element_blank(),  
+        panel.grid.major.x = element_blank(),  
+        axis.line = element_line(color = "black")) +
+  geom_point(aes(x = dung_area_cm2, y = CH4_flux, color = Animal),
+             data = dung_flux_data,
+             inherit.aes = FALSE)
+
+
+CH4_dungsize_plot
+ggsave(CH4_dungsize_plot, file = "plots/CH4_dungsize_plot.jpeg",  width = 6, height = 4)
+
+# Making CO2 RE  plot
+CO2_RE_dungsize_plot <- plot_model(CO2_RE_dungsize_model, type = "pred", 
+                                terms = c("dung_area_cm2", "Animal")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
+  scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
+  xlab(expression("Dung area (cm"^2*")")) +
+  ylab(expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
+  labs(title = "Predicted values of CO2 RE flux") +
+  scale_y_continuous(breaks = seq(0,40, by = 5)) + 
+  scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
+  theme(panel.grid.minor = element_blank(),  
+        panel.grid.major.x = element_blank(),  
+        axis.line = element_line(color = "black")) +
+  geom_point(aes(x = dung_area_cm2, y = CO2_RE_flux, color = Animal),
+             data = dung_flux_data,
+             inherit.aes = FALSE)
+
+
+CO2_RE_dungsize_plot
+ggsave(CO2_RE_dungsize_plot, file = "plots/CO2_RE_dungsize_plot.jpeg",  width = 6, height = 4)
 
