@@ -816,7 +816,7 @@ dung_summary_stats <- dung_data %>%
     Mg_se = std.error(Mg)
   )
 
-# Species data analysis # HERE!
+# Species data analysis
 species_summary <- species_list %>%
   group_by(plot_id) %>%
   dplyr::summarise(species_count = n_distinct(species_list)) %>% 
@@ -1148,7 +1148,7 @@ saveRDS(veg_growth, file = "plant_data/veg_growth_data.rds")
 ## Plotting relationship between CN ratio in the dung compared to the CN ratio of the vegetation
 vegCN <- vegdung_lab %>% 
   filter(Kode_3 != "Dung") %>% 
-  dplyr::dplyr::select(Kode_1, CN_ratio, "N%") %>% 
+  dplyr::select(Kode_1, CN_ratio, "N%") %>% 
   filter(grepl(".F", Kode_1)) %>% 
   mutate(dung_name =  case_when(
     grepl("^CG", Kode_1) ~ "CG",
