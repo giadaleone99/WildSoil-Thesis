@@ -405,7 +405,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ sample_type|Animal|Campaign)
   test2 <- emmeans(model, ~ Campaign|sample_type|Animal)
   test3 <- emmeans(model, ~ Animal|Campaign|sample_type)
-  contrast(test3, method = "pairwise") %>% as.data.frame()
+  contrast(test, method = "pairwise") %>% as.data.frame()
 }
 
 # Soil parameters
@@ -423,7 +423,7 @@ Soil_pH_b1 <- glmmTMB(pH ~ Animal * sample_type * Campaign * bulk_density + (1|b
 Soil_PO4.P_b1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign * bulk_density + (1|base_code), data = combined_soil)
 
 # Change this accordingly 
-run_model(combined_soil, Soil_pH_m1)
+run_model(combined_soil, Soil_CNratio_m1)
 
 # model effects
 Soil_CNratio_effects <- allEffects(Soil_CNratio_m1)

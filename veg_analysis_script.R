@@ -444,13 +444,22 @@ veg_percent <- veg_percent %>%
   dplyr::mutate(
     species_per_vegclass = lookup_species[paste(plot_id, veg_category, sep = "_")]
   )
+palette25 <- Polychrome::light.colors(24)
+palette25 <- c(palette25, '#781203')
+show_col(palette25)
 
-percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = veg_class)) +
+cols <- c("#FD3216", "#00FE35", "#6A76FC", "#FED4C4", "#FE00CE", "#0DF9FF", "#F6F926", "#FF9616", "#479B55", "#EEA6FB" ,
+  "#DC587D", "#D626FF", "#6E899C", "#00B5F7", "#B68E00", "#C9FBE5", "#FF0092", "#22FFA7", "#E3EE9E", "#86CE00",
+  "#BC7196", "#7E7DCD", "#FC6955", "#E48F72", "#781203")
+
+percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = factor(veg_class)))  +
   geom_bar(position = "fill", stat = "identity") +
   facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="Short temporal campaign", Gradient="Long temporal campaign"))) +
   xlab("\nPlot ID") + ylab("Proportion of total forb weight") +
   theme_minimal() +
-  scale_fill_paletteer_d("Polychrome::palette36") +
+  scale_fill_manual(values = c("#D95F30FF", "#A89E5EFF", "#8785B2FF", "#FED4C4", "#FE00CE", "#0DF9FF", "#F8D564FF", "#FF9616", "#479B55", "#EEA6FB" ,
+                      "#DC587D", "#D626FF", "#6E899C", "#00B5F7", "#B68E00", "#C9FBE5", "#FF0092", "#22FFA7", "#E3EE9E", "#86CE00",
+                      "#BC7196", "#7E7DCD", "#FC6955", "#E48F72", "#846D86FF"))+
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), strip.text = element_text(size=13),
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), legend.position = "bottom") +
@@ -1033,7 +1042,7 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ treatment|Animal|Campaign)
   test2 <- emmeans(model, ~ Animal|treatment|Campaign)
   test3 <- emmeans(model, ~ Campaign|Animal|treatment)
-  contrast(test, method = "pairwise") %>% as.data.frame()
+  contrast(test3, method = "pairwise") %>% as.data.frame()
 }
 
 #dailies
@@ -1057,7 +1066,7 @@ veg_growth_m1 <- glmmTMB(height_value ~ Animal * treatment * Campaign + (1|base_
 veg_biomass_m1 <- glmmTMB(total_veg_weight_gm2 ~ treatment * Animal * Campaign + (1|base_code), data = veg_combined)
 veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 
-run_model(gradient_veg_combined, veg_height_gradient_m1)
+run_model(veg_combined, veg_cn_m1)
 
 #test model effects
 veg_height_effects <- allEffects(veg_height_m1)

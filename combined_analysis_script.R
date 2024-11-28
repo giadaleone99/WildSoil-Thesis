@@ -9,6 +9,8 @@ library(interactions)
 library(plotrix)
 library(ggpmisc)
 library(bestNormalize)
+library(effects)
+library(sjPlot)
 
 
 # Import data
@@ -140,18 +142,38 @@ C_bulkdensity <- ggplot(soil_data_nooutlier, aes(bulk_density, TC)) +
   stat_poly_eq(use_label(c("eq", "R2"))) +
   theme_minimal() +
   labs(x = "Bulk density (g/cm3)", y = "Total carbon")
-
+C_bulkdensity
 ggsave(C_bulkdensity, file = "plots/C_bulkdensity.jpeg",  width = 6, height = 4)
 
 # comparing plant and soil CN
+ggplot(horsedata, aes(x = CN_ratio_soil, y = plant_CN, colour = treatment)) +
+  geom_point() + 
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
+  geom_smooth(method = "lm") +
+  labs(
+    x = "CN soil",        
+    y = "CN veg",        
+    color = "treatment") +
+  theme_minimal() +               
+  scale_color_manual(values = c("Control" = "#656D4A",
+                                "Fresh" = "#7F4F24"),
+                     labels = c("Control", "Fresh")) +
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)) +
+  ggtitle("CO2 RE flux by dung area and plot type")
+
 soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio_soil, plant_CN)) +
   geom_point(aes(color = interaction(treatment, Animal)), size = 2) +
-  stat_poly_line(color = "black") +
-  stat_poly_eq(use_label(c("eq", "R2"))) +
+  # stat_poly_line(color = "black") +
   theme_minimal() +
+  stat_poly_eq(use_label(c( "R2", "p"))) +
+  geom_smooth(method = "lm", aes(group = factor(treatment), color = interaction(treatment, Animal))) +
+  # stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   scale_y_continuous(expand = c(0, 5)) +
   labs(x = "Soil CN ratio", y = "Vegetation CN ratio",
        colour = "Plot type")+
+  facet_wrap(~Animal) +
   scale_colour_manual(values = c("Control.Cow" = "#a4ac86",
                                  "Fresh.Cow" = "#656d4a",
                                  "Control.Horse" = "#a68a64",
@@ -160,12 +182,23 @@ soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio_soil, plant_CN)) +
 soilCNvegCN
 ggsave(soilCNvegCN, file = "plots/soilCNvegCN.jpeg",  width = 6, height = 4)
   
+
 # Creating model with soil CN and plant CN
 mod_soilveg_CN <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment * Animal , data = soil_data_test)
 
+horsedata <- soil_data_test %>% 
+  filter(Animal == "Horse")
+
+
+cowdata <- soil_data_test %>% 
+  filter(Animal == "Cow")
+
+modHorse <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment, data = horsedata)
+modCow <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment, data = cowdata)
 # Model validation
 simulationOutput <- simulateResiduals(fittedModel = mod_soilveg_CN, n = 1000)
 testDispersion(simulationOutput)
+print(Anova(mod_soilveg_CN))
 
 plot(simulationOutput)
 plotResiduals(simulationOutput, form = mod_soilveg_CN$CN_ratio_soil)
@@ -186,18 +219,58 @@ scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
   xlab("Soil CN ratio") +
   ylab("Vegetation CN ratio") +
   labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
+             data = soil_data_test,
+             inherit.aes = FALSE) +
   scale_x_continuous(breaks = seq(10, 18, by = 1)) +
   scale_y_continuous(breaks = seq(10, 50, by = 5)) +
   theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank(),
-        axis.line = element_line(color = "black")) +
-  geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
-             data = soil_data_test,
-             inherit.aes = FALSE)
+        axis.line = element_line(color = "black"))
 
+HorsevegCN_plot <- plot_model(modHorse, type = "pred", 
+                             terms = c("CN_ratio_soil", "treatment")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Fresh" = "#7f4f24", "Control" = "#a68a64"), labels = c("Control", "Dung")) +
+  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
+  xlab("Soil CN ratio") +
+  ylab("Vegetation CN ratio") +
+  labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
+             data = horsedata,
+             inherit.aes = FALSE) +
+  scale_x_continuous(breaks = seq(10, 15, by = 1)) +
+  scale_y_continuous(limits = c(10, 40)) +
+  theme(panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+
+HorsevegCN_plot
+
+CowvegCN_plot <- plot_model(modCow, type = "pred", 
+                              terms = c("CN_ratio_soil", "treatment")) +
+  theme_minimal() +
+  scale_color_manual(values = c("Fresh" = "#656d4a", "Control" = "#a4ac86"), labels = c("Control", "Dung")) +
+  scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
+  xlab("Soil CN ratio") +
+  ylab("Vegetation CN ratio") +
+  labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
+             data = cowdata,
+             inherit.aes = FALSE) +
+  scale_x_continuous() +
+  scale_y_continuous(limits = c(10, 40)) +
+  theme(panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"),
+        legend.position = "none")
+
+CowvegCN_plot
+
+combinedCNplot <- CowvegCN_plot + HorsevegCN_plot
+combinedCNplot
+
+plot_grid(CowvegCN_plot, HorsevegCN_plot, ncol = 2)
 
 soilvegCN_plot
-ggsave(soilvegCN_plot, file = "veg_plots/soilvegCN_plot.jpeg",  width = 6, height = 4)
+ggsave(combinedCNplot, file = "veg_plots/soilvegCN_plot.jpeg",  width = 6, height = 4)
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
@@ -253,7 +326,7 @@ mod <- glmmTMB(P ~ PO4.P, data = growth_model_data)
 summary(mod)
 print(Anova(mod))
 
-model <- glmmTMB(height_value ~ treatment * Animal * CN_ratio * PO4.P, data = growth_model_data)
+model <- glmmTMB(height_value ~ Animal * CN_ratio * PO4.P * treatment, data = growth_model_data)
 summary(model)
 
   print(Anova(model))
@@ -264,11 +337,13 @@ summary(model)
   plotResiduals(simuOutput, form = growth_model_data$treatment)
   plotResiduals(simuOutput, form = growth_model_data$CN_ratio)
   plotResiduals(simuOutput, form = growth_model_data$PO4.P)
-  plotResiduals(simuOutput, form = growth_model_data$P)
-  test <- emmeans(model, ~ Animal|treatment*PO4.P*CN_ratio)
-  contrast(test, method = "pairwise") %>% as.data.frame()
-  interactions::interact_plot(model, pred = PO4.P, modx = Animal)
-
+  test1 <- emmeans(model, ~ Animal|treatment|PO4.P|CN_ratio)
+  test2 <- emmeans(model, ~ treatment|PO4.P|CN_ratio|Animal)
+  contrast(test2, method = "pairwise") %>% as.data.frame()
+  interactions::interact_plot(model, pred = PO4.P, modx = treatment)
+  modeleffects <- allEffects(model)
+  plot(modeleffects)
+  
 # Run gas flux models with soil moisture and temperature as random factors
   run_model <- function(dataset, model) {
     #print(summary(model))
@@ -279,10 +354,11 @@ summary(model)
     plotResiduals(simuOutput, form = dataset$Animal)
     plotResiduals(simuOutput, form = dataset$treatment)
     plotResiduals(simuOutput, form = dataset$Campaign)
+    plotResiduals(simuOutput, form = dataset$SWC_.)
     plotResiduals(simuOutput, form = dataset$bulk_density)
-    test1 <- emmeans(model, ~ treatment|Animal|Campaign|bulk_density)
-    test2 <- emmeans(model, ~ Animal|Campaign|treatment|bulk_density)
-    test3 <- emmeans(model, ~ Campaign|treatment|Animal|bulk_density)
+    test1 <- emmeans(model, ~ treatment|Animal|Campaign|SWC_.)
+    test2 <- emmeans(model, ~ Animal * treatment + Campaign + SWC_. + bulk_density)
+    test3 <- emmeans(model, ~ Campaign|treatment|Animal|SWC_.|bulk_density)
     contrast(test1, method = "pairwise") %>% as.data.frame()
   }
   
@@ -299,7 +375,7 @@ CH4_model5 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign + bulk
 N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model3 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
-run_model(flux_data, CH4_model4)
+run_model(flux_data, CO2_RE_model)
 
 plot_model(CH4_model4, type = "pred", 
            terms = c("Animal", "treatment"), 
@@ -309,7 +385,8 @@ plot_model(CH4_model4, type = "pred",
 ggplot(flux_data %>% filter(treatment == "F"),
         aes(x = dung_area_cm2, y = CH4_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
-  geom_smooth(method = "lm")+
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
+  geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
     y = "CH4 flux",        
@@ -328,6 +405,7 @@ ggplot(flux_data %>% filter(treatment == "F"),
 ggplot(flux_data %>% filter(treatment == "F"),
        aes(x = dung_area_cm2, y = N2O_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
@@ -336,7 +414,7 @@ ggplot(flux_data %>% filter(treatment == "F"),
   theme_minimal() +               
   scale_color_manual(values = c("F.Cow" = "#656D4A",
                                 "F.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung"))+
+                     labels = c("Cow dung", "Horse dung")) +
   theme(
     legend.position = "right",    
     plot.title = element_text(hjust = 0.5)) +
@@ -345,6 +423,7 @@ ggplot(flux_data %>% filter(treatment == "F"),
 ggplot(flux_data %>% filter(treatment == "F"),
        aes(x = dung_area_cm2, y = CO2_RE_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
@@ -353,7 +432,7 @@ ggplot(flux_data %>% filter(treatment == "F"),
   theme_minimal() +               
   scale_color_manual(values = c("F.Cow" = "#656D4A",
                                 "F.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung"))+
+                     labels = c("Cow dung", "Horse dung")) +
   theme(
     legend.position = "right",    
     plot.title = element_text(hjust = 0.5)) +
