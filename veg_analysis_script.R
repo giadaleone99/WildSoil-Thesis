@@ -475,12 +475,13 @@ scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = t
   geom_point() + geom_smooth(method = lm)
 print(scatterplot)
 
-gradient_regression <- ggplot(veg_gradient, aes(x = biomass, y = veg_height_2, color = treatment)) +
+gradient_regression <- ggplot(veg_gradient, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
   geom_point() + geom_smooth(method = lm) +
   theme_minimal() +
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("B") +
+  ggtitle("Gradient") +
   scale_color_manual(values = c("Dung" = "black", "Control" = "gray")) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
@@ -489,12 +490,13 @@ gradient_regression <- ggplot(veg_gradient, aes(x = biomass, y = veg_height_2, c
 
 print(gradient_regression)
 
-daily_regression <- ggplot(veg_daily, aes(x = biomass, y = veg_height_2, color = treatment)) +
+daily_regression <- ggplot(veg_daily, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
   geom_point() + geom_smooth(method = lm) +
   theme_minimal() +
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("A") +
+  ggtitle("Daily") +
   labs(colour = "Treatment") +
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
