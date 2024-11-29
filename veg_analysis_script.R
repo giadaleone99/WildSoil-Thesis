@@ -382,15 +382,14 @@ dailyvegbiomassbox <- ggplot(veg_daily, aes(x = Animal, y = total_veg_weight_gm2
   xlab("\nAnimal") + ylab(expression("Adjusted biomass (g/m"^2*")")) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        axis.text.x = element_text(size = 12)) +
+        panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung","Horse control", "Horse dung"))+
-  ggtitle("Short term campaign") +
+  ggtitle("A") +
   scale_y_continuous(limits = c(80, 450), breaks = seq(100, 400, by = 100)) +
   theme(legend.position = "none")
 dailyvegbiomassbox
@@ -401,8 +400,7 @@ gradientvegbiomassbox <- ggplot(veg_gradient, aes(x = Animal, y = total_veg_weig
   xlab("\nAnimal") + ylab(NULL) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        axis.text.x = element_text(size = 12)) +
+        panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
@@ -410,7 +408,7 @@ gradientvegbiomassbox <- ggplot(veg_gradient, aes(x = Animal, y = total_veg_weig
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung","Horse control", "Horse dung"))+
   scale_y_continuous(limits = c(80, 450), breaks = seq(100, 400, by = 100)) +
-  ggtitle("Long term campaign")
+  ggtitle("B")
 gradientvegbiomassbox
 
 vegbiomassbox <- dailyvegbiomassbox + gradientvegbiomassbox
@@ -454,7 +452,7 @@ cols <- c("#FD3216", "#00FE35", "#6A76FC", "#FED4C4", "#FE00CE", "#0DF9FF", "#F6
 
 percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = factor(veg_class)))  +
   geom_bar(position = "fill", stat = "identity") +
-  facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="Short temporal campaign", Gradient="Long temporal campaign"))) +
+  facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="A", Gradient="B"))) +
   xlab("\nPlot ID") + ylab("Proportion of total forb weight") +
   theme_minimal() +
   scale_fill_manual(values = c("#D95F30FF", "#A89E5EFF", "#8785B2FF", "#FED4C4", "#FE00CE", "#0DF9FF", "#F8D564FF", "#FF9616", "#479B55", "#EEA6FB" ,
@@ -482,7 +480,7 @@ gradient_regression <- ggplot(veg_gradient, aes(x = biomass, y = veg_height_2, c
   theme_minimal() +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("Gradient") +
+  ggtitle("B") +
   scale_color_manual(values = c("Dung" = "black", "Control" = "gray")) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
@@ -496,7 +494,7 @@ daily_regression <- ggplot(veg_daily, aes(x = biomass, y = veg_height_2, color =
   theme_minimal() +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("Daily") +
+  ggtitle("A") +
   labs(colour = "Treatment") +
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
@@ -531,11 +529,11 @@ contrast(test, method = "pairwise") %>% as.data.frame()
 # Effect plot with predicted values for gradient model
 plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
                                    terms = c("veg_height_2", "treatment"), 
-                                   title = "Gradient") +
+                                   title = "B") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab("Predicted vegetation height (cm)") +
+  xlab("Vegetation height (cm)") +
   ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") + 
   scale_y_continuous(limits = c(0, 650)) + 
@@ -554,15 +552,15 @@ plot_gradient_effect
 # Effect plot with predicted values for daily model 
 plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", show.values = TRUE,
                                 terms = c("veg_height_2", "treatment"), 
-                                title = "Daily") +
+                                title = "A") +
   theme_minimal() +  
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab("Predicted vegetation height (cm)") +
+  xlab("Vegetation height (cm)") +
   ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") +  
-  scale_y_continuous(limits = c(0, 600)) + 
+  scale_y_continuous(limits = c(0, 650)) + 
   scale_x_continuous(breaks = seq(0, 13, by = 2)) +
   theme(
     panel.grid.minor = element_blank(),  
@@ -651,15 +649,14 @@ gradientcnplot <- ggplot(veg_gradient, aes(x = Animal, y = CN_ratio, fill = inte
   scale_y_continuous(limits = c(12, 38), breaks = seq(12, 38, by = 4)) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        axis.text.x = element_text(size = 12)) +
+        panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung","Horse control", "Horse dung"))+
-  ggtitle("Long term campaign")
+  ggtitle("B")
 gradientcnplot
 ggsave(filename = "veg_plots/gradientcn.jpeg", plot = gradientcnplot, width = 6, height = 4)
 
@@ -670,22 +667,21 @@ dailycnplot <- ggplot(veg_daily, aes(x = Animal, y = CN_ratio, fill = interactio
   scale_y_continuous(limits = c(12, 38), breaks = seq(12, 38, by = 4)) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        axis.text.x = element_text(size = 12)) +
+        panel.border = element_blank(), axis.line = element_line()) +
   labs(fill = "Plot type") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86", 
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))+
-  ggtitle("Short term campaign") +
+  ggtitle("A") +
   theme(legend.position = "none")
 dailycnplot
 ggsave(filename = "veg_plots/dailycn.jpeg", plot = dailycnplot, width = 6, height = 4)
 
 combinedcnplot <- dailycnplot + gradientcnplot
 combinedcnplot
-ggsave(filename = "veg_plots/combinedcn.jpeg", plot = combinedcnplot, width = 8, height = 4)
+ggsave(filename = "veg_plots/combinedcn.jpeg", plot = combinedcnplot, width = 6, height = 4)
 
 ### STATISTICS ------------------------------------------------------------------------
 
