@@ -416,14 +416,17 @@ vegbiomassbox
 ggsave(filename = "veg_plots/vegbiomassbox.jpeg", plot = vegbiomassbox, width = 6, height = 4)
 
 # Percent stacked barplot for veg weight per species
-veg_class_order <- c("Bryophytes", "Graminoids", "Achillea millefolium", "Campanula rotundifolia", "Cerastium fontanum", "Dandelions and false dandelions", "Daucus carota", 
+veg_class_order <- c("Achillea millefolium", "Campanula rotundifolia", "Cerastium fontanum", "Daucus carota", 
                      "Euphrasia stricta", "Galium verum", "Hypericum perforatum", "Jacobaea vulgaris", "Knautia arvensis", "Pilosella officinarum", "Pimpinella saxifraga", 
-                     "Plantago lanceolata", "Ranunculus sp.", "Rosa canina", "Rumex acetosa", "Rumex acetosella", "Stellaria graminea", "Trifolium arvense", 
+                     "Plantago lanceolata", "Ranunculus sp.", "Rosa canina", "Rumex acetosa", "Rumex acetosella", "Stellaria graminea", "Dandelions and false dandelions", "Trifolium arvense", 
                      "Trifolium campestre", "Trifolium pratense", "Trifolium repens", "Veronica chamaedrys", "Veronica officinalis", "Vicia sativa")
 
 veg_percent <- veg_new %>% 
   mutate(veg_class = factor(veg_class, levels = veg_class_order)) %>% 
   filter(veg_category == "Forbs")
+
+veg_percent <- veg_percent %>% 
+  mutate(across("veg_class", str_replace, "Dandelions and false dandelions", "Taraxacum sp. and false dandelions"))
 
 species_data <- species_list %>%
   group_by(plot_id, veg_class) %>%
@@ -442,21 +445,14 @@ veg_percent <- veg_percent %>%
   dplyr::mutate(
     species_per_vegclass = lookup_species[paste(plot_id, veg_category, sep = "_")]
   )
-palette25 <- Polychrome::light.colors(24)
-palette25 <- c(palette25, '#781203')
-show_col(palette25)
-
-cols <- c("#FD3216", "#00FE35", "#6A76FC", "#FED4C4", "#FE00CE", "#0DF9FF", "#F6F926", "#FF9616", "#479B55", "#EEA6FB" ,
-  "#DC587D", "#D626FF", "#6E899C", "#00B5F7", "#B68E00", "#C9FBE5", "#FF0092", "#22FFA7", "#E3EE9E", "#86CE00",
-  "#BC7196", "#7E7DCD", "#FC6955", "#E48F72", "#781203")
 
 percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = factor(veg_class)))  +
   geom_bar(position = "fill", stat = "identity") +
   facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="A", Gradient="B"))) +
   xlab("\nPlot ID") + ylab("Proportion of total forb weight") +
   theme_minimal() +
-  scale_fill_manual(values = c("#D95F30FF", "#A89E5EFF", "#8785B2FF", "#FED4C4", "#FE00CE", "#0DF9FF", "#F8D564FF", "#FF9616", "#479B55", "#EEA6FB" ,
-                      "#DC587D", "#D626FF", "#6E899C", "#00B5F7", "#B68E00", "#C9FBE5", "#FF0092", "#22FFA7", "#E3EE9E", "#86CE00",
+  scale_fill_manual(values = c("#D95F30FF", "#A89E5EFF", "#8785B2FF", "#FE00CE", "#0DF9FF", "#F8D564FF", "#FF9616", "#479B55", "#EEA6FB" ,
+                      "#DC587D", "#D626FF", "#6E899C", "#00B5F7", "#B68E00", "#C9FBE5", "#FF0092", "#22FFA7", "#FED4C4", "#E3EE9E", "#86CE00",
                       "#BC7196", "#7E7DCD", "#FC6955", "#E48F72", "#846D86FF"))+
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), strip.text = element_text(size=13),
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
@@ -474,6 +470,12 @@ ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width 
 scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = treatment)) +
   geom_point() + geom_smooth(method = lm)
 print(scatterplot)
+
+# test assumptions of the lms
+gradient_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_gradient)
+daily_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_daily)
+
+plot(daily_reg)
 
 gradient_regression <- ggplot(veg_gradient, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
   geom_point() + geom_smooth(method = lm) +
@@ -1075,9 +1077,10 @@ plot(veg_biomass_effects)
 
 
 dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)
-summary(dung_cn_m1)
-Anova(dung_cn_m1)
-simulationOutput <- simulateResiduals(fittedModel = dung_cn_m1, n = 1000)
+dung_ph_m1 <- glmmTMB(pH ~ Animal * campaign, data = dung_data)
+summary(dung_ph_m1)
+Anova(dung_ph_m1)
+simulationOutput <- simulateResiduals(fittedModel = dung_ph_m1, n = 1000)
 testDispersion(simulationOutput)
 plot(simulationOutput)
 plotResiduals(simulationOutput, form = dung_data$Animal)

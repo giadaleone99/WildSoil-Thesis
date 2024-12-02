@@ -146,6 +146,11 @@ C_bulkdensity
 ggsave(C_bulkdensity, file = "plots/C_bulkdensity.jpeg",  width = 6, height = 4)
 
 # comparing plant and soil CN
+CN_horse_dung <- lm(plant_CN ~ CN_ratio_soil, data = horsedata, subset = treatment == "Fresh")
+CN_horse_control <- lm(plant_CN ~ CN_ratio_soil, data = horsedata, subset = treatment == "Control")
+CN_cow_dung <- lm(plant_CN ~ CN_ratio_soil, data = cowdata, subset = treatment == "Fresh")
+CN_cow_control <- lm(plant_CN ~ CN_ratio_soil, data = cowdata, subset = treatment == "Control")
+plot(CN_cow_dung)
 ggplot(horsedata, aes(x = CN_ratio_soil, y = plant_CN, colour = treatment)) +
   geom_point() + 
   stat_poly_eq(use_label(c("eq", "R2", "p"))) +
@@ -384,6 +389,10 @@ N2O_effects <- allEffects(N2O_model)
 plot(N2O_effects)
 
 # Relate fluxes to dung dimensions
+CO2_reg <- lm(CO2_RE_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
+CH4_reg <- lm(CH4_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
+N2O_reg <- lm(N2O_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
+plot(N2O_reg)
 ggplot(flux_data %>% filter(treatment == "F"),
         aes(x = dung_area_cm2, y = CH4_flux, colour = interaction(treatment, Animal))) +
   geom_point() + 
