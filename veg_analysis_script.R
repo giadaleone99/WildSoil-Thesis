@@ -672,7 +672,7 @@ ggsave(filename = "veg_plots/gradientcn.jpeg", plot = gradientcnplot, width = 6,
 dailycnplot <- ggplot(veg_daily, aes(x = Animal, y = CN_ratio, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1))+
-  xlab("\nAnimal") + ylab("CN ratio") +
+  xlab("\nAnimal") + ylab("C:N ratio") +
   scale_y_continuous(limits = c(12, 38), breaks = seq(12, 38, by = 4)) +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),

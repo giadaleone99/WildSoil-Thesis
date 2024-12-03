@@ -64,9 +64,9 @@ gradientphplot <- ggplot(gradient_soil, aes(x = Animal, y = pH, fill = interacti
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(4, 7)) +
   scale_y_continuous(breaks = seq(0, 7, by = 0.5)) +
-  ggtitle("Long term campaign")
+  ggtitle("B")
 gradientphplot
-#ggsave(filename = "soil_plots/gradientph.jpeg", plot = gradientphplot, width = 6, height = 4)
+ggsave(filename = "soil_plots/gradientph.jpeg", plot = gradientphplot, width = 6, height = 4)
 
 dailyphplot <- ggplot(daily_soil, aes(x = Animal, y = pH, fill = interaction(sample_type, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
@@ -87,7 +87,7 @@ dailyphplot <- ggplot(daily_soil, aes(x = Animal, y = pH, fill = interaction(sam
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(4, 7)) +
   scale_y_continuous(breaks = seq(0, 7, by = 0.5)) +
-  ggtitle("Short term campaign") +
+  ggtitle("A") +
   theme(legend.position = "none")
 dailyphplot
 ggsave(filename = "soil_plots/dailyph.jpeg", plot = dailyphplot, width = 6, height = 4)
@@ -110,7 +110,7 @@ gradientpo4plot <- ggplot(gradient_soil, aes(x = Animal, y = PO4.P, fill = inter
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(50, 370)) +
   scale_y_continuous(breaks = seq(50, 370, by = 50)) +
-  ggtitle("Long term campaign")
+  ggtitle("B")
 gradientpo4plot
 #ggsave(filename = "soil_plots/gradientpo4.jpeg", plot = gradientpo4plot, width = 6, height = 4)
 
@@ -132,7 +132,7 @@ dailypo4plot <- ggplot(daily_soil, aes(x = Animal, y = PO4.P, fill = interaction
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(50, 370)) +
   scale_y_continuous(breaks = seq(50, 370, by = 50)) +
-  ggtitle("Short term campaign") +
+  ggtitle("A") +
   theme(legend.position = "none")
 dailypo4plot
 ggsave(filename = "soil_plots/dailypo4.jpeg", plot = dailypo4plot, width = 6, height = 4)
@@ -155,14 +155,14 @@ gradientcnplot <- ggplot(gradient_soil, aes(x = Animal, y = CN_ratio, fill = int
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(11, 16)) +
   scale_y_continuous(breaks = seq(11, 16, by = 1)) +
-  ggtitle("Long term campaign")
+  ggtitle("B")
 gradientcnplot
 #ggsave(filename = "soil_plots/gradientcn.jpeg", plot = gradientcnplot, width = 6, height = 4)
 
 dailycnplot <- ggplot(daily_soil, aes(x = Animal, y = CN_ratio, fill = interaction(sample_type, Animal))) +
   geom_boxplot(position = position_dodge(width = 1)) +
   geom_point(position = position_dodge(width = 1))+
-  xlab("\nAnimal") + ylab("CN ratio") +
+  xlab("\nAnimal") + ylab("C:N ratio") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(),
@@ -177,7 +177,7 @@ dailycnplot <- ggplot(daily_soil, aes(x = Animal, y = CN_ratio, fill = interacti
                     labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
   expand_limits(y = c(11, 16)) +
   scale_y_continuous(breaks = seq(11, 16, by = 1)) +
-  ggtitle("Short term campaign") +
+  ggtitle("A") +
   theme(legend.position = "none")
 dailycnplot
 ggsave(filename = "soil_plots/dailycn.jpeg", plot = dailycnplot, width = 6, height = 4)
