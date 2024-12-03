@@ -476,7 +476,7 @@ N2O_dungsize_plot <- plot_model(N2O_dungsize_model, type = "pred",
   labs(title = "Predicted values of N2O flux") +
   scale_y_continuous(breaks = seq(-5,10, by = 5)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
-  theme(panel.grid.minor = element_blank(),  
+  theme( 
   panel.grid.major.x = element_blank(),  
   axis.line = element_line(color = "black")) +
   geom_point(aes(x = dung_area_cm2, y = N2O_flux, color = Animal),
@@ -498,7 +498,7 @@ CH4_dungsize_plot <- plot_model(CH4_dungsize_model, type = "pred",
   labs(title = "Predicted values of CH4 flux") +
   scale_y_continuous(breaks = seq(-5,160, by = 25)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
-  theme(panel.grid.minor = element_blank(),  
+  theme(  
         panel.grid.major.x = element_blank(),  
         axis.line = element_line(color = "black")) +
   geom_point(aes(x = dung_area_cm2, y = CH4_flux, color = Animal),
@@ -520,7 +520,7 @@ CO2_RE_dungsize_plot <- plot_model(CO2_RE_dungsize_model, type = "pred",
   labs(title = "Predicted values of CO2 RE flux") +
   scale_y_continuous(breaks = seq(0,40, by = 5)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
-  theme(panel.grid.minor = element_blank(),  
+  theme( 
         panel.grid.major.x = element_blank(),  
         axis.line = element_line(color = "black")) +
   geom_point(aes(x = dung_area_cm2, y = CO2_RE_flux, color = Animal),

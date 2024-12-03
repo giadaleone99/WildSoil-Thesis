@@ -15,6 +15,7 @@ library(nlme)
 library(emmeans)
 library(car)
 library(glmmTMB)
+library(rstatix)
 
 
 # Import data 
@@ -155,9 +156,9 @@ if (!dir.exists("plots")) {
 
 # List of gases to plot
 gases <- list(
-  list(gastype = "CO2", y_label = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}), filename_suffix = "CO2"),
-  list(gastype = "CH4", y_label = expression("nmol CH4 m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
-  list(gastype = "N2O", y_label = expression("nmol N2O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
+  list(gastype = "CO2", y_label = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}), filename_suffix = "CO2"),
+  list(gastype = "CH4", y_label = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
+  list(gastype = "N2O", y_label = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
 )
 
 # Function to generate plots ### WORKING!!!! with DATES
@@ -182,7 +183,7 @@ generate_plots <- function(animal_type, campaign_type, date_filter, campaign_cod
         geom_point(size = 2) +
         geom_line() +
         facet_wrap(~base_code, scales = "free") +
-        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Days since first", y = gas$y_label,
+        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Days since first measurement", y = gas$y_label,
              color = "Measurement type",         # Changed title for the color legend
              shape = "Treatment") +
         scale_color_manual(values = c("NEE" = "gray", "RE" = "black"),
@@ -550,8 +551,8 @@ daily_N2O_subset <- flux_data_ANOVA %>%
 gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8), width = 0.5) +  # Suppress outliers in the boxplot
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
-       title = "Long term campaign",
+  labs(y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
+       title = "B",
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_break(c(4, 25),c(30, 115), scales = c(0.2)) + 
@@ -562,7 +563,7 @@ gradient_CH4_boxplot <- ggplot(gradient_CH4_subset, aes(x = Animal, y = best.flu
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank()
   )
@@ -574,8 +575,8 @@ ggsave(filename = "plots/gradient_CH4_boxplot.jpeg", plot = gradient_CH4_boxplot
 gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8), width = 0.7) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
-       title = "Long term campaign",
+  labs(y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}),
+       title = "B",
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_break(c(0.8, 1.15), scales = (0.4)) +
@@ -585,7 +586,7 @@ gradient_N2O_boxplot <- ggplot(gradient_N2O_subset, aes(x = Animal, y = best.flu
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank()
   )
@@ -597,8 +598,8 @@ ggsave(filename = "plots/gradient_N2O_boxplot.jpeg", plot = gradient_N2O_boxplot
 gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Long term campaign",
+  labs(y = expression(mu * "mol CO"[2] *" m"^{-2} * " s"^{-1}),
+       title = "B",
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_continuous(limits = c(-1, 36)) +
@@ -608,7 +609,7 @@ gradient_CO2_boxplot_PS <- ggplot(gradient_CO2_PS_subset, aes(x = Animal, y = be
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank()
   )
@@ -619,8 +620,8 @@ ggsave(filename = "plots/gradient_CO2_PS_boxplot.jpeg", plot = gradient_CO2_boxp
 gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Long term campaign",
+  labs(y = expression(mu * "mol CO"[2] *" m"^{-2} * " s"^{-1}),
+       title = "B",
        colour = "Treatment",
        fill = "Plot type") +
   ylim(0,30) +
@@ -631,7 +632,7 @@ gradient_CO2_boxplot_RE <- ggplot(gradient_CO2_RE_subset, aes(x = Animal, y = be
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank()
   )
@@ -644,8 +645,8 @@ ggsave(filename = "plots/gradient_CO2_RE_boxplot.jpeg", plot = gradient_CO2_boxp
 daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Short term campaign",
+  labs(y = expression(mu * "mol CO"[2] *" m"^{-2} * " s"^{-1}),
+       title = "A",
        colour = "Treatment",
        fill = "Plot type") +
   scale_y_continuous(limits = c(-1, 36)) +
@@ -655,7 +656,7 @@ daily_CO2_boxplot_PS <- ggplot(daily_CO2_PS_subset, aes(x = Animal, y = best.flu
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank(),
     legend.position = "none"
@@ -668,8 +669,8 @@ daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flu
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
   scale_y_continuous(limits = c(4, 30)) +
-  labs(y = expression(mu * "mol CO2 m"^{-2} * " s"^{-1}),
-       title = "Short term campaign",
+  labs(y = expression(mu * "mol CO"[2] *" m"^{-2} * " s"^{-1}),
+       title = "A",
        colour = "Treatment",
        fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -678,7 +679,7 @@ daily_CO2_boxplot_RE <- ggplot(daily_CO2_RE_subset, aes(x = Animal, y = best.flu
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank(),
     legend.position = "none"
@@ -691,8 +692,8 @@ ggsave(filename = "plots/daily_CO2_RE_boxplot.jpeg", plot = daily_CO2_boxplot_RE
 daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8), width = 0.5) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression("nmol N2O m"^{-2} * " s"^{-1}),
-       title = "Short term campaign",
+  labs(y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}),
+       title = "A",
        colour = "Treatment",
        fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -701,7 +702,7 @@ daily_N2O_boxplot <- ggplot(daily_N2O_subset, aes(x = Animal, y = best.flux, fil
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank(),
     legend.position = "none"
@@ -714,7 +715,7 @@ ggsave(filename = "plots/daily_N2O_boxplot.jpeg", plot = daily_N2O_boxplot, widt
 daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fill = interaction(treatment, Animal))) +
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
-  labs(y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+  labs(y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
        title = "Short term campaign",
        colour = "Treatment",
        fill = "Plot type") +
@@ -724,7 +725,7 @@ daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fil
                                "F.Horse" = "#7F4F24"),
                     labels = c("Cow control", "Cow dung", "Horse control", "Horse dung")) +
   theme_minimal() +
-  theme(
+  theme(panel.grid.major = element_blank(),
     axis.line = element_line(colour = "black"),  # Adds axis lines for both x and y
     panel.border = element_blank(),
     legend.position = "none"
@@ -740,7 +741,7 @@ NoCow_CH4_plot <- ggplot(combined_plot_data, aes(x = interaction(treatment, Anim
   geom_boxplot(aes(fill = interaction(treatment, Animal)), position = position_dodge(), width = 0.7) +
   geom_jitter(position = position_dodge(width = 0.8)) +  # Jittered points
   labs(x = "Animal",  # Change the x-axis label here
-       y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
        title = "Short term campaign",
        fill = "Plot type") +
   scale_y_break(c(1, 40), scales = (0.3)) +
@@ -750,7 +751,8 @@ NoCow_CH4_plot <- ggplot(combined_plot_data, aes(x = interaction(treatment, Anim
                     labels = c("Cow control", "Horse control", "Horse dung")) +
   theme_minimal() +
   #scale_x_discrete(labels = c("C.Cow" = "Cow", "C.Horse" = "Horse", "F.Horse" = "Horse")) +
-  theme(axis.line = element_line(colour = "black"),
+  theme(panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black"),
         panel.border = element_blank(),
         legend.position = "none")
 
@@ -766,7 +768,7 @@ cow_fresh_CH4_plot <- ggplot(cow_fresh_plot_data, aes(x = treatment, y = best.fl
   geom_boxplot(aes(fill = interaction(treatment, Animal)), position = position_dodge(), width = 0.25) +
   geom_jitter(position = position_dodge(width = 0.8)) + 
   labs(x = "Animal",
-       y = expression("nmol CH4 m"^{-2} * " s"^{-1}),
+       y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
        title = "",
        fill = "Plot type") +
   scale_fill_manual(values = c("F.Cow" = "#656D4A"),
