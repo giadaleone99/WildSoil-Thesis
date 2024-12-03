@@ -716,7 +716,7 @@ daily_CH4_boxplot <- ggplot(daily_CH4_subset, aes(x = Animal, y = best.flux, fil
   geom_boxplot(position = position_dodge(width = 0.8)) +
   geom_point(position = position_dodge(width = 0.8)) +
   labs(y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
-       title = "Short term campaign",
+       title = "A",
        colour = "Treatment",
        fill = "Plot type") +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -742,7 +742,7 @@ NoCow_CH4_plot <- ggplot(combined_plot_data, aes(x = interaction(treatment, Anim
   geom_jitter(position = position_dodge(width = 0.8)) +  # Jittered points
   labs(x = "Animal",  # Change the x-axis label here
        y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
-       title = "Short term campaign",
+       title = "A",
        fill = "Plot type") +
   scale_y_break(c(1, 40), scales = (0.3)) +
   scale_fill_manual(values = c("C.Cow" = "#A4AC86", 
@@ -789,10 +789,10 @@ N2O_boxplots = daily_N2O_boxplot + gradient_N2O_boxplot
 CO2_RE_boxplots = daily_CO2_boxplot_RE + gradient_CO2_boxplot_RE
 CO2_PS_boxplots = daily_CO2_boxplot_PS + gradient_CO2_boxplot_PS
 
-CH4_boxplots
-N2O_boxplots
-CO2_RE_boxplots
-CO2_PS_boxplots
+# CH4_boxplots
+# N2O_boxplots
+# CO2_RE_boxplots
+# CO2_PS_boxplots
 
 ggsave(filename = "plots/CH4_boxplots.jpeg", plot = CH4_boxplots, width = 10, height = 5)
 ggsave(filename = "plots/N2O_boxplots.jpeg", plot = N2O_boxplots, width = 10, height = 5)

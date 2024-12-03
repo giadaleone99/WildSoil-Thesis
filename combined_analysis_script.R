@@ -17,7 +17,7 @@ library(sjPlot)
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
 veg_growth_data <- readRDS("plant_data/veg_growth_data.rds") %>% 
-  rename("plotID"= "plot_id") %>% 
+  dplyr::rename("plotID"= "plot_id") %>% 
   dplyr::select(-2:-9)
 dung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.names = FALSE) %>% 
   filter(Kode_3 %in% "Dung") %>% 
@@ -26,7 +26,7 @@ dung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.name
          "plotID" = "Kode_1") %>% 
   dplyr::select(-4,-5,-9)
 veg_combined_data <- readRDS("plant_data/veg_combined_data.rds")%>% 
-  rename("plotID"= "plot_id",
+  dplyr::rename("plotID"= "plot_id",
          "plant_CN" = "CN_ratio") %>% 
   dplyr::select(-5)
 
@@ -77,7 +77,10 @@ plot_flux_data <- plot_flux_data %>%
   full_join(soil_data, by = "plotID")
 
 soil_data_test <- soil_data %>% 
-  left_join(plot_flux_data, by = "plotID", suffix = c("_soil", "_veg"))
+  left_join(plot_flux_data, by = "plotID", suffix = c("_soil", "_veg")) %>% 
+  mutate(Animal = case_when(
+    grepl("^C", plotID) ~ "Cow",
+    grepl("^H", plotID) ~ "Horse"))
 
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
@@ -119,7 +122,7 @@ summary_dung_soil <- dung_soil_data %>%
     CN_mean = mean(CN_ratio, na.rm = TRUE),
     CN_se = std.error(CN_ratio)) %>% 
   ungroup() %>% 
-  rename("base_code" = "dung_name")
+  dplyr::rename("base_code" = "dung_name")
   
 
 summary_dung_soil <- summary_dung_soil %>% 
@@ -237,9 +240,9 @@ HorsevegCN_plot <- plot_model(modHorse, type = "pred",
   theme_minimal() +
   scale_color_manual(values = c("Fresh" = "#7f4f24", "Control" = "#a68a64"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab("Soil CN ratio") +
-  ylab("Vegetation CN ratio") +
-  labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  xlab("Soil C:N ratio") +
+  ylab(element_blank()) +
+  labs(colour = "Treatment", title = element_blank()) +
   geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
              data = horsedata,
              inherit.aes = FALSE) +
@@ -255,9 +258,9 @@ CowvegCN_plot <- plot_model(modCow, type = "pred",
   theme_minimal() +
   scale_color_manual(values = c("Fresh" = "#656d4a", "Control" = "#a4ac86"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
-  xlab("Soil CN ratio") +
-  ylab("Vegetation CN ratio") +
-  labs(colour = "Treatment", title = "Predicted values of plant CN ratio") +
+  xlab("Soil C:N ratio") +
+  ylab("Vegetation C:N ratio") +
+  labs(colour = "Treatment", title = element_blank()) +
   geom_point(aes(x = CN_ratio_soil, y = plant_CN, color = treatment),
              data = cowdata,
              inherit.aes = FALSE) +
@@ -272,10 +275,8 @@ CowvegCN_plot
 combinedCNplot <- CowvegCN_plot + HorsevegCN_plot
 combinedCNplot
 
-plot_grid(CowvegCN_plot, HorsevegCN_plot, ncol = 2)
-
 soilvegCN_plot
-ggsave(combinedCNplot, file = "veg_plots/soilvegCN_plot.jpeg",  width = 6, height = 4)
+ggsave(combinedCNplot, file = "veg_plots/soilvegCN_cowhorse_plot.jpeg",  width = 6, height = 4)
 
 #Comparing pH in the dung and in the soil beneath the dung
 ggplot(dungsoil_dung_data, aes(x = plotID, y = pH, fill = interaction(sample_type, Animal))) +
