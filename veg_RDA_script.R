@@ -163,10 +163,10 @@ anova(rda(species_df.hell, bulk, permutation = how(nperm = 9999)))
 anova(rda(species_df.hell, bulk, cbind(PO4.P, ph, cn)), permutation = how(nperm = 9999))
 
 # Soil and other variables
-(spe.part.all <- varpart(species_df.hell, soil, campaign, sample_type, Animal))
+(spe.part.all2 <- varpart(species_df.hell, soil, campaign, sample_type, Animal))
 jpeg(file="veg_plots/variation_partitioning.jpeg")
-plot(spe.part.all, digits = 2, bg = c("red", "blue", "green", "yellow"),
-     Xnames = c("Soil","Campaign", "Sample_type", "Animal"))
+plot(spe.part.all2, digits = 2, bg = c("red", "blue", "green", "yellow"),
+     Xnames = c("Soil","Campaign", "Treatment", "Animal"))
 dev.off()
 
 # Test soil
@@ -272,10 +272,10 @@ Animal <- soil_df$Animal
 
 
 # Soil
-(spe.part.all <- varpart(presence_absence_matrix, PO4.P, ph, cn, bulk))
+(spe.part.all3 <- varpart(presence_absence_matrix, PO4.P, ph, cn, bulk))
 
 jpeg(file="veg_plots/Soil_variation_partitioning_absence.jpeg")
-plot(spe.part.all, digits = 2, bg = c("red", "blue", "green", "yellow"),
+plot(spe.part.all3, digits = 2, bg = c("red", "blue", "green", "yellow"),
      Xnames = c("PO4.P","pH", "C:N", "Bulk"))
 dev.off()
 
@@ -304,10 +304,10 @@ anova(rda(presence_absence_matrix, bulk, permutation = how(nperm = 9999)))
 anova(rda(presence_absence_matrix, bulk, cbind(PO4.P, ph, cn)), permutation = how(nperm = 9999))
 
 # Soil and other variables
-(spe.part.all <- varpart(presence_absence_matrix, soil, campaign, sample_type, Animal))
+(spe.part.all4 <- varpart(presence_absence_matrix, soil, campaign, sample_type, Animal))
 jpeg(file="veg_plots/variation_partitioning_absence.jpeg")
-plot(spe.part.all, digits = 2, bg = c("red", "blue", "green", "yellow"),
-     Xnames = c("Soil","Campaign", "Sample type", "Animal"))
+plot(spe.part.all4, digits = 2, bg = c("red", "blue", "green", "yellow"),
+     Xnames = c("Soil","Campaign", "Treatment", "Animal"))
 dev.off()
 
 # Test soil
