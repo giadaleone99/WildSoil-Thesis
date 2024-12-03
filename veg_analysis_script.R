@@ -471,19 +471,23 @@ scatterplot <- ggplot(veg_combined, aes(x = biomass, y = veg_height_2, color = t
   geom_point() + geom_smooth(method = lm)
 print(scatterplot)
 
+# subset by animal
+veg_horse <- veg_combined %>% filter(Animal == "Horse")
+veg_cow <- veg_combined %>% filter(Animal == "Cow")
+
 # test assumptions of the lms
-gradient_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_gradient)
-daily_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_daily)
+horse_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_horse)
+cow_reg <- lm(total_veg_weight_gm2 ~ veg_height_2, data = veg_cow)
 
 plot(daily_reg)
 
-gradient_regression <- ggplot(veg_gradient, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
+gradient_regression <- ggplot(veg_cow, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
   geom_point() + geom_smooth(method = lm) +
   theme_minimal() +
   stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("Gradient") +
+  ggtitle("A") +
   scale_color_manual(values = c("Dung" = "black", "Control" = "gray")) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1), 
         panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
@@ -492,13 +496,13 @@ gradient_regression <- ggplot(veg_gradient, aes(x = veg_height_2, y = total_veg_
 
 print(gradient_regression)
 
-daily_regression <- ggplot(veg_daily, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
+daily_regression <- ggplot(veg_horse, aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment)) +
   geom_point() + geom_smooth(method = lm) +
   theme_minimal() +
   stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   xlab("Estimated biomass per plot (g)") +
   ylab("Vegetation height (cm)") +
-  ggtitle("Daily") +
+  ggtitle("Horse") +
   labs(colour = "Treatment") +
   scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
                      labels = c("Control", "Dung")) +
@@ -514,60 +518,61 @@ ggsave(filename = "veg_plots/combined_regression.jpeg", plot = combined_regressi
 
 # Fitting models to plot linear regressions between biomass and veg_height_2 with SjPlot
 # Fit linear models for each dataset
+
 SjPlot_model_gradient <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2   * treatment, data = veg_gradient)
+SjPlot_model_horse <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2   * treatment, data = veg_horse)
 
 SjPlot_model_daily <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2    * treatment, data = veg_daily)
+SjPlot_model_cow <- glmmTMB(total_veg_weight_gm2 ~ veg_height_2    * treatment, data = veg_cow)
 
 #Validate modelsAnova(veg_height_daily_m1)
 # Model validation
-simulationOutput <- simulateResiduals(fittedModel = SjPlot_model_gradient, n = 1000)
+simulationOutput <- simulateResiduals(fittedModel = SjPlot_model_horse, n = 1000)
 testDispersion(simulationOutput)
 
 plot(simulationOutput)
-plotResiduals(simulationOutput, form = SjPlot_model_daily$treatment)
+plotResiduals(simulationOutput, form = SjPlot_model_horse$treatment)
 #plotResiduals(simulationOutput, form = gradient_veg_combined$treatment)
 # Post-hoc-test
-test <- emmeans(SjPlot_model_gradient, ~ treatment)
+test <- emmeans(SjPlot_model_horse, ~ treatment)
 contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Effect plot with predicted values for gradient model
-plot_gradient_effect <- plot_model(SjPlot_model_gradient, type = "pred", 
+plot_horse_effect <- plot_model(SjPlot_model_horse, type = "pred", 
                                    terms = c("veg_height_2", "treatment"), 
                                    title = "B") +
   theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"), labels = c("Control", "Dung")) +
+  scale_color_manual(values = c("Fresh" = "#7F4F24", "Control" = "#A68A64"), labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
   xlab("Vegetation height (cm)") +
   ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") + 
-  scale_y_continuous(limits = c(0, 650)) + 
-  scale_x_continuous(breaks = seq(0, 18, by = 2)) +
+  scale_y_continuous(limits = c(100, 800)) + 
+  # scale_x_continuous(breaks = seq(0, 18, by = 2)) +
   theme(
-    panel.grid.minor = element_blank(),  
     panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black",),
     axis.title.y = element_blank()) +
   geom_point(aes(x = veg_height_2, y = total_veg_weight_gm2, color = treatment),
-             data = veg_gradient,
+             data = veg_horse,
              inherit.aes = FALSE)
 
-plot_gradient_effect
+plot_horse_effect
 
 # Effect plot with predicted values for daily model 
-plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", show.values = TRUE,
+plot_cow_effect <- plot_model(SjPlot_model_cow, type = "pred", show.values = TRUE,
                                 terms = c("veg_height_2", "treatment"), 
                                 title = "A") +
   theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "black", "Control" = "gray"),
+  scale_color_manual(values = c("Fresh" = "#656D4A", "Control" = "#A68A64"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
   xlab("Vegetation height (cm)") +
   ylab(expression("Adjusted biomass (g/m"^2*")")) +
   labs(colour = "Treatment") +  
-  scale_y_continuous(limits = c(0, 650)) + 
-  scale_x_continuous(breaks = seq(0, 13, by = 2)) +
-  theme(
-    panel.grid.minor = element_blank(),  
+  # scale_y_continuous(limits = c(0, 650)) + 
+  scale_x_continuous(breaks = seq(0, 12, by = 4)) +
+  theme( 
     panel.grid.major.x = element_blank(),  
     axis.line = element_line(color = "black"),
    legend.position = "none") +
@@ -575,11 +580,11 @@ plot_daily_effect <- plot_model(SjPlot_model_daily, type = "pred", show.values =
                                         data = veg_daily,
                                         inherit.aes = FALSE)
    
-plot_daily_effect
+plot_cow_effect
 
-combined_model_plot <- plot_daily_effect + plot_gradient_effect
+combined_model_plot <- plot_cow_effect + plot_horse_effect
 combined_model_plot
-ggsave("veg_plots/model_biomass_vegheight_combined1.jpeg", plot = combined_model_plot, width = 7, height = 4)
+ggsave("veg_plots/model_biomass_vegheight_animal.jpeg", plot = combined_model_plot, width = 7, height = 4)
 
 scatterplot <- ggplot(veg_combined, aes(x = total_veg_weight, y = veg_height_2, color = treatment)) +
   geom_point(size = 2) +  
@@ -701,6 +706,8 @@ gradient_veg_combined <- gradient_veg_combined %>%
   mutate(log_total_veg_weight = 1/(total_veg_weight),
          log_estimated_biomass_plot = log(biomass),
          log_CN_ratio = log(CN_ratio))
+
+
 
 # T-tests and ANOVAs
 run_anova <- function(df, y_var) {
@@ -896,7 +903,7 @@ veg_weight <- veg_new %>%
       TRUE ~ forb_weight
     )
   ) %>%
-  dplyr::dplyr::select(-forb_weight)
+  dplyr::select(-forb_weight)
 
 veg_weight <- veg_weight %>% 
   mutate(
@@ -910,7 +917,7 @@ forb_unique <- veg_weight %>%
 veg_weight <- veg_weight %>% 
   filter(veg_class != "Forbs") %>% 
   bind_rows(forb_unique) %>% 
-  dplyr::dplyr::select(-dry_weight)
+  dplyr::select(-dry_weight)
 
 veg_weight <- veg_weight %>% 
   mutate(harvested_area_m2 = harvested_area / 10000) %>% 
@@ -918,6 +925,29 @@ veg_weight <- veg_weight %>%
   mutate(Animal = case_when(grepl("^C", plot_id) ~ "Cow", grepl("^H", plot_id) ~ "Horse")) %>% 
   mutate(Animal = factor(Animal))
 
+# Calculating forb:graminoid ratio here
+forb_graminoid_ratio <- veg_weight %>% 
+  filter(veg_class %in% c("Forbs", "Graminoids")) %>% # Keep only Forbs and Graminoids
+  group_by(plot_id, veg_class) %>%
+  summarise(total_weight = sum(adjweight_per_class, na.rm = TRUE), .groups = "drop") %>% 
+  pivot_wider(names_from = veg_class, values_from = total_weight, values_fill = 0) %>%
+  mutate(forb_graminoid_ratio = Forbs / Graminoids) %>% 
+  #mutate(Animal = case_when(grepl("^C", plot_id) ~ "Cow", grepl("^H", plot_id) ~ "Horse")) %>% 
+  ungroup()
+  
+# plot
+ggplot(forb_graminoid, aes(x = plot_id, y = forb_graminoid_ratio)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(
+    title = "Forb-to-Graminoid Ratio by plot",
+    x = "Plot ID",
+    y = "Forb:Graminoid ratio"
+  ) +
+  theme_minimal() + 
+  facet_wrap(~Animal)
+
+# table
+kable(forb_graminoid_ratio, col.names = c("Plot ID", "Forbs", "Graminoids", "Forb-to-Graminoid Ratio"))
 
 # T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
 species_aov <- run_anova(final_species_data, "species_count")
