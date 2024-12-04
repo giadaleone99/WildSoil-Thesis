@@ -932,23 +932,50 @@ forb_graminoid_ratio <- veg_weight %>%
   summarise(total_weight = sum(adjweight_per_class, na.rm = TRUE), .groups = "drop") %>% 
   pivot_wider(names_from = veg_class, values_from = total_weight, values_fill = 0) %>%
   mutate(forb_graminoid_ratio = Forbs / Graminoids) %>% 
-  #mutate(Animal = case_when(grepl("^C", plot_id) ~ "Cow", grepl("^H", plot_id) ~ "Horse")) %>% 
+  mutate(Animal = case_when(grepl("^C", plot_id) ~ "Cow", grepl("^H", plot_id) ~ "Horse"),
+         treatment = case_when(
+           grepl("_F$", plot_id) ~ "Fresh",
+           grepl("_C$", plot_id) ~ "Control",
+           TRUE ~ NA_character_
+         ),
+        Campaign = case_when(
+          grepl("G", plot_id) ~ "Gradient",
+          grepl("D", plot_id) ~ "Daily"
+        )) %>% 
   ungroup()
   
 # plot
-ggplot(forb_graminoid, aes(x = plot_id, y = forb_graminoid_ratio)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+ggplot(filter(forb_graminoid_ratio, Campaign == "Gradient"), aes( y = forb_graminoid_ratio, fill = interaction(Animal, treatment))) +
+  geom_boxplot() +
   labs(
     title = "Forb-to-Graminoid Ratio by plot",
     x = "Plot ID",
     y = "Forb:Graminoid ratio"
   ) +
-  theme_minimal() + 
-  facet_wrap(~Animal)
+  theme_minimal()
+
+ggplot(filter(forb_graminoid_ratio, Campaign == "Gradient"), aes(x = plot_id, y = forb_graminoid_ratio, fill = interaction(Animal, treatment))) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Forb-to-Graminoid Ratio by plot",
+    x = "Plot ID",
+    y = "Forb:Graminoid ratio"
+  ) +
+  theme_minimal()
 
 # table
 kable(forb_graminoid_ratio, col.names = c("Plot ID", "Forbs", "Graminoids", "Forb-to-Graminoid Ratio"))
 
+# stats
+gradient_forb_graminoid <- forb_graminoid_ratio %>% filter(Campaign == "Gradient")
+forb_graminoid_model <- glmmTMB(forb_graminoid_ratio ~ treatment * Animal + (1|plot_id), data = gradient_forb_graminoid)
+Anova(forb_graminoid_model)
+simulationOutput <- simulateResiduals(fittedModel = forb_graminoid_model, n = 1000)
+testDispersion(simulationOutput)
+
+plot(simulationOutput)
+forb_graminoid_effect <- allEffects(forb_graminoid_model)
+plot(forb_graminoid_effect)
 # T-tests and ANOVAs for the species data are no good, the data distribution is unsuitable
 species_aov <- run_anova(final_species_data, "species_count")
 species_model <- lmer(species_per_vegclass ~ Animal * treatment + (1|veg_class), data = final_species_data)
@@ -1106,8 +1133,8 @@ veg_cn_effects <- allEffects(veg_cn_m1)
 plot(veg_biomass_effects)
 
 
-dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign, data = dung_data)
-dung_ph_m1 <- glmmTMB(pH ~ Animal * campaign, data = dung_data)
+dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign + (1|plot_id), data = dung_data)
+dung_ph_m1 <- glmmTMB(pH ~ Animal * campaign + (1|plot_id), data = dung_data)
 summary(dung_ph_m1)
 Anova(dung_ph_m1)
 simulationOutput <- simulateResiduals(fittedModel = dung_ph_m1, n = 1000)
