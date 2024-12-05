@@ -361,10 +361,11 @@ summary(model)
     plotResiduals(simuOutput, form = dataset$treatment)
     plotResiduals(simuOutput, form = dataset$Campaign)
     plotResiduals(simuOutput, form = dataset$S_temp)
+    plotResiduals(simuOutput, form = dataset$SWC_.)
     #plotResiduals(simuOutput, form = dataset$bulk_density)
-    test1 <- emmeans(model, ~ treatment|Animal|Campaign|S_temp)
-    test2 <- emmeans(model, ~ Animal * treatment + Campaign + SWC_. + bulk_density)
-    test3 <- emmeans(model, ~ Campaign|treatment|Animal|SWC_.|bulk_density)
+    test1 <- emmeans(model, ~ treatment|Animal|Campaign|S_temp|SWC_.)
+    test2 <- emmeans(model, ~ Animal|treatment|Campaign|S_temp|SWC_.)
+    test3 <- emmeans(model, ~ Campaign|treatment|Animal|S_temp|SWC_.)
     contrast(test1, method = "pairwise") %>% as.data.frame()
   }
   
@@ -381,15 +382,19 @@ CH4_model <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_
 #N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
-run_model(flux_data, CO2_PS_model)
+run_model(flux_data, N2O_model)
 
 CO2_PS_effects <- allEffects(CO2_PS_model)
 CO2_RE_effects <- allEffects(CO2_RE_model)
 CH4_effects <- allEffects(CH4_model)
 N2O_effects <- allEffects(N2O_model)
-plot(CO2_PS_effects)
-interactions::interact_plot(CO2_PS_model, pred = S_temp, modx = treatment)
-
+plot(N2O_effects)
+interactions::interact_plot(N2O_model, pred = Animal, modx = Campaign)
+plot(ggeffect(N2O_model))
+N2O_model |>
+  ggeffects::ggeffect() |>
+  lapply(plot) |>
+  patchwork::wrap_plots()
 # Relate fluxes to dung dimensions
 CO2_reg <- lm(CO2_RE_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
 CH4_reg <- lm(CH4_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")

@@ -353,7 +353,7 @@ library(plyr)
 library(datarium)
 library(lmerTest)
 library(bestNormalize)
-#library(ARTool)
+library(plotrix)
 library(DHARMa)
 
 
@@ -545,6 +545,48 @@ daily_N2O_subset <- flux_data_ANOVA %>%
   mutate(Unique_ANOVA = as.factor(Unique_ANOVA),
          normalized_best.flux = log(0.4 + best.flux))
 
+# summary stats
+
+gradient_CO2_PS_summary <- gradient_CO2_PS_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+gradient_CO2_RE_summary <- gradient_CO2_RE_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+gradient_CH4_summary <- gradient_CH4_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+gradient_N2O_summary <- gradient_N2O_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+daily_CO2_PS_summary <- daily_CO2_PS_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+daily_CO2_RE_summary <- daily_CO2_RE_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+daily_CH4_summary <- daily_CH4_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
+daily_N2O_summary <- daily_N2O_subset %>%
+  group_by(Animal, treatment) %>% 
+  dplyr::summarise(
+    Nperc_mean = mean(best.flux, na.rm = TRUE),
+    Nperc_se = std.error(best.flux),)
 ### PLOTTING SUBSETS --------------------------------------------------
 
 ## Gradients
@@ -816,7 +858,6 @@ N2O_model2 <- glmmTMB(normalized_best.flux ~ Animal * treatment * Campaign + (1|
                       data = N2O_subset)
 N2O_model3 <- glmmTMB(logged_best.flux ~ Animal * treatment * Campaign + (1|Days_Since_First), 
                       data = N2O_subset)
-
 
 run_model <- function(dataset, model) {
   #print(summary(model))
