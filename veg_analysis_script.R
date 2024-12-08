@@ -564,7 +564,7 @@ plot_cow_effect <- plot_model(SjPlot_model_cow, type = "pred", show.values = TRU
                                 terms = c("veg_height_2", "treatment"), 
                                 title = "A") +
   theme_minimal() +  
-  scale_color_manual(values = c("Fresh" = "#656D4A", "Control" = "#A68A64"),
+  scale_color_manual(values = c("Fresh" = "#656D4A", "Control" = "#A4AC86"),
                      labels = c("Control", "Dung")) +
   scale_fill_manual(values = c("Fresh" = "#696969", "Control" = "#696969")) +
   xlab("Vegetation height (cm)") +
