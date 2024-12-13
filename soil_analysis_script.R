@@ -44,37 +44,6 @@ combined_soil <- combined_soil %>%
     grepl("D", base_code) ~ "Daily")
   ))
 
-# create some plots 
-gradient_soil <- gradient_soil %>%
-  mutate(
-    sample_type_animal = interaction(sample_type, Animal),
-    sample_type_animal = factor(sample_type_animal,levels = c(
-        "Control.Cow", "Fresh.Cow", "Dung soil.Cow",
-        "Control.Horse", "Fresh.Horse", "Dung soil.Horse"
-      )
-    )
-  )
-
-gradientphplot <- ggplot(gradient_soil, aes(x = sample_type_animal, y = pH, fill = interaction(sample_type_animal))) +
-  geom_boxplot(position = position_dodge(width = 1)) +
-  geom_point(position = position_dodge(width = 1))+
-  xlab("\nAnimal") + ylab(NULL) +
-  theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
-        panel.border = element_blank(), axis.line = element_line(),
-        axis.text.x = element_text(size = 12)) +
-  labs(fill = "Plot type & \nsampling location") +
-  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
-                               "Control.Cow" = "#A4AC86",
-                               "Dung soil.Cow"= "#333D29", 
-                               "Fresh.Horse" = "#7F4F24",
-                               "Control.Horse" = "#A68A64", 
-                               "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
-  expand_limits(y = c(4, 7)) +
-  scale_y_continuous(breaks = seq(0, 7, by = 0.5)) +
-  ggtitle("B")
-gradientphplot
 
 # Ensure sample_type_animal is a factor with the correct order
 gradient_soil <- gradient_soil %>%
@@ -159,12 +128,13 @@ gradientpo4plot <- ggplot(gradient_soil, aes(x = Animal, y = PO4.P, fill = sampl
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64", 
                                "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
+                    labels = c("Cow control", "Cow beside dung", "Cow below dung", 
+                               "Horse control", "Horse beside dung", "Horse below dung")) +
   expand_limits(y = c(50, 370)) +
   scale_y_continuous(breaks = seq(50, 370, by = 50)) +
   ggtitle("B")
 gradientpo4plot
-#ggsave(filename = "soil_plots/gradientpo4.jpeg", plot = gradientpo4plot, width = 6, height = 4)
+ggsave(filename = "soil_plots/gradientpo4.jpeg", plot = gradientpo4plot, width = 6, height = 4)
 
 dailypo4plot <- ggplot(daily_soil, aes(x = Animal, y = PO4.P, fill = sample_type_animal)) +
   geom_boxplot(position = position_dodge(width = 1)) +
@@ -204,7 +174,8 @@ gradientcnplot <- ggplot(gradient_soil, aes(x = Animal, y = CN_ratio, fill = sam
                                "Fresh.Horse" = "#7F4F24",
                                "Control.Horse" = "#A68A64", 
                                "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
+                    labels = c("Cow control", "Cow beside dung", "Cow below dung", 
+                               "Horse control", "Horse beside dung", "Horse below dung")) +
   expand_limits(y = c(11, 16)) +
   scale_y_continuous(breaks = seq(11, 16, by = 1)) +
   ggtitle("B")
