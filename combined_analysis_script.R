@@ -189,7 +189,6 @@ soilCNvegCN <- ggplot(soil_data_test, aes(CN_ratio_soil, plant_CN)) +
                       labels = c("Cow control", "Cow dung", "Horse control", "Horse dung"))
 soilCNvegCN
 ggsave(soilCNvegCN, file = "plots/soilCNvegCN.jpeg",  width = 6, height = 4)
-  
 
 # Creating model with soil CN and plant CN
 mod_soilveg_CN <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment * Animal , data = soil_data_test)
@@ -203,19 +202,23 @@ cowdata <- soil_data_test %>%
 
 modHorse <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment, data = horsedata)
 modCow <- glmmTMB(plant_CN ~ CN_ratio_soil  * treatment, data = cowdata)
-# Model validation
-simulationOutput <- simulateResiduals(fittedModel = mod_soilveg_CN, n = 1000)
-testDispersion(simulationOutput)
-print(Anova(mod_soilveg_CN))
 
+#soil CN and total soil N model
+mod_soilCN_soilN <- glmmTMB(CN_ratio_soil ~ TN_soil + treatment, data = soil_data_test)
+
+# Model validation
+simulationOutput <- simulateResiduals(fittedModel = mod_soilCN_soilN, n = 1000)
+testDispersion(simulationOutput)
+print(Anova(mod_soilCN_soilN))
+plot(allEffects(mod_soilCN_soilN))
 plot(simulationOutput)
-plotResiduals(simulationOutput, form = mod_soilveg_CN$CN_ratio_soil)
-plotResiduals(simulationOutput, form = mod_soilveg_CN$plant_CN)
-plotResiduals(simulationOutput, form = mod_soilveg_CN$treatment)
-plotResiduals(simulationOutput, form = mod_soilveg_CN$Animal)
+plotResiduals(simulationOutput, form = mod_soilCN_soilN$CN_ratio_soil)
+plotResiduals(simulationOutput, form = mod_soilCN_soilN$TN_soil)
+plotResiduals(simulationOutput, form = mod_soilCN_soilN$Animal)
+plotResiduals(simulationOutput, form = mod_soilCN_soilN$treatment)
 
 # Post-hoc-test
-test <- emmeans(mod_soilveg_CN, ~ treatment)
+test <- emmeans(mod_soilCN_soilN, ~ Animal|TN_soil|treatment)
 contrast(test, method = "pairwise") %>% as.data.frame()
 
 # Making a plot
@@ -328,7 +331,7 @@ ggplot(dungsoil_dung_data, aes(x = plotID, y = CN_ratio, fill = interaction(samp
 
 
 # Modeling
-mod <- glmmTMB(P ~ PO4.P, data = growth_model_data)
+model <- glmmTMB(P ~ PO4.P, data = growth_model_data)
 summary(mod)
 print(Anova(mod))
 

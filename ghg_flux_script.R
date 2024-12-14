@@ -16,6 +16,7 @@ library(emmeans)
 library(car)
 library(glmmTMB)
 library(rstatix)
+library(Hmisc)
 
 
 # Import data 
@@ -160,6 +161,185 @@ gases <- list(
   list(gastype = "CH4", y_label = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}), filename_suffix = "CH4"),
   list(gastype = "N2O", y_label = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}), filename_suffix = "N2O")
 )
+
+# Make the summarised plots
+avgflux_data <- flux_data %>% 
+  mutate(animain = substr(base_code, 1, nchar(base_code)-1)) %>% 
+  filter(plottype == 'Vegetated') %>% 
+  filter(!(gastype %in% c("CH4", "N2O") & NEERE == "NEE"))
+
+cowGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Cow", ],
+                      aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A4AC86", 
+                                "F" = "#656D4A"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Cow GPP', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+cowGPPgraph
+ggsave(filename = "plots/cowGPPgraph.jpeg", plot = cowGPPgraph, width = 6, height = 4)
+
+horseGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Horse", ],
+                        aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A68A64", 
+                                "F" = "#7F4F24"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Horse GGP', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+horseGPPgraph
+ggsave(filename = "plots/horseGPPgraph.jpeg", plot = horseGPPgraph, width = 6, height = 4)
+
+cowRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Cow", ],
+                      aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A4AC86", 
+                                "F" = "#656D4A"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Cow Reco', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+cowRecograph
+ggsave(filename = "plots/cowRecograph.jpeg", plot = cowRecograph, width = 6, height = 4)
+
+horseRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Horse", ],
+                        aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A68A64", 
+                                "F" = "#7F4F24"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Horse Reco', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+horseRecograph
+ggsave(filename = "plots/horseRecograph.jpeg", plot = horseRecograph, width = 6, height = 4)
+
+cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$Animal == "Cow", ],
+       aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A4AC86", 
+                                "F" = "#656D4A"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Cow CH4', x = 'Days since first measurement', y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}))
+cowCH4graph
+ggsave(filename = "plots/cowCH4graph.jpeg", plot = cowCH4graph, width = 6, height = 4)
+
+horseCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$Animal == "Horse", ],
+                      aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A68A64", 
+                                "F" = "#7F4F24"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Horse CH4', x = 'Days since first measurement', y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}))
+horseCH4graph
+ggsave(filename = "plots/horseCH4graph.jpeg", plot = horseCH4graph, width = 6, height = 4)
+
+cowN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & avgflux_data$Animal == "Cow", ],
+                      aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A4AC86", 
+                                "F" = "#656D4A"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Cow N2O', x = 'Days since first measurement', y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}))
+cowN2Ograph
+ggsave(filename = "plots/cowN2Ograph.jpeg", plot = cowN2Ograph, width = 6, height = 4)
+
+horseN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & avgflux_data$Animal == "Horse", ],
+                        aes(x = Days_Since_First, y = best.flux)) +
+  geom_jitter(width = 0.1, aes(color = treatment)) +
+  scale_color_manual(values = c("C" = "#A68A64", 
+                                "F" = "#7F4F24"),
+                     labels = c("Control", "Dung")) +
+  labs(color = "Treament") +
+  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
+  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black")) +
+  labs(title = 'Horse N2O', x = 'Days since first measurement', y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}))
+horseN2Ograph
+ggsave(filename = "plots/horseN2Ograph.jpeg", plot = horseN2Ograph, width = 6, height = 4)
+
+generate_avgplots <- function(animal_type, campaign_type, date_filter, campaign_code) {
+  for (gas in gases) {
+    # Filter data based on gas type and other conditions
+    gas_data <- flux_data %>%
+      filter(Campaign == campaign_type, gastype == gas$gastype, date %in% date_filter, Animal == animal_type)
+    
+    # Check if the gas is CH4 or N2O, and filter for RE measurements only
+    if (gas$gastype %in% c("CH4", "N2O")) {
+      gas_data <- gas_data %>% filter(NEERE == "RE")  # Filter to include only RE measurements
+    }
+    
+    #summarise the data
+    
+    # Print the number of rows in gas_data
+    cat("Processing gas:", gas$gastype, " - Rows:", nrow(gas_data), "\n")
+    
+    # Check if there is data to plot
+    if (nrow(gas_data) > 0) {
+      # Create the plot dynamically
+      gas_plot <- ggplot(gas_data, aes(x = Days_Since_First, y = best.flux, color = NEERE, group = plotNEERE, shape = treatment)) +
+        geom_point(size = 2) +
+        geom_line() +
+        facet_wrap(~base_code, scales = "free") +
+        labs(title = paste(campaign_type, animal_type, gas$gastype), x = "Days since first measurement", y = gas$y_label,
+             color = "Measurement type",         # Changed title for the color legend
+             shape = "Treatment") +
+        scale_color_manual(values = c("NEE" = "gray", "RE" = "black"),
+                           labels = c("Photosynthesis",
+                                      "Respiration")) +
+        scale_shape_manual(values = c("C" = 16, "F" = 17),  # 16 and 17 are shape codes for circles and triangles
+                           labels = c("Control", "Dung")) +
+        theme_minimal() +
+        theme(
+          legend.position.inside = c(0.75, 0.25),
+          axis.line = element_line(color = "black"), 
+          axis.text = element_text(color = "black"),   
+          axis.ticks = element_line(color = "black"),
+          panel.grid.major = element_blank(),               # No major grid lines
+          panel.background = element_rect(fill = "white")   # White background
+        )
+      # Generate the filename dynamically
+      filename <- file.path("plots", paste0(substr(animal_type, 1, 1), campaign_code, "_", gas$filename_suffix, ".jpeg"))
+      
+      # Save the plot
+      ggsave(filename = filename, plot = gas_plot, width = 10, height = 8)
+      
+      cat("Saved plot to:", filename, "\n")  # Confirm save location
+    } else {
+      cat("No data available for gas:", gas$gastype, "\n")
+    }
+  }
+}
 
 # Function to generate plots ### WORKING!!!! with DATES
 generate_plots <- function(animal_type, campaign_type, date_filter, campaign_code) {
