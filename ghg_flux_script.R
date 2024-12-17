@@ -243,6 +243,50 @@ cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$
 cowCH4graph
 ggsave(filename = "plots/cowCH4graph.jpeg", plot = cowCH4graph, width = 6, height = 4)
 
+## TEST
+nopitflux_data <- flux_data %>% 
+  mutate(animain = substr(base_code, 1, nchar(base_code)-1)) %>% 
+  filter(plottype == 'Vegetated') %>% 
+  filter(!(gastype %in% c("CH4", "N2O") & NEERE == "NEE"))
+# Updated Cow CH4 graph
+# Updated Cow CH4 graph: Mean and Standard Error
+cowCH4graph <- ggplot(nopitflux_data[nopitflux_data$gastype == "CH4" & 
+                                       nopitflux_data$Animal == "Cow", ],
+                      aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  # Raw data points
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  # Mean and Standard Error bars per treatment
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  
+  # Colors: more distinguishable
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
+                     labels = c("Control", "Dung")) +
+  
+  
+  # X-axis with breaks
+  scale_x_discrete(breaks = levels(factor(nopitflux_data$Days_Since_First))) +
+  
+  # Titles and labels
+  labs(title = 'Cow CH4', 
+       x = 'Days since first measurement', 
+       y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment") +
+  
+  # Adjust theme
+  theme_minimal() +
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "right")
+
+cowCH4graph
+
 horseCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$Animal == "Horse", ],
                       aes(x = Days_Since_First, y = best.flux)) +
   geom_jitter(width = 0.1, aes(color = treatment)) +
