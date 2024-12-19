@@ -482,7 +482,7 @@ N2O_dungsize_plot <- plot_model(N2O_dungsize_model, type = "pred",
   scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
   scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
   xlab(expression("Dung area (cm"^2*")")) +
-  ylab(expression("nmol N2O m"^{-2} * " s"^{-1})) +
+  ylab(expression("nmol N"[2] * "O m"^{-2} * " s"^{-1})) +
   labs(title = "Predicted values of N2O flux") +
   scale_y_continuous(breaks = seq(-5,10, by = 5)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
@@ -504,7 +504,7 @@ CH4_dungsize_plot <- plot_model(CH4_dungsize_model, type = "pred",
   scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
   scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
   xlab(expression("Dung area (cm"^2*")")) +
-  ylab(expression("nmol CH4 m"^{-2} * " s"^{-1})) +
+  ylab(expression("nmol CH"[4] * " m"^{-2} * " s"^{-1})) +
   labs(title = "Predicted values of CH4 flux") +
   scale_y_continuous(breaks = seq(-5,160, by = 25)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
@@ -526,7 +526,7 @@ CO2_RE_dungsize_plot <- plot_model(CO2_RE_dungsize_model, type = "pred",
   scale_color_manual(values = c("Cow" = "#656d4a", "Horse" = "#7f4f24"), labels = c("Cow", "Horse")) +
   scale_fill_manual(values = c("Horse" = "#696969", "Cow" = "#696969")) +
   xlab(expression("Dung area (cm"^2*")")) +
-  ylab(expression(mu * "mol CO2 m"^{-2} * " s"^{-1})) +
+  ylab(expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1})) +
   labs(title = "Predicted values of CO2 RE flux") +
   scale_y_continuous(breaks = seq(0,40, by = 5)) + 
   scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
