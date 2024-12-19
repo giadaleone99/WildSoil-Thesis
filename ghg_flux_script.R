@@ -168,125 +168,258 @@ avgflux_data <- flux_data %>%
   filter(plottype == 'Vegetated') %>% 
   filter(!(gastype %in% c("CH4", "N2O") & NEERE == "NEE"))
 
+## Cow GPP 
 cowGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Cow", ],
-                      aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A4AC86", 
-                                "F" = "#656D4A"),
+                      aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), , alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Cow GPP', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "none")+
+  labs(title = 'A', x = element_blank(), y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
+
 cowGPPgraph
 ggsave(filename = "plots/cowGPPgraph.jpeg", plot = cowGPPgraph, width = 6, height = 4)
 
+## Horse GPP
 horseGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Horse", ],
-                        aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A68A64", 
-                                "F" = "#7F4F24"),
+                        aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Horse GGP', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "bottom")+
+  labs(title = 'B', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 horseGPPgraph
 ggsave(filename = "plots/horseGPPgraph.jpeg", plot = horseGPPgraph, width = 6, height = 4)
 
+cowhorseGPP <- cowGPPgraph + horseGPPgraph
+cowhorseGPP
+ggsave(filename = "plots/cowhorseGPPgraph.jpeg", plot = cowhorseGPP, width = 8, height = 4)
+
+cowhorseGPPnew <- grid.arrange(cowGPPgraph, horseGPPgraph, ncol = 1 )
+ggsave("plots/cowhorseGPPnew_plot.png", cowhorseGPPnew, width = 8, height = 7)
+
+## Cow Reco graph
 cowRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Cow", ],
-                      aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A4AC86", 
-                                "F" = "#656D4A"),
+                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Cow Reco', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "none")+
+  labs(title = 'A', x = element_blank(), y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 cowRecograph
 ggsave(filename = "plots/cowRecograph.jpeg", plot = cowRecograph, width = 6, height = 4)
 
+## Horse Reco graph
 horseRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Horse", ],
-                        aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A68A64", 
-                                "F" = "#7F4F24"),
+                        aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Horse Reco', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "bottom")+
+  labs(title = 'B', x = 'Days since first measurement', y = expression(mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 horseRecograph
 ggsave(filename = "plots/horseRecograph.jpeg", plot = horseRecograph, width = 6, height = 4)
 
-cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$Animal == "Cow", ],
-       aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A4AC86", 
-                                "F" = "#656D4A"),
+CowhorseRecograph <- cowRecograph + horseRecograph
+CowhorseRecograph
+ggsave(filename = "plots/CowhorseRecograph.jpeg", plot = CowhorseRecograph, width = 8, height = 4)
+
+cowhorseReconew <- grid.arrange(cowRecograph, horseRecograph, ncol = 1 )
+ggsave("plots/cowhorseReconew_plot.png", cowhorseReconew, width = 8, height = 7)
+
+
+## Cow CH4 graph
+cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & 
+                                     avgflux_data$Animal == "Cow", ],
+                      aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+    scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
+  labs(title = 'A', 
+       x = element_blank(), 
+       y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment") +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Cow CH4', x = 'Days since first measurement', y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "none")
+
 cowCH4graph
 ggsave(filename = "plots/cowCH4graph.jpeg", plot = cowCH4graph, width = 6, height = 4)
 
+# ## Different approach (Frederik)
+# cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & 
+#                                      avgflux_data$Animal == "Cow", ],
+#                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment, shape = Campaign)) + 
+#   geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+#   stat_summary(fun = mean, 
+#                geom = "point",
+#                aes(group = treatment, color = treatment),
+#                position = position_dodge(width = 1), 
+#                size = 2.5) +
+#   stat_summary(fun.data = mean_se, 
+#                geom = "errorbar", 
+#                position = position_dodge(width = 1), 
+#                width = 0.5) +
+#   scale_color_manual(values = c("C" = "grey", "F" = "black"), 
+#                      labels = c("Control", "Dung")) +
+#   labs(title = 'A', 
+#        x = element_blank(), 
+#        y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
+#        color = "Treatment", fill = "Treatment") +
+#   theme_minimal() +
+#   theme(axis.line = element_line(color = "black"),
+#         legend.position = "none") +
+#   facet_wrap(~ifelse(Days_Since_First %in% 0:4, "Days 0-4", "Days 16-47"), scales = "free")
+# 
+# cowCH4graph
+
+
+## Horse CH4 graph
 horseCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & avgflux_data$Animal == "Horse", ],
-                      aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A68A64", 
-                                "F" = "#7F4F24"),
+                        aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Horse CH4', x = 'Days since first measurement', y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "bottom")+
+  labs(title = 'B', x = 'Days since first measurement', y = expression("nmol CH"[4] * " m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 horseCH4graph
 ggsave(filename = "plots/horseCH4graph.jpeg", plot = horseCH4graph, width = 6, height = 4)
 
+CowhorseCH4graph <- cowCH4graph + horseCH4graph
+CowhorseCH4graph
+ggsave(filename = "plots/CowhorseCH4graph.jpeg", plot = CowhorseCH4graph, width = 8, height = 4)
+
+cowhorseCH4new <- grid.arrange(cowCH4graph, horseCH4graph, ncol = 1 )
+ggsave("plots/cowhorseCH4new_plot.png", cowhorseCH4new, width = 8, height = 7)
+
+## Cow N2O 
 cowN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & avgflux_data$Animal == "Cow", ],
-                      aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A4AC86", 
-                                "F" = "#656D4A"),
+                      aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Cow N2O', x = 'Days since first measurement', y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "none")+
+  labs(title = 'A', x = element_blank(), y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 cowN2Ograph
 ggsave(filename = "plots/cowN2Ograph.jpeg", plot = cowN2Ograph, width = 6, height = 4)
 
 horseN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & avgflux_data$Animal == "Horse", ],
-                        aes(x = Days_Since_First, y = best.flux)) +
-  geom_jitter(width = 0.1, aes(color = treatment)) +
-  scale_color_manual(values = c("C" = "#A68A64", 
-                                "F" = "#7F4F24"),
+                        aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
+  stat_summary(fun = mean, 
+               geom = "point",
+               aes(group = treatment, color = treatment),
+               position = position_dodge(width = 1), 
+               size = 2.5) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(width = 1), 
+               width = 0.5) +
+  scale_color_manual(values = c("C" = "grey", "F" = "black"), 
                      labels = c("Control", "Dung")) +
-  labs(color = "Treament") +
-  stat_summary(fun = mean, geom = 'point', size = 7, color = 'red', shape = 95) +
-  stat_summary(fun.data = mean_cl_boot, geom = 'errorbar', width = 1, color = 'black') +
+  scale_x_discrete(breaks = levels(factor(avgflux_data$Days_Since_First))) +
   theme_minimal() +
-  theme(axis.line = element_line(color = "black")) +
-  labs(title = 'Horse N2O', x = 'Days since first measurement', y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}))
+  theme(axis.line = element_line(color = "black"),
+        legend.position = "bottom")+
+  labs(title = 'B', x = 'Days since first measurement', y = expression("nmol N"[2] * "O m"^{-2} * " s"^{-1}),
+       color = "Treatment", fill = "Treatment")
 horseN2Ograph
 ggsave(filename = "plots/horseN2Ograph.jpeg", plot = horseN2Ograph, width = 6, height = 4)
+
+CowhorseN2Ograph <- cowN2Ograph + horseN2Ograph
+CowhorseN2Ograph
+ggsave(filename = "plots/CowhorseN2Ograph.jpeg", plot = CowhorseN2Ograph, width = 8, height = 4)
+
+cowhorseN2Onew <- grid.arrange(cowN2Ograph, horseN2Ograph, ncol = 1 )
+ggsave("plots/cowhorseN2Onew_plot.png", cowhorseN2Onew, width = 8, height = 7)
 
 generate_avgplots <- function(animal_type, campaign_type, date_filter, campaign_code) {
   for (gas in gases) {
