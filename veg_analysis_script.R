@@ -994,7 +994,7 @@ saveRDS(veg_combined, "data/vegetation_data.rds")
 gradient_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("G", plot_id)), 
                                    aes(x = plot_id, y = adjweight_per_class, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
-  facet_wrap("Animal", scales = "free") +
+  facet_wrap("Animal", scales = "free_x") +
   geom_bar_pattern(aes(pattern = veg_class), 
                    position = "stack", 
                    stat = "identity", 
@@ -1032,7 +1032,7 @@ ggsave(filename = "veg_plots/gradientvegweightperclass.jpeg", plot = gradient_st
 daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)), 
                                    aes(x = plot_id, y = adjweight_per_class, fill = interaction(treatment, Animal))) +
   geom_bar(stat = "identity") +
-  facet_wrap("Animal", scales = "free") +
+  facet_wrap("Animal", scales = "free_x") +
   geom_bar_pattern(aes(pattern = veg_class), 
                    position = "stack", 
                    stat = "identity", 
