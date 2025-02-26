@@ -12,9 +12,32 @@ library(DHARMa)
 library(effects)
 
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
+date_data <- readRDS("flux_data/clean_flux_data.rds")
 
+# get the dates per base code for days since first
+date_data <- date_data %>% 
+  filter(gastype == "CO2") %>% 
+  filter(NEERE == "RE") %>% 
+  filter(treatment == "F") %>% 
+  filter(Days_Since_First == 0) %>% 
+  select(base_code, longdate)
+
+date_data <- date_data %>% 
+  mutate(days_since_first = as.numeric(as.Date("2024-08-02") - as.Date(longdate))) %>% 
+  mutate(dung_age = case_when(days_since_first %in% c(3, 4) ~ "3-4", days_since_first == 18 ~ "18", days_since_first %in% c(49, 50) ~ "49-50")) %>% 
+  select(base_code, dung_age)
+
+# create combined dataset with dung age
+comb_soil_data <- soil_data_raw %>% 
+  mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
+  mutate(Animal = as.factor(Animal))
+
+comb_soil_data$sample_type <- factor(comb_soil_data$sample_type, levels = c("Dung soil", "Fresh", "Control"))
+
+comb_soil_data <- comb_soil_data %>% 
+  left_join(date_data, by = "base_code")
+  
 # create subdatasets for the campaigns
-
 gradient_soil <- soil_data_raw %>% 
   filter(grepl("G.", base_code)) %>% 
   mutate(Animal = case_when(grepl("^C", base_code) ~ "Cow", grepl("^H", base_code) ~ "Horse"),) %>% 
@@ -424,10 +447,10 @@ run_model <- function(dataset, model) {
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$sample_type)
-  plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ sample_type|Animal|Campaign)
-  test2 <- emmeans(model, ~ Campaign|sample_type|Animal)
-  test3 <- emmeans(model, ~ Animal|Campaign|sample_type)
+  plotResiduals(simuOutput, form = dataset$dung_age)
+  test <- emmeans(model, ~ sample_type|Animal|dung_age)
+  test2 <- emmeans(model, ~ dung_age|sample_type|Animal)
+  test3 <- emmeans(model, ~ Animal|dung_age|sample_type)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
 
@@ -445,8 +468,16 @@ Soil_pH_b1 <- glmmTMB(pH ~ Animal * sample_type * Campaign * bulk_density + (1|b
 
 Soil_PO4.P_b1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign * bulk_density + (1|base_code), data = combined_soil)
 
+# IMPROVED FOR PAPER
+Soil_CNratio_d1 <- glmmTMB(CN_ratio ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
+
+Soil_pH_d1 <- glmmTMB(pH ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
+
+Soil_PO4.P_d1 <- glmmTMB(PO4.P ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
+
+
 # Change this accordingly 
-run_model(combined_soil, Soil_CNratio_m1)
+run_model(comb_soil_data, Soil_PO4.P_d1)
 
 # model effects
 Soil_CNratio_effects <- allEffects(Soil_CNratio_m1)
