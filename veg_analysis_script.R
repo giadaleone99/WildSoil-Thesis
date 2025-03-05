@@ -27,6 +27,7 @@ vegdung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.n
 veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
 species_list <- read.csv("data/species_lists.csv")
+date_data <- readRDS("flux_data/clean_flux_data.rds")
 
 #dung_data <- readRDS("data/dung_data.rds")
 #gradient_soil_data <- readRDS("data/gradient_soil_data.rds")
@@ -142,6 +143,22 @@ dung_data <- dung_data %>%
     )
   )
 
+# get the dates per base code for days since first and add to veg combined
+date_data <- date_data %>% 
+  filter(gastype == "CO2") %>% 
+  filter(NEERE == "RE") %>% 
+  filter(treatment == "F") %>% 
+  filter(Days_Since_First == 0) %>% 
+  select(base_code, longdate)
+
+date_data <- date_data %>% 
+  mutate(days_since_first = as.numeric(as.Date("2024-08-02") - as.Date(longdate))) %>% 
+  mutate(dung_age = case_when(days_since_first %in% c(3, 4) ~ "3-4", days_since_first == 18 ~ "18", days_since_first %in% c(49, 50) ~ "49-50")) %>% 
+  select(base_code, dung_age)
+
+veg_combined <- veg_combined %>% 
+  left_join(date_data, by = "base_code")
+
 # mutating the data for the stacked height bar plots
 veg_combined2 <- veg_combined
 na_index <- is.na(veg_combined2$veg_height) & !is.na(veg_combined2$veg_height_2)
@@ -157,6 +174,9 @@ veg_growth <- veg_summary %>%
   filter(!is.na(veg_height)) %>%
   mutate(height_value = veg_height_2 - veg_height,
          height_type = "veg_growth") 
+
+veg_growth <- veg_growth %>% 
+  left_join(date_data, by = "base_code")
 
 
 # Combine the original DataFrame with the new rows
@@ -1095,11 +1115,11 @@ run_model <- function(dataset, model) {
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$treatment)
-  plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ treatment|Animal|Campaign)
-  test2 <- emmeans(model, ~ Animal|treatment|Campaign)
-  test3 <- emmeans(model, ~ Campaign|Animal|treatment)
-  contrast(test3, method = "pairwise") %>% as.data.frame()
+  plotResiduals(simuOutput, form = dataset$dung_age)
+  test <- emmeans(model, ~ treatment|Animal|dung_age)
+  test2 <- emmeans(model, ~ Animal|treatment|dung_age)
+  test3 <- emmeans(model, ~ dung_age|Animal|treatment)
+  contrast(test, method = "pairwise") %>% as.data.frame()
 }
 
 #dailies
@@ -1123,7 +1143,11 @@ veg_growth_m1 <- glmmTMB(height_value ~ Animal * treatment * Campaign + (1|base_
 veg_biomass_m1 <- glmmTMB(total_veg_weight_gm2 ~ treatment * Animal * Campaign + (1|base_code), data = veg_combined)
 veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), data = veg_combined)
 
-run_model(veg_combined, veg_cn_m1)
+#models with dung age - IMPROVED FOR PAPER
+veg_growth_d1 <- glmmTMB(height_value ~ Animal * treatment * dung_age + (1|base_code), data = veg_growth)
+veg_cn_d1 <- glmmTMB(CN_ratio ~ Animal * treatment * dung_age + (1|base_code), data = veg_combined)
+
+run_model(veg_growth, veg_growth_d1)
 
 #test model effects
 veg_height_effects <- allEffects(veg_height_m1)
