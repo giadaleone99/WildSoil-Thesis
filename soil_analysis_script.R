@@ -256,7 +256,7 @@ cnplot <- ggplot(comb_soil_data, aes(x = Animal, y = CN_ratio, fill = sample_typ
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
-        axis.text.x=element_blank(), axis.text.y = element_text(size = 14), strip.text = element_text(size = 14)) +
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
   labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
@@ -280,7 +280,7 @@ phplot <- ggplot(comb_soil_data, aes(x = Animal, y = pH, fill = sample_type_anim
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
-        axis.text.x=element_blank(), axis.text.y = element_text(size = 14), strip.text = element_text(size = 14)) +
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
   labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",
@@ -304,7 +304,7 @@ po4plot <- ggplot(comb_soil_data, aes(x = Animal, y = PO4.P, fill = sample_type_
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
-        axis.text.x=element_blank(), axis.text.y = element_text(size = 14), strip.text = element_text(size = 14)) +
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
   labs(fill = "Plot type & \nsampling location") +
   scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
                                "Control.Cow" = "#A4AC86",

@@ -385,6 +385,9 @@ CH4_model <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_
 #N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
+# models with dung age - IMPROVED FOR PAPER
+CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp + (1|Days_Since_First), data = flux_data)
+
 run_model(flux_data, N2O_model)
 
 CO2_PS_effects <- allEffects(CO2_PS_model)

@@ -77,7 +77,7 @@ for(i in 1:(nrow(flux_data) - 1)) {  # Loop until n-1 to avoid going out of boun
   if (flux_data$NEERE[i] == "NEE" && flux_data$NEERE[i+1] == "RE") {
     if (flux_data$gastype[i] == "CO2") {
       # Subtract the best.flux values from NEE and RE
-      flux_data$photosynthesis[i] <-  flux_data$best.flux[i+1] - flux_data$best.flux[i]
+      flux_data$photosynthesis[i] <-  flux_data$best.flux[i] - flux_data$best.flux[i+1]
     }
   }
 }
@@ -1176,15 +1176,15 @@ run_model <- function(dataset, model) {
   #print(summary(model))
   print(Anova(model))
   simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
-  #testDispersion(simulationOutput)
+  testDispersion(simuOutput)
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
   plotResiduals(simuOutput, form = dataset$treatment)
-  plotResiduals(simuOutput, form = dataset$Campaign)
-  test <- emmeans(model, ~ Campaign|treatment|Animal)
+  plotResiduals(simuOutput, form = dataset$Days_Since_First)
+  test <- emmeans(model, ~ treatment|Animal)
   contrast(test, method = "pairwise") %>% as.data.frame()
 }
-run_model(N2O_subset, N2O_model3)
+run_model(CO2_PS_subset, CO2_PS_d1)
 
 
 # creating the models for all the subsets
