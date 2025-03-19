@@ -58,24 +58,28 @@ flux_data <- flux_data %>%
   left_join(N2O_data, by = c("plotID", "longdate")) %>% 
   dplyr::select(-1:-5, -7:-9, -12:-17, -20, -26)
 flux_data <- flux_data[, c(6, 7, 2, 8, 9, 11, 12, 13, 3, 17, 18, 1, 4, 5, 10, 14, 15, 16)]
-flux_data <- flux_data %>% 
+
+# PAR stuff
+CO2_PS_data <- CO2_PS_data %>% 
   left_join(start_data, by = "UniqueID") 
-flux_data <- flux_data %>% 
+CO2_PS_data <- CO2_PS_data %>% 
   mutate(minute = str_sub(Start_timehhmmss, 1, 5),
          par = 0)
 
 par_data <- par_data %>% 
   mutate(date = str_sub(min.time, 1, 10),
-         min = str_sub(min.time, 12, 16)) %>% 
-  mutate(longdate = as.Date(par_data$date, format = "%d-%m-%y"))
+         min = str_sub(min.time, 12, 16))
+par_data <- par_data %>% 
+  mutate(longdate = as.Date(par_data$date, format = "%d-%m-%Y"))
 
 for (i in 1:ncol(par_data)) {
-  for (j in 1:ncol(flux_data)) {
-    if (par_data$longdate[i] == flux_data$longdate[j] && par_data$min[i] == flux_data$minute[j]) {
-      flux_data$par[j] <- mean(par_data$PAR_umol_m2_s[i], par_data$PAR_umol_m2_s[i+1], par_data$PAR_umol_m2_s[i+2], par_data$PAR_umol_m2_s[i+3], par_data$PAR_umol_m2_s[i+4])
+  for (j in 1:ncol(CO2_PS_data)) {
+    if (par_data$longdate[i] == CO2_PS_data$longdate[j] && par_data$min[i] == CO2_PS_data$minute[j]) {
+      CO2_PS_data$par[j] <- mean(par_data$PAR_umol_m2_s[i], par_data$PAR_umol_m2_s[i+1], par_data$PAR_umol_m2_s[i+2], par_data$PAR_umol_m2_s[i+3], par_data$PAR_umol_m2_s[i+4])
     }
   }
-}
+} 
+
 # create a df summing the gas data on the diff days for each plot
 plot_flux_data <- flux_data %>% 
   group_by(plotID) %>% 
