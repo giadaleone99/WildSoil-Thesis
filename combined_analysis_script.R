@@ -47,35 +47,37 @@ CH4_data <- allflux_data %>%
 N2O_data <- allflux_data %>% 
   filter(gastype == "N2O") %>% 
   dplyr::rename(N2O_flux = best.flux)
-# Join gas data per date
-flux_data <- CO2_PS_data %>% 
-  left_join(CO2_RE_data, by = c("plotID", "longdate")) %>% 
-  dplyr::select(-18:-22, -24:-32)
-flux_data <- flux_data %>% 
-  left_join(CH4_data, by = c("plotID", "longdate")) %>% 
-  dplyr::select(-19:-23, -25:-33)
-flux_data <- flux_data %>% 
-  left_join(N2O_data, by = c("plotID", "longdate")) %>% 
-  dplyr::select(-1:-5, -7:-9, -12:-17, -20, -26)
-flux_data <- flux_data[, c(6, 7, 2, 8, 9, 11, 12, 13, 3, 17, 18, 1, 4, 5, 10, 14, 15, 16)]
 
 # PAR stuff
 CO2_PS_data <- CO2_PS_data %>% 
   left_join(start_data, by = "UniqueID") 
 CO2_PS_data <- CO2_PS_data %>% 
   mutate(minute = str_sub(Start_timehhmmss, 1, 5),
-         par = 0)
+         par = NA)
 
+# Join gas data per date
+flux_data <- CO2_PS_data %>% 
+  left_join(CO2_RE_data, by = c("plotID", "longdate")) %>% 
+  dplyr::select(-21:-25, -27:-35)
+flux_data <- flux_data %>% 
+  left_join(CH4_data, by = c("plotID", "longdate")) %>% 
+  dplyr::select(-22:-26, -28:-36)
+flux_data <- flux_data %>% 
+  left_join(N2O_data, by = c("plotID", "longdate")) %>% 
+  dplyr::select(-1:-5, -7:-9, -12:-17, -23, -29)
+flux_data <- flux_data[, c(9, 10, 2, 11, 12, 14, 15, 16, 3, 20, 21, 1, 7, 8, 13, 17, 18, 19, 4, 5, 6)]
+
+# more PAR stuff
 par_data <- par_data %>% 
   mutate(date = str_sub(min.time, 1, 10),
          min = str_sub(min.time, 12, 16))
 par_data <- par_data %>% 
   mutate(longdate = as.Date(par_data$date, format = "%d-%m-%Y"))
 
-for (i in 1:ncol(par_data)) {
-  for (j in 1:ncol(CO2_PS_data)) {
-    if (par_data$longdate[i] == CO2_PS_data$longdate[j] && par_data$min[i] == CO2_PS_data$minute[j]) {
-      CO2_PS_data$par[j] <- mean(par_data$PAR_umol_m2_s[i], par_data$PAR_umol_m2_s[i+1], par_data$PAR_umol_m2_s[i+2], par_data$PAR_umol_m2_s[i+3], par_data$PAR_umol_m2_s[i+4])
+for (i in 1:nrow(par_data)) {
+  for (j in 1:nrow(flux_data)) {
+    if (par_data$longdate[i] == flux_data$longdate[j] && par_data$min[i] == flux_data$minute[j]) {
+      flux_data$par[j] <- mean(c(par_data$PAR_umol_m2_s[i], par_data$PAR_umol_m2_s[i+1], par_data$PAR_umol_m2_s[i+2], par_data$PAR_umol_m2_s[i+3], par_data$PAR_umol_m2_s[i+4]))
     }
   }
 } 
@@ -378,7 +380,7 @@ summary(model)
   plot(modeleffects)
   
 # Run gas flux models with soil moisture and temperature as random factors
-  run_model <- function(dataset, model) {
+run_model <- function(dataset, model) {
     #print(summary(model))
     print(Anova(model))
     simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
@@ -386,17 +388,18 @@ summary(model)
     plot(simuOutput)
     plotResiduals(simuOutput, form = dataset$Animal)
     plotResiduals(simuOutput, form = dataset$treatment)
-    plotResiduals(simuOutput, form = dataset$Campaign)
+    plotResiduals(simuOutput, form = dataset$Days_Since_First)
     plotResiduals(simuOutput, form = dataset$S_temp)
     plotResiduals(simuOutput, form = dataset$SWC_.)
     #plotResiduals(simuOutput, form = dataset$bulk_density)
-    test1 <- emmeans(model, ~ treatment|Animal|Campaign|S_temp|SWC_.)
-    test2 <- emmeans(model, ~ Animal|treatment|Campaign|S_temp|SWC_.)
-    test3 <- emmeans(model, ~ Campaign|treatment|Animal|S_temp|SWC_.)
+    test1 <- emmeans(model, ~ treatment|Animal|SWC_.)
+    #test2 <- emmeans(model, ~ Animal|treatment|S_temp)#|SWC_.)
+    #test3 <- emmeans(model, ~ S_temp|treatment|Animal)#|SWC_.)
     contrast(test1, method = "pairwise") %>% as.data.frame()
-  }
-  
+}
+
 CO2_PS_model <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data)
+CO2_PS_parmodel <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Campaign * S_temp + (1|par) + (1|Days_Since_First), data = flux_data)
 CO2_RE_model <- glmmTMB(CO2_RE_flux ~ Animal * treatment + Campaign + SWC_. + bulk_density + (1|Days_Since_First), data = flux_data)
 
 #CH4_model1 <- glmmTMB(ranked_CH4_flux ~ Animal * treatment * Campaign * SWC_. + (1|Days_Since_First), data = flux_data) #close
@@ -410,9 +413,13 @@ CH4_model <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_
 N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
 # models with dung age - IMPROVED FOR PAPER
-CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp + (1|Days_Since_First), data = flux_data)
+CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp * Days_Since_First + (1|base_code), data = flux_data)
+CO2_PS_d2 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp * Days_Since_First + (1|par) + (1|base_code), data = flux_data)
+CO2_RE_d1 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Days_Since_First * S_temp + SWC_. + (1|base_code), data = flux_data)
+N2O_d1 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Days_Since_First * S_temp * SWC_. + (1|base_code), data = flux_data)
+CH4_d1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + bulk_density * S_temp + ns(SWC_., df = 3) + (1|base_code), data = flux_data) #not functional yet
 
-run_model(flux_data, N2O_model)
+run_model(flux_data, CH4_d1)
 
 CO2_PS_effects <- allEffects(CO2_PS_model)
 CO2_RE_effects <- allEffects(CO2_RE_model)

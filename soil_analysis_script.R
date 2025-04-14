@@ -247,75 +247,84 @@ comb_soil_data <- comb_soil_data %>%
     sample_type_animal = interaction(sample_type, Animal))
 comb_soil_data$dung_age <- ordered(comb_soil_data$dung_age, levels = c("3-4", "18", "49-50"))
 
+comb_means <- comb_soil_data %>% 
+  group_by(sample_type, Animal, dung_age, sample_type_animal) %>% 
+  summarise(CN_ratio=mean(CN_ratio),
+            pH=mean(pH),
+            PO4.P=mean(PO4.P))
+
 # CN ratio
 cnplot <- ggplot(comb_soil_data, aes(x = Animal, y = CN_ratio, fill = sample_type_animal)) +
   facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old"))) +
-  geom_boxplot(position = position_dodge(width = 1)) +
-  geom_point(position = position_dodge(width = 1))+
+  #geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1)) +
+  guides(fill = "none") +
+  geom_point(
+    data = comb_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  ) +
+  labs(shape = "Sample type") +
   ylab("C:N ratio") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
-  labs(fill = "Plot type & \nsampling location") +
-  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
-                               "Control.Cow" = "#A4AC86",
-                               "Dung soil.Cow"= "#333D29", 
-                               "Fresh.Horse" = "#7F4F24",
-                               "Control.Horse" = "#A68A64", 
-                               "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
+  scale_shape_manual(values = c(15,16,17)) +
+  scale_color_manual(values = c("#656D4A","#7F4F24"),
+                    labels = c("Cow", "Horse"))+
   expand_limits(y = c(11, 16)) +
   scale_y_continuous(breaks = seq(11, 16, by = 1))
-  #ggtitle("C:N ratio")
 cnplot
 ggsave(filename = "soil_plots/newcn.jpeg", plot = cnplot, width = 6, height = 4)
 
 # pH
 phplot <- ggplot(comb_soil_data, aes(x = Animal, y = pH, fill = sample_type_animal)) +
   facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old"))) +
-  geom_boxplot(position = position_dodge(width = 1)) +
-  geom_point(position = position_dodge(width = 1))+
+  #geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1)) +
+  guides(fill = "none") +
+  geom_point(
+    data = comb_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  ) +
+  labs(shape = "Sample type") +
   ylab("pH") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
-  labs(fill = "Plot type & \nsampling location") +
-  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
-                               "Control.Cow" = "#A4AC86",
-                               "Dung soil.Cow"= "#333D29", 
-                               "Fresh.Horse" = "#7F4F24",
-                               "Control.Horse" = "#A68A64", 
-                               "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control")) +
+  scale_shape_manual(values = c(15,16,17)) +
+  scale_color_manual(values = c("#656D4A","#7F4F24"),
+                     labels = c("Cow", "Horse"))+
   expand_limits(y = c(4, 7)) +
   scale_y_continuous(breaks = seq(0, 7, by = 0.5))
-  #ggtitle("pH")
 phplot
 ggsave(filename = "soil_plots/newph.jpeg", plot = phplot, width = 6, height = 4)
 
 # PO4.P
 po4plot <- ggplot(comb_soil_data, aes(x = Animal, y = PO4.P, fill = sample_type_animal)) +
   facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old"))) +
-  geom_boxplot(position = position_dodge(width = 1)) +
-  geom_point(position = position_dodge(width = 1))+
-  ylab("Plant available P (mg P/kg soil)") +
+  #geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1)) +
+  guides(fill = "none") +
+  geom_point(
+    data = comb_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  ) +
+  labs(shape = "Sample type") +
+  ylab("Plant available P") +
   theme_minimal() +
   theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
-  labs(fill = "Plot type & \nsampling location") +
-  scale_fill_manual(values = c("Fresh.Cow" = "#656D4A",
-                               "Control.Cow" = "#A4AC86",
-                               "Dung soil.Cow"= "#333D29", 
-                               "Fresh.Horse" = "#7F4F24",
-                               "Control.Horse" = "#A68A64", 
-                               "Dung soil.Horse" = "#582F0E"),
-                    labels = c("Cow below dung", "Cow beside dung", "Cow control", "Horse below dung", "Horse beside dung", "Horse control"))+
+  scale_shape_manual(values = c(15,16,17)) +
+  scale_color_manual(values = c("#656D4A","#7F4F24"),
+                     labels = c("Cow", "Horse"))+
   expand_limits(y = c(50, 370)) +
   scale_y_continuous(breaks = seq(50, 370, by = 50))
-  #ggtitle("Plant available P")
 po4plot
 ggsave(filename = "soil_plots/newpo4p.jpeg", plot = po4plot, width = 6, height = 4)
 

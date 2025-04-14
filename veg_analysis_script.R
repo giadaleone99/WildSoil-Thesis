@@ -182,8 +182,6 @@ veg_growth <- veg_growth %>%
 # Combine the original DataFrame with the new rows
 veg_heightdata <- bind_rows(veg_heightdata, veg_growth) %>% 
   filter(height_type != "veg_height_2")
-  
-
 
 #make subsets for the campaigns
 daily_veg_combined <- veg_combined %>% 
@@ -1085,6 +1083,29 @@ daily_stacked_weights <- ggplot(data = veg_weight %>% filter(grepl("D", plot_id)
 print(daily_stacked_weights)
 
 ggsave(filename = "veg_plots/dailyvegweightperclass.jpeg", plot = daily_stacked_weights, width = 6, height = 4)
+
+# boxplots with dung age - IMPROVED FOR PAPER
+vegcnplot <- ggplot(veg_combined, aes(x = Animal, y = CN_ratio, fill = Animal_treatment)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old"))) +
+  #geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1)) +
+  #guides(fill = "none") +
+  #geom_point(
+  #  data = comb_means,
+  #  size = 3,
+  #  position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  #) +
+  #labs(shape = "Sample type") +
+  ylab("C:N ratio") +
+  theme_minimal() +
+  theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
+  scale_color_manual(values = c("#656D4A","#7F4F24"),
+                     labels = c("Cow", "Horse")) +
+  expand_limits(y = c(10, 40)) 
+vegcnplot
+ggsave(filename = "veg_plots/vegcn_new.jpeg", plot = vegcnplot, width = 6, height = 4)
 
 
 # modelling Lasses way xD
