@@ -16,7 +16,7 @@ library(sjPlot)
 # Import data
 allflux_data <- readRDS("flux_data/clean_flux_data.rds")
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
-par_data <- read.csv("data/PAR_file.csv", sep = ";")
+par_data <- read.csv("data/PAR_file.csv", sep = ",")
 start_data <- read.csv("data/Fieldwork_data_final.csv") %>% 
   select(UniqueID, Start_timehhmmss)
 veg_growth_data <- readRDS("plant_data/veg_growth_data.rds") %>% 
@@ -55,6 +55,12 @@ CO2_PS_data <- CO2_PS_data %>%
   mutate(minute = str_sub(Start_timehhmmss, 1, 5),
          par = NA)
 
+for (i in 1:nrow(CO2_PS_data)) {
+  if (substring(CO2_PS_data$minute[i], 1, 1) == "0") {
+    CO2_PS_data$minute[i] = substring(CO2_PS_data$minute[i], 2)
+  }
+}
+
 # Join gas data per date
 flux_data <- CO2_PS_data %>% 
   left_join(CO2_RE_data, by = c("plotID", "longdate")) %>% 
@@ -74,8 +80,8 @@ par_data <- par_data %>%
 par_data <- par_data %>% 
   mutate(longdate = as.Date(par_data$date, format = "%d-%m-%Y"))
 
-for (i in 1:nrow(par_data)) {
-  for (j in 1:nrow(flux_data)) {
+for (j in 1:nrow(flux_data)) {
+  for (i in 1:nrow(par_data)) {
     if (par_data$longdate[i] == flux_data$longdate[j] && par_data$min[i] == flux_data$minute[j]) {
       flux_data$par[j] <- mean(c(par_data$PAR_umol_m2_s[i], par_data$PAR_umol_m2_s[i+1], par_data$PAR_umol_m2_s[i+2], par_data$PAR_umol_m2_s[i+3], par_data$PAR_umol_m2_s[i+4]))
     }
@@ -121,12 +127,12 @@ flux_data <- flux_data %>%
 # create data transformed columns for CH4 and N2O fluxes
 flux_data <- flux_data %>% 
   mutate(ranked_CH4_flux = rank(CH4_flux),
-         normalized_CH4_flux = bestNormalize(CH4_flux)$x.t) %>% 
+         normalized_CH4_flux = bestNormalize(CH4_flux)$x.t,
+         addition_CH4_flux = CH4_flux + 2.904) %>% 
   mutate(ranked_N2O_flux = rank(N2O_flux),
-         normalized_N2O_flux = bestNormalize(N2O_flux)$x.t)
-hist(flux_data$normalized_N2O_flux)
-normalizeCH4 <- orderNorm(flux_data$N2O_flux)$x.t
-hist(normalizeCH4)
+         normalized_N2O_flux = bestNormalize(N2O_flux)$x.t,
+         addition_N2O_flux = N2O_flux + 1.471)
+
 #create df with dung soil data
 dung_soil_data <- soil_data_raw %>% 
   filter(sample_type %in% "Dung soil") %>% 
@@ -389,10 +395,10 @@ run_model <- function(dataset, model) {
     plotResiduals(simuOutput, form = dataset$Animal)
     plotResiduals(simuOutput, form = dataset$treatment)
     plotResiduals(simuOutput, form = dataset$Days_Since_First)
-    plotResiduals(simuOutput, form = dataset$S_temp)
-    plotResiduals(simuOutput, form = dataset$SWC_.)
+    #plotResiduals(simuOutput, form = dataset$S_temp)
+    #plotResiduals(simuOutput, form = dataset$SWC_.)
     #plotResiduals(simuOutput, form = dataset$bulk_density)
-    test1 <- emmeans(model, ~ treatment|Animal|SWC_.)
+    test1 <- emmeans(model, ~ treatment|Animal)
     #test2 <- emmeans(model, ~ Animal|treatment|S_temp)#|SWC_.)
     #test3 <- emmeans(model, ~ S_temp|treatment|Animal)#|SWC_.)
     contrast(test1, method = "pairwise") %>% as.data.frame()
@@ -413,13 +419,18 @@ CH4_model <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_
 N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
 # models with dung age - IMPROVED FOR PAPER
-CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp * Days_Since_First + (1|base_code), data = flux_data)
-CO2_PS_d2 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * S_temp * Days_Since_First + (1|par) + (1|base_code), data = flux_data)
+CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Days_Since_First * S_temp + (1|base_code), data = flux_data) #actually does not pass QQ plot residuals
+CO2_PS_d2 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Days_Since_First + (1|par) + (1|base_code), data = flux_data) #with PAR data and removed S_temp, works fine
 CO2_RE_d1 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Days_Since_First * S_temp + SWC_. + (1|base_code), data = flux_data)
 N2O_d1 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Days_Since_First * S_temp * SWC_. + (1|base_code), data = flux_data)
-CH4_d1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + bulk_density * S_temp + ns(SWC_., df = 3) + (1|base_code), data = flux_data) #not functional yet
+N2O_d2 <- glmmTMB(addition_N2O_flux ~ Animal * treatment * Days_Since_First + (1|base_code), family = Gamma(link="log"), data = flux_data) #Frederiks way, DHARMa hates it
+CH4_d0 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + (1|base_code), data = flux_data) #not functional yet
+CH4_d1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + bulk_density * S_temp + SWC_. + (1|base_code), data = flux_data) #not functional yet, try gamma and mabye log link
+CH4_d2 <- glmmTMB(addition_CH4_flux ~ Animal * treatment * Days_Since_First + (1|base_code), family = Gamma(link="log"), data = flux_data) #Frederiks way, DHARMa hates it
+
 
 run_model(flux_data, CH4_d1)
+anova(CH4_d0, CH4_d1)
 
 CO2_PS_effects <- allEffects(CO2_PS_model)
 CO2_RE_effects <- allEffects(CO2_RE_model)
