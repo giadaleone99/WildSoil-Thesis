@@ -86,7 +86,7 @@ flux_data <- flux_data %>%
 #------- Models ---------
 run_model <- function(dataset, model) {
   print(Anova(model))
-  simuOutput <- simulateResiduals(fittedModel = model, n = 1000)
+  simuOutput <- simulateResiduals(fittedModel = model, n = 10000)
   testDispersion(simuOutput)
   plot(simuOutput)
   plotResiduals(simuOutput, form = dataset$Animal)
@@ -120,24 +120,185 @@ CH4_d4 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + poly(Days_Since_Fir
 CH4_d5 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * poly(Days_Since_First, 3) + poly(SWC_., 2) * poly(Days_Since_First, 3) + (1|base_code), data = flux_data) # no good
 CH4_d6 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * poly(Days_Since_First, 2) + poly(SWC_., 2) * poly(Days_Since_First, 2) + (1|base_code), data = flux_data) # significant outliers, fine otherwise
 
+
 run_model(flux_data, CH4_d6)
 
 model.sel(CH4_d4, CH4_d5, CH4_d6)
 
+testOutliers(CH4_d6)
 
-modplot <- get_model_data(CH4_d4, type = "pred")
+#model plot GPP FOR PAPER
+modplot <- get_model_data(CO2_PS_d1, type = "pred")
+ggplot(bind_rows(modplot, .id="data_frame"),
+       aes(Animal, treatment, Days_Since_First, colour=modplot)) +
+  geom_line()
+
+pred_GPPdata <- get_model_data(CO2_PS_d1,
+                            type = "pred",
+                            terms = c("Days_Since_First[0:47, by=0.5]", "treatment", "Animal"))
+
+pred_GPPdata <- as.data.frame(pred_GPPdata)
+
+predictedGPPcow <- ggplot(pred_GPPdata[pred_GPPdata$facet == "Cow", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Cow", ], aes(x = Days_Since_First, y = CO2_PS_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted "* mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Cow control", "Cow dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Cow control", "Cow dung")) +
+  theme(legend.position = "bottom")
+predictedGPPcow
+
+predictedGPPhorse <- ggplot(pred_GPPdata[pred_GPPdata$facet == "Horse", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Horse", ], aes(x = Days_Since_First, y = CO2_PS_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted "* mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Horse control", "Horse dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Horse control", "Horse dung")) +
+  theme(legend.position = "bottom")
+predictedGPPhorse
+
+predictedGPP <- predictedGPPcow + predictedGPPhorse
+predictedGPP
+ggsave(filename = "plots/predictedGPPpoints_paper.jpeg", plot = predictedGPP, width = 8, height = 4)
+
+#model plot Reco FOR PAPER
+pred_Recodata <- get_model_data(CO2_RE_d1,
+                               type = "pred",
+                               terms = c("Days_Since_First[0:47, by=0.5]", "treatment", "Animal"))
+
+pred_Recodata <- as.data.frame(pred_Recodata)
+
+predictedRecocow <- ggplot(pred_Recodata[pred_Recodata$facet == "Cow", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Cow", ], aes(x = Days_Since_First, y = CO2_RE_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted "* mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Cow control", "Cow dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Cow control", "Cow dung")) +
+  theme(legend.position = "bottom")
+predictedRecocow
+
+predictedRecohorse <- ggplot(pred_Recodata[pred_Recodata$facet == "Horse", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Horse", ], aes(x = Days_Since_First, y = CO2_RE_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted "* mu * "mol CO"[2] * " m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Horse control", "Horse dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Horse control", "Horse dung")) +
+  theme(legend.position = "bottom")
+predictedRecohorse
+
+predictedReco <- predictedRecocow + predictedRecohorse
+predictedReco
+ggsave(filename = "plots/predictedRecopoints_paper.jpeg", plot = predictedReco, width = 8, height = 4)
+
+#model plot N2O FOR PAPER
+pred_N2Odata <- get_model_data(N2O_d1,
+                               type = "pred",
+                               terms = c("Days_Since_First[0:47, by=0.5]", "treatment", "Animal"))
+
+pred_N2Odata <- as.data.frame(pred_N2Odata)
+
+predictedN2Ocow <- ggplot(pred_N2Odata[pred_N2Odata$facet == "Cow", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Cow", ], aes(x = Days_Since_First, y = normalized_N2O_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted nmol N"[2] * "O m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Cow control", "Cow dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Cow control", "Cow dung")) +
+  theme(legend.position = "bottom")
+predictedN2Ocow
+
+predictedN2Ohorse <- ggplot(pred_N2Odata[pred_N2Odata$facet == "Horse", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Horse", ], aes(x = Days_Since_First, y = normalized_N2O_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted nmol N"[2] * "O m"^{-2} * " s"^{-1}), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Horse control", "Horse dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Horse control", "Horse dung")) +
+  theme(legend.position = "bottom")
+predictedN2Ohorse
+
+predictedN2O <- predictedN2Ocow + predictedN2Ohorse
+predictedN2O
+ggsave(filename = "plots/predictedN2Opoints_paper.jpeg", plot = predictedN2O, width = 8, height = 4)
+
+#model plot CH4 FOR PAPER
+modplot <- get_model_data(CH4_d6, type = "pred")
 ggplot(bind_rows(modplot, .id="data_frame"),
        aes(Animal, treatment, Days_Since_First, SWC_., colour=modplot)) +
   geom_line()
 
-pred_data <- get_model_data(CH4_d4,
+pred_CH4data <- get_model_data(CH4_d6,
                             type = "pred",
                             terms = c("Days_Since_First[0:47, by=0.5]", "treatment", "Animal"))
 
-pred_data <- as.data.frame(pred_data)
+pred_CH4data <- as.data.frame(pred_CH4data)
 
-predictedCH4 <- ggplot(pred_data, aes(x = x, y = predicted)) +
-  #geom_point(flux_data, aes(x = Days_Since_First, y = normalized_CH4_flux)) +
+predictedCH4cow <- ggplot(pred_CH4data[pred_CH4data$facet == "Cow", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Cow", ], aes(x = Days_Since_First, y = normalized_CH4_flux, color = interaction(treatment, Animal))) +
   geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
   geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
   facet_grid(. ~facet) +
@@ -147,12 +308,36 @@ predictedCH4 <- ggplot(pred_data, aes(x = x, y = predicted)) +
                                "F.Cow" = "#656d4a",
                                "C.Horse" = "#a68a64",
                                "F.Horse" = "#7f4f24"),
-                     labels = c("Cow dung", "Cow control", "Horse dung", "Horse control")) +
+                     labels = c("Cow control", "Cow dung")) +
   scale_fill_manual(values = c("C.Cow" = "#c4cda0",
                                 "F.Cow" = "#4b5037",
                                 "C.Horse" = "#c3a276",
                                 "F.Horse" = "#66401a"),
-                     labels = c("Cow dung", "Cow control", "Horse dung", "Horse control"))
+                     labels = c("Cow control", "Cow dung")) +
+  theme(legend.position = "bottom")
+predictedCH4cow
+
+predictedCH4horse <- ggplot(pred_CH4data[pred_CH4data$facet == "Horse", ], aes(x = x, y = predicted)) +
+  geom_point(data = flux_data[flux_data$Animal == "Horse", ], aes(x = Days_Since_First, y = normalized_CH4_flux, color = interaction(treatment, Animal))) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, fill = interaction(group, facet)), alpha=0.2) +
+  geom_line(aes(x = x, y = predicted, color = interaction(group, facet)), size = 1.4) +
+  facet_grid(. ~facet) +
+  labs(x = "Days since first measurement", y = expression("Predicted CH"[4] * " flux (nmol" * " m"^{-2} * " s"^{-1} * ")"), colour = "Plot type", fill = "Plot type") +
+  theme_minimal() +
+  scale_color_manual(values = c("C.Cow" = "#a4ac86",
+                                "F.Cow" = "#656d4a",
+                                "C.Horse" = "#a68a64",
+                                "F.Horse" = "#7f4f24"),
+                     labels = c("Horse control", "Horse dung")) +
+  scale_fill_manual(values = c("C.Cow" = "#c4cda0",
+                               "F.Cow" = "#4b5037",
+                               "C.Horse" = "#c3a276",
+                               "F.Horse" = "#66401a"),
+                    labels = c("Horse control", "Horse dung")) +
+  theme(legend.position = "bottom")
+predictedCH4horse
+
+predictedCH4 <- predictedCH4cow + predictedCH4horse
 predictedCH4
-ggsave(filename = "plots/predictedCH4_paper.jpeg", plot = predictedCH4, width = 8, height = 4)
+ggsave(filename = "plots/predictedCH4points_paper.jpeg", plot = predictedCH4, width = 8, height = 4)
        
