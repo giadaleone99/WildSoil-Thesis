@@ -93,9 +93,9 @@ run_model <- function(dataset, model) {
   plotResiduals(simuOutput, form = dataset$treatment)
   plotResiduals(simuOutput, form = dataset$Days_Since_First)
   #plotResiduals(simuOutput, form = dataset$S_temp)
-  #plotResiduals(simuOutput, form = dataset$SWC_.)
+  plotResiduals(simuOutput, form = dataset$SWC_.)
   #plotResiduals(simuOutput, form = dataset$bulk_density)
-  test1 <- emmeans(model, ~ treatment|Animal)
+  test1 <- emmeans(model, ~ treatment|Animal|Days_Since_First)
   #test2 <- emmeans(model, ~ Animal|treatment|S_temp)#|SWC_.)
   #test3 <- emmeans(model, ~ S_temp|treatment|Animal)#|SWC_.)
   contrast(test1, method = "pairwise") %>% as.data.frame()
@@ -110,7 +110,10 @@ N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_tem
 
 # models with dung age - IMPROVED FOR PAPER
 CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Days_Since_First + (1|par) + (1|base_code), data = flux_data) # with PAR data, works fine
-CO2_RE_d1 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Days_Since_First * S_temp + SWC_. + (1|base_code), data = flux_data) # works fine
+CO2_RE_d1 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Days_Since_First * S_temp + SWC_. + (1|base_code), data = flux_data) # no good
+CO2_RE_d2 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * poly(Days_Since_First, 3) + (1|base_code), data = flux_data) # works fine
+CO2_RE_d3 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * poly(Days_Since_First, 3) + poly(S_temp, 2) * poly(Days_Since_First, 3) + (1|base_code), data = flux_data) # works but has some weird warnings
+CO2_RE_d4 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * poly(Days_Since_First, 3) + poly(SWC_., 2) * poly(Days_Since_First, 2) + (1|base_code), data = flux_data) # works but has some weird warnings
 N2O_d1 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Days_Since_First * S_temp * SWC_. + (1|base_code), data = flux_data) # works fine
 N2O_d2 <- glmmTMB(addition_N2O_flux ~ Animal * treatment * Days_Since_First + (1|base_code), family = Gamma(link="log"), data = flux_data) # Frederiks way, DHARMa hates it
 CH4_d1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + (1|base_code), data = flux_data) # not approved by DHARMa
@@ -120,12 +123,21 @@ CH4_d4 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + poly(Days_Since_Fir
 CH4_d5 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * poly(Days_Since_First, 3) + poly(SWC_., 2) * poly(Days_Since_First, 3) + (1|base_code), data = flux_data) # no good
 CH4_d6 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * poly(Days_Since_First, 2) + poly(SWC_., 2) * poly(Days_Since_First, 2) + (1|base_code), data = flux_data) # significant outliers, fine otherwise
 
+run_model(flux_data, CO2_RE_d2)
 
-run_model(flux_data, CH4_d6)
-
-model.sel(CH4_d4, CH4_d5, CH4_d6)
+model.sel(CO2_RE_d1, CO2_RE_d2, CO2_RE_d3)
 
 testOutliers(CH4_d6)
+
+CO2_PS_effects <- allEffects(CO2_PS_d1)
+CO2_RE_effects <- allEffects(CO2_RE_d1)
+N2O_effects <- allEffects(N2O_d1)
+CH4_effects <- allEffects(CH4_d6)
+plot(CH4_effects)
+CH4_d6 |>
+  ggeffects::ggeffect() |>
+  lapply(plot) |>
+  patchwork::wrap_plots()
 
 #model plot GPP FOR PAPER
 modplot <- get_model_data(CO2_PS_d1, type = "pred")
@@ -184,7 +196,7 @@ predictedGPP
 ggsave(filename = "plots/predictedGPPpoints_paper.jpeg", plot = predictedGPP, width = 8, height = 4)
 
 #model plot Reco FOR PAPER
-pred_Recodata <- get_model_data(CO2_RE_d1,
+pred_Recodata <- get_model_data(CO2_RE_d2,
                                type = "pred",
                                terms = c("Days_Since_First[0:47, by=0.5]", "treatment", "Animal"))
 
