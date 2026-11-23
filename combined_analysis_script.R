@@ -29,10 +29,22 @@ dung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.name
          "plotID" = "Kode_1") %>% 
   dplyr::select(-4,-5,-9)
 veg_combined_data <- readRDS("plant_data/veg_combined_data.rds")%>% 
-  dplyr::rename("plotID"= "plot_id",
+  dplyr::rename("plotID" = "plot_id",
          "plant_CN" = "CN_ratio") %>% 
   dplyr::select(-5)
 
+# get the dates per base code for days since first
+date_data <- allflux_data %>% 
+  filter(gastype == "CO2") %>% 
+  filter(NEERE == "RE") %>% 
+  filter(treatment == "F") %>% 
+  filter(Days_Since_First == 0) %>% 
+  select(base_code, longdate)
+
+date_data <- date_data %>% 
+  mutate(days_since_first = as.numeric(as.Date("2024-08-02") - as.Date(longdate))) %>% 
+  mutate(dung_age = case_when(days_since_first %in% c(3, 4) ~ "3-4", days_since_first == 18 ~ "18", days_since_first %in% c(49, 50) ~ "49-50")) %>% 
+  select(base_code, dung_age)
 
 # Combine data
 CO2_PS_data <- allflux_data %>% 
@@ -112,7 +124,11 @@ soil_data_test <- soil_data %>%
   left_join(plot_flux_data, by = "plotID", suffix = c("_soil", "_veg")) %>% 
   mutate(Animal = case_when(
     grepl("^C", plotID) ~ "Cow",
-    grepl("^H", plotID) ~ "Horse"))
+    grepl("^H", plotID) ~ "Horse")) %>% 
+  dplyr::rename("base_code" = "base_code_soil")
+
+soil_data_test <- soil_data_test %>% 
+  left_join(date_data, by = "base_code")
 
 growth_model_data <- plot_flux_data %>% 
   filter(!is.na(height_value))
@@ -132,6 +148,15 @@ flux_data <- flux_data %>%
   mutate(ranked_N2O_flux = rank(N2O_flux),
          normalized_N2O_flux = bestNormalize(N2O_flux)$x.t,
          addition_N2O_flux = N2O_flux + 1.471)
+
+# create df with only the last GHG measurements per plot and soil variables, does not have dung soil rn
+last_flux_data <- flux_data %>% 
+  filter(period == 3) %>% 
+  filter(Days_Since_First %in% c(3, 4, 16, 46, 47)) %>% 
+  filter(UniqueID != 'CD3_C_RE_01aug' & UniqueID != 'CD4_C_RE_01aug' & UniqueID != 'HD3_C_RE_01aug' & UniqueID != 'HD4_C_RE_01aug' & UniqueID != 'CD3_F_RE_01aug' & UniqueID != 'CD4_F_RE_01aug' & UniqueID != 'HD3_F_RE_01aug' & UniqueID != 'HD4_F_RE_01aug')
+
+last_combined <- last_flux_data %>% 
+  left_join(soil_data, by = 'plotID')
 
 #create df with dung soil data
 dung_soil_data <- soil_data_raw %>% 
@@ -167,6 +192,7 @@ dungsoil_dung_data <- bind_rows(dung_soil_data, dung_lab) %>%
     grepl("^C", base_code) ~ "Cow",
     grepl("^H", base_code) ~ "Horse")) 
 
+# -----------------------------------------------------------------
 # regression plot of bulk density and %C
 soil_data_nooutlier <- soil_data_raw %>% 
   filter(bulk_density < 4)
@@ -361,13 +387,34 @@ ggplot(dungsoil_dung_data, aes(x = plotID, y = CN_ratio, fill = interaction(samp
   ggtitle("Dung and Dung Soil CN ratio")+
   facet_wrap(~ Animal, scales = "free_x")
 
+#CN and N in soil compared to GHG
+NGPP <- glmmTMB(CO2_PS_flux ~ TN * treatment, data = last_combined)
+NReco <- glmmTMB(CO2_RE_flux ~ TN * treatment, data = last_combined)
+NCH4 <- glmmTMB(normalized_CH4_flux ~ TN * treatment, data = last_combined)
+NN2O <- glmmTMB(normalized_N2O_flux ~ TN * treatment, data = last_combined)
 
-# Modeling
+CNGPP <- glmmTMB(CO2_PS_flux ~ CN_ratio * treatment, data = last_combined)
+CNReco <- glmmTMB(CO2_RE_flux ~ CN_ratio * treatment, data = last_combined)
+CNCH4 <- glmmTMB(normalized_CH4_flux ~ CN_ratio * treatment, data = last_combined)
+CNN2O <- glmmTMB(normalized_N2O_flux ~ CN_ratio * treatment, data = last_combined)
+
+run_model(last_combined, NN2O)
+
+standardize_parameters(NN2O, method = "refit")
+
+plot(allEffects(CNN2O))
+ggplot(last_combined, aes(x = normalized_N2O_flux, y = CN_ratio, color = treatment)) +
+  geom_point()
+# Modeling P and veg growth
 model <- glmmTMB(P ~ PO4.P, data = growth_model_data)
 summary(mod)
 print(Anova(mod))
 
 model <- glmmTMB(height_value ~ Animal * CN_ratio * PO4.P * treatment, data = growth_model_data)
+
+# veg growth soil influence model - PAPER
+model <- glmmTMB(height_value ~ Animal + TN_soil + PO4.P_soil + treatment, data = soil_data_test)
+
 summary(model)
 
   print(Anova(model))
@@ -378,13 +425,14 @@ summary(model)
   plotResiduals(simuOutput, form = growth_model_data$treatment)
   plotResiduals(simuOutput, form = growth_model_data$CN_ratio)
   plotResiduals(simuOutput, form = growth_model_data$PO4.P)
-  test1 <- emmeans(model, ~ Animal|treatment|PO4.P|CN_ratio)
+  test1 <- emmeans(model, ~ Animal|treatment|PO4.P_soil|TN_soil)
   test2 <- emmeans(model, ~ treatment|PO4.P|CN_ratio|Animal)
-  contrast(test2, method = "pairwise") %>% as.data.frame()
-  interactions::interact_plot(model, pred = PO4.P, modx = treatment)
-  interactions::interact_plot(model, pred = CN_ratio, modx = treatment)
+  contrast(test1, method = "pairwise") %>% as.data.frame()
+  interactions::interact_plot(model, pred = PO4.P_soil, modx = treatment)
+  interactions::interact_plot(model, pred = TN_soil, modx = treatment)
   modeleffects <- allEffects(model)
   plot(modeleffects)
+  standardize_parameters(model, method = "refit")
   
 # Run gas flux models with soil moisture and temperature as random factors
 run_model <- function(dataset, model) {
@@ -419,7 +467,7 @@ CH4_model <- glmmTMB(normalized_CH4_flux ~ Animal * treatment * Campaign * bulk_
 #N2O_model2 <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp + (1|Days_Since_First), data = flux_data) #good
 N2O_model <- glmmTMB(normalized_N2O_flux ~ Animal * treatment * Campaign * S_temp * SWC_. + (1|Days_Since_First), data = flux_data) #best
 
-# models with dung age - IMPROVED FOR PAPER
+# models with dung age
 CO2_PS_d1 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Days_Since_First * S_temp + (1|base_code), data = flux_data) #actually does not pass QQ plot residuals
 CO2_PS_d2 <- glmmTMB(CO2_PS_flux ~ Animal * treatment * Days_Since_First + (1|par) + (1|base_code), data = flux_data) #with PAR data and removed S_temp, works fine
 CO2_RE_d1 <- glmmTMB(CO2_RE_flux ~ Animal * treatment * Days_Since_First * S_temp + SWC_. + (1|base_code), data = flux_data)
@@ -430,7 +478,7 @@ CH4_d1 <- glmmTMB(normalized_CH4_flux ~ Animal * treatment + Days_Since_First + 
 CH4_d2 <- glmmTMB(addition_CH4_flux ~ Animal * treatment * Days_Since_First + (1|base_code), family = Gamma(link="log"), data = flux_data) #Frederiks way, DHARMa hates it
 
 
-run_model(flux_data, CH4_d1)
+run_model(flux_data, N2O_reg)
 anova(CH4_d0, CH4_d1)
 
 CO2_PS_effects <- allEffects(CO2_PS_model)
@@ -444,48 +492,41 @@ N2O_model |>
   ggeffects::ggeffect() |>
   lapply(plot) |>
   patchwork::wrap_plots()
+
 # Relate fluxes to dung dimensions
-CO2_reg <- lm(CO2_RE_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
-CH4_reg <- lm(CH4_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
-N2O_reg <- lm(N2O_flux ~ dung_area_cm2,  data = flux_data, subset = treatment == "F")
-plot(N2O_reg)
+
+CO2_cow_reg <- lm(CO2_RE_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Cow")
+CO2_horse_reg <- lm(CO2_RE_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Horse")
+CH4_reg <- lm(log(normalized_CH4_flux) ~ dung_area_cm2 * Animal,  data = dung_flux_data)
+CH4_cow_reg <- lm(normalized_CH4_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Cow")
+CH4_horse_reg <- lm(normalized_CH4_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Horse")
+N2O_cow_reg <- lm(normalized_N2O_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Cow")
+N2O_horse_reg <- lm(normalized_N2O_flux ~ dung_area_cm2,  data = dung_flux_data, subset = Animal == "Horse")
+summary(CH4_reg)
+plot(CH4_reg, 1)
+library(lmtest)
+bptest(CH4_reg) #check that residual errors have constant variance
+durbinWatsonTest(CH4_reg) #check that predictors (x) are independent & observed with negligible error
+ncvTest(CH4_reg) #check that residual errors have constant variance
+shapiro.test(resid(CH4_reg)) #check normality of residuals
+
 ggplot(flux_data %>% filter(treatment == "F"),
-        aes(x = dung_area_cm2, y = CH4_flux, colour = interaction(treatment, Animal))) +
+       aes(x = dung_area_cm2, y = CO2_RE_flux)) + #, colour = interaction(treatment, Animal))) +
   geom_point() + 
   stat_poly_eq(use_label(c("eq", "R2", "p"))) +
   geom_smooth(method = "lm") +
   labs(
     x = "Dung Area (cm²)",        
-    y = "CH4 flux",        
-    color = "Plot type"           
-  ) +
-  theme_minimal() +               
-  scale_color_manual(values = c("F.Cow" = "#656D4A",
-                               "F.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung")) +
-  theme(
-    legend.position = "right",    
-    plot.title = element_text(hjust = 0.5)) +
-  ggtitle("CH4 flux by dung area and plot type")
-
-
-ggplot(flux_data %>% filter(treatment == "F"),
-       aes(x = dung_area_cm2, y = N2O_flux, colour = interaction(treatment, Animal))) +
-  geom_point() + 
-  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
-  geom_smooth(method = "lm") +
-  labs(
-    x = "Dung Area (cm²)",        
-    y = "N2O flux",        
+    y = "CO2 RE flux",        
     color = "Plot type") +
   theme_minimal() +               
-  scale_color_manual(values = c("F.Cow" = "#656D4A",
-                                "F.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung")) +
+  #scale_color_manual(values = c("F.Cow" = "#656D4A",
+  #                              "F.Horse" = "#7F4F24"),
+  #                   labels = c("Cattle dung", "Horse dung")) +
   theme(
     legend.position = "right",    
     plot.title = element_text(hjust = 0.5)) +
-  ggtitle("N2O flux by dung area and plot type")
+  ggtitle("CO2 RE flux by dung area and plot type")
 
 ggplot(flux_data %>% filter(treatment == "F"),
        aes(x = dung_area_cm2, y = CO2_RE_flux, colour = interaction(treatment, Animal))) +
@@ -499,21 +540,59 @@ ggplot(flux_data %>% filter(treatment == "F"),
   theme_minimal() +               
   scale_color_manual(values = c("F.Cow" = "#656D4A",
                                 "F.Horse" = "#7F4F24"),
-                     labels = c("Cow dung", "Horse dung")) +
+                     labels = c("Cattle dung", "Horse dung")) +
   theme(
     legend.position = "right",    
     plot.title = element_text(hjust = 0.5)) +
   ggtitle("CO2 RE flux by dung area and plot type")
 
+ggplot(flux_data %>% filter(treatment == "F"),
+        aes(x = dung_area_cm2, y = normalized_CH4_flux, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
+  geom_smooth(method = "lm") +
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "Normalised CH4 flux",        
+    color = "Plot type"           
+  ) +
+  theme_minimal() +               
+  scale_color_manual(values = c("F.Cow" = "#656D4A",
+                               "F.Horse" = "#7F4F24"),
+                     labels = c("Cattle dung", "Horse dung")) +
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)) +
+  ggtitle("CH4 flux by dung area and plot type")
+
+
+ggplot(flux_data %>% filter(treatment == "F"),
+       aes(x = dung_area_cm2, y = normalized_N2O_flux, colour = interaction(treatment, Animal))) +
+  geom_point() + 
+  stat_poly_eq(use_label(c("eq", "R2", "p"))) +
+  geom_smooth(method = "lm") +
+  labs(
+    x = "Dung Area (cm²)",        
+    y = "Normalised N2O flux",        
+    color = "Plot type") +
+  theme_minimal() +               
+  scale_color_manual(values = c("F.Cow" = "#656D4A",
+                                "F.Horse" = "#7F4F24"),
+                     labels = c("Cattle dung", "Horse dung")) +
+  theme(
+    legend.position = "right",    
+    plot.title = element_text(hjust = 0.5)) +
+  ggtitle("N2O flux by dung area and plot type")
+
 # Modelling the fluxes in relation to dung size
 dung_flux_data <- flux_data %>% filter(treatment == "F")
 
 N2O_dungsize_model <- glmmTMB(N2O_flux ~ dung_area_cm2 * Animal, dung_flux_data)
-CH4_dungsize_model <- glmmTMB(CH4_flux ~ dung_area_cm2 * Animal, dung_flux_data)
+CH4_dungsize_model <- glmmTMB(normalized_CH4_flux ~ dung_area_cm2 * Animal, dung_flux_data)
 CO2_RE_dungsize_model <- glmmTMB(CO2_RE_flux ~ dung_area_cm2 * Animal, dung_flux_data)
 
-print(Anova(CO2_RE_dungsize_model))
-simuOutput <- simulateResiduals(fittedModel = CO2_RE_dungsize_model, n = 1000)
+print(Anova(CH4_dungsize_model))
+simuOutput <- simulateResiduals(fittedModel = CH4_dungsize_model, n = 1000)
 testDispersion(simuOutput)
 plot(simuOutput)
 plotResiduals(simuOutput, form = dung_flux_data$Animal)
@@ -552,12 +631,12 @@ CH4_dungsize_plot <- plot_model(CH4_dungsize_model, type = "pred",
   xlab(expression("Dung area (cm"^2*")")) +
   ylab(expression("nmol CH"[4] * " m"^{-2} * " s"^{-1})) +
   labs(title = "Predicted values of CH4 flux") +
-  scale_y_continuous(breaks = seq(-5,160, by = 25)) + 
-  scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
+  #scale_y_continuous(breaks = seq(-5,160, by = 25)) + 
+  #scale_x_continuous(breaks = seq(0, 1500, by = 250)) +
   theme(  
         panel.grid.major.x = element_blank(),  
         axis.line = element_line(color = "black")) +
-  geom_point(aes(x = dung_area_cm2, y = CH4_flux, color = Animal),
+  geom_point(aes(x = dung_area_cm2, y = normalized_CH4_flux, color = Animal),
              data = dung_flux_data,
              inherit.aes = FALSE)
 
