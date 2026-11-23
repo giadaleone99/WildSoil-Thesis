@@ -382,6 +382,7 @@ summary(model)
   test2 <- emmeans(model, ~ treatment|PO4.P|CN_ratio|Animal)
   contrast(test2, method = "pairwise") %>% as.data.frame()
   interactions::interact_plot(model, pred = PO4.P, modx = treatment)
+  interactions::interact_plot(model, pred = CN_ratio, modx = treatment)
   modeleffects <- allEffects(model)
   plot(modeleffects)
   

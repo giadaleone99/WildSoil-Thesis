@@ -21,19 +21,15 @@ library(sjPlot)
 library(vegan)
 library(paletteer)
 library(effects)
+library(ggnewscale)
+library(effectsize)
 
-# Importeffects# Import data
+# Import data
 vegdung_lab <- read.csv("data/Plant_Dung_CN_pH_elements.csv", sep = ";", check.names = FALSE)
 veg_raw <- read.csv("data/vegetation_data.csv")
 fieldwork_data_raw <- read.csv("data/Fieldwork_data_final.csv")
 species_list <- read.csv("data/species_lists.csv")
 date_data <- readRDS("flux_data/clean_flux_data.rds")
-
-#dung_data <- readRDS("data/dung_data.rds")
-#gradient_soil_data <- readRDS("data/gradient_soil_data.rds")
-#daily_soil_data <- readRDS("data/daily_soil_data.rds")
-#species_data <- readRDS("data/species_data.rds")
-#vegetation_data <- readRDS("data/vegetation_data.rds")
 
 # Manipulating vegetation data
 veg_new <- veg_raw %>%
@@ -99,12 +95,13 @@ veg_combined <- veg_summary %>%
 
 # get CN and plot_id from the lab data sheet and merge with the rest
 veglab_data <- vegdung_lab %>% 
-  dplyr::select(Kode_1, CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
+  dplyr::select(Kode_1, 'N%', CN_ratio, B, Na, Mg, Al, P, S, K, Ca, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, As, Se, Sr, Mo, Cd, Ba, Tl, Pb) %>% 
   filter(!Kode_1 %in% c("CG dung", "HG dung", "HOD dung", "COD dung", "HND dung", "CND dung"))
 colnames(veglab_data)[1] <- c("plot_id")
 
 veg_combined <- veg_combined %>% 
-  left_join(veglab_data, by = "plot_id")
+  left_join(veglab_data, by = "plot_id") %>% 
+  dplyr::rename("TN" = "N%")
 
 # create a df for dung
 dung_data <- vegdung_lab %>% 
@@ -149,12 +146,12 @@ date_data <- date_data %>%
   filter(NEERE == "RE") %>% 
   filter(treatment == "F") %>% 
   filter(Days_Since_First == 0) %>% 
-  select(base_code, longdate)
+  dplyr::select(base_code, longdate)
 
 date_data <- date_data %>% 
   mutate(days_since_first = as.numeric(as.Date("2024-08-02") - as.Date(longdate))) %>% 
   mutate(dung_age = case_when(days_since_first %in% c(3, 4) ~ "3-4", days_since_first == 18 ~ "18", days_since_first %in% c(49, 50) ~ "49-50")) %>% 
-  select(base_code, dung_age)
+  dplyr::select(base_code, dung_age)
 
 veg_combined <- veg_combined %>% 
   left_join(date_data, by = "base_code")
@@ -462,11 +459,18 @@ lookup_species <- with(species_data, setNames(species_per_vegclass, paste(plot_i
 veg_percent <- veg_percent %>%
   dplyr::mutate(
     species_per_vegclass = lookup_species[paste(plot_id, veg_category, sep = "_")]
-  )
+  ) %>% 
+  mutate(
+    base_code = substr(plot_id, 1, 3)
+  ) %>% 
+  left_join(date_data, by = "base_code")
+
+veg_percent <- veg_percent %>%
+  mutate(dung_age = as.factor(dung_age))
 
 percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = factor(veg_class)))  +
   geom_bar(position = "fill", stat = "identity") +
-  facet_wrap("Campaign", scales = "free", labeller = as_labeller(c(Daily="A", Gradient="B"))) +
+  #facet_wrap("dung_age", scales = "free", labeller = as_labeller(c("A", "B", "C"))) +
   xlab("\nPlot ID") + ylab("Proportion of total forb weight") +
   theme_minimal() +
   scale_fill_manual(values = c("#D95F30FF", "#A89E5EFF", "#8785B2FF", "#FE00CE", "#0DF9FF", "#F8D564FF", "#FF9616", "#479B55", "#EEA6FB" ,
@@ -477,11 +481,9 @@ percentspecies <- ggplot(veg_percent, aes(x = plot_id, y = dry_weight, fill = fa
         panel.border = element_blank(), axis.line = element_line(), legend.position = "bottom") +
   labs(fill = "Forb species") +
   scale_y_continuous(expand = c(0, 0)) +
-  ggtitle("Proportions of forb species per campaign")
+  ggtitle("Proportions of forb species per age group")
 
-percentspecies
-
-ggsave(filename = "veg_plots/percentspecies.jpeg", plot = percentspecies, width = 10, height = 8)
+ggsave(filename = "veg_plots/percentspeciesnoage.jpeg", plot = percentspecies, width = 10, height = 8)
 
 
 # Scatter plot of veg weight vs height
@@ -849,6 +851,57 @@ dung_summary_stats <- dung_data %>%
     Mg_mean = mean(Mg, na.rm = TRUE),
     Mg_se = std.error(Mg)
   )
+# attempt to do t-test w dung data for PAPER
+library(rstatix)
+#CN ratio
+fligner.test(CN_ratio ~ Animal, data = dung_data) # check if variances are equal (true when p > 0.05)
+dung_data %>% identify_outliers(CN_ratio) # check if there are no outliers in the data
+dung_data %>% shapiro_test(CN_ratio) # check if data is normally distributed (true when p > 0.05)
+t.test(CN_ratio ~ Animal, data = dung_data, var.equal = TRUE) # t test, p = 0.142
+
+#N
+fligner.test(Nperc ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(Nperc)
+dung_data %>% shapiro_test(Nperc)
+t.test(Nperc ~ Animal, data = dung_data, var.equal = TRUE) # p = 0.135
+
+#pH
+fligner.test(pH ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(pH)
+dung_data %>% shapiro_test(pH)
+t.test(pH ~ Animal, data = dung_data, var.equal = TRUE) # cow greater than horse p = 0.013
+
+#P
+fligner.test(P ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(P)
+dung_data %>% shapiro_test(P)
+t.test(P ~ Animal, data = dung_data, var.equal = TRUE) # cow almost greater than horse p = 0.057
+
+#K
+fligner.test(K ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(K) # HND is outlier but not extreme
+dung_data %>% shapiro_test(K)
+t.test(K ~ Animal, data = dung_data, var.equal = TRUE) # p = 0.321
+
+#Ca
+fligner.test(Ca ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(Ca)
+dung_data %>% shapiro_test(Ca) # doesn't pass test
+library(ggpubr)
+ggqqplot(dung_data, x = "Ca") # actually, distribution looks fine
+t.test(Ca ~ Animal, data = dung_data, var.equal = TRUE) #cow greater than horse p < 0.001
+
+#S
+fligner.test(S ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(S)
+dung_data %>% shapiro_test(S)
+t.test(S ~ Animal, data = dung_data, var.equal = TRUE) # cow greater than horse p = 0.009
+
+#Mg
+fligner.test(Mg ~ Animal, data = dung_data)
+dung_data %>% identify_outliers(Mg)
+dung_data %>% shapiro_test(Mg)
+t.test(Mg ~ Animal, data = dung_data, var.equal = TRUE) # cow greater than horse p = 0.019
 
 # Species data analysis
 species_summary <- species_list %>%
@@ -1085,27 +1138,102 @@ print(daily_stacked_weights)
 ggsave(filename = "veg_plots/dailyvegweightperclass.jpeg", plot = daily_stacked_weights, width = 6, height = 4)
 
 # boxplots with dung age - IMPROVED FOR PAPER
+veg_combined$dung_age <- ordered(veg_combined$dung_age, levels = c("3-4", "18", "49-50"))
+
+vegcn_means <- veg_combined %>% 
+  group_by(treatment, Animal, dung_age, Animal_treatment) %>% 
+  summarise(CN_se = std.error(CN_ratio), CN_ratio=mean(CN_ratio))
+vegcn_means$dung_age <- ordered(vegcn_means$dung_age, levels = c("3-4", "18", "49-50"))
+
+veggrowth_means <- veg_growth %>% 
+  group_by(treatment, Animal, dung_age, Animal_treatment) %>% 
+  summarise(height_se = std.error(height_value), height_value=mean(height_value))
+veggrowth_means$dung_age <- ordered(veggrowth_means$dung_age, levels = c("18", "49-50"))
+
+vegtn_means <- veg_combined %>% 
+  group_by(treatment, Animal, dung_age, Animal_treatment) %>% 
+  summarise(TN_se = std.error(TN), TN=mean(TN))
+vegcn_means$dung_age <- ordered(vegtn_means$dung_age, levels = c("3-4", "18", "49-50"))
+
 vegcnplot <- ggplot(veg_combined, aes(x = Animal, y = CN_ratio, fill = Animal_treatment)) +
-  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old"))) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
   #geom_boxplot(position = position_dodge(width = 1)) +
-  geom_point(position = position_dodge(width = 1)) +
-  #guides(fill = "none") +
-  #geom_point(
-  #  data = comb_means,
-  #  size = 3,
-  #  position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
-  #) +
-  #labs(shape = "Sample type") +
-  ylab("C:N ratio") +
+  geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
+  geom_errorbar(data = vegcn_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=CN_ratio-CN_se, ymax=CN_ratio+CN_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
+  new_scale_color() +
+  guides(fill = "none") +
+  geom_point(
+    data = vegcn_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = treatment, color = Animal)
+  ) +
+  ylab("Vegetation C:N ratio") +
   theme_minimal() +
-  theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
-  scale_color_manual(values = c("#656D4A","#7F4F24"),
-                     labels = c("Cow", "Horse")) +
+  labs(shape = "Treatment") +
+  scale_shape_manual(values = c(23,24,22), labels = c("Control", "Dung")) +
+  scale_fill_manual(values = c("#004488", "#004488", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488","#997700"),
+                     labels = c("Cattle", "Horse")) +
   expand_limits(y = c(10, 40)) 
 vegcnplot
 ggsave(filename = "veg_plots/vegcn_new.jpeg", plot = vegcnplot, width = 6, height = 4)
+
+veggrowthplot <- ggplot(veg_growth, aes(x = Animal, y = height_value, fill = Animal_treatment)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
+  #geom_boxplot(position = position_dodge(width = 1)) +
+  geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
+  geom_errorbar(data = veggrowth_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=height_value-height_se, ymax=height_value+height_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
+  new_scale_color() +
+  guides(fill = "none") +
+  geom_point(
+    data = veggrowth_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = treatment, color = Animal)
+  ) +
+  ylab("Vegetation growth (cm)") +
+  theme_minimal() +
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
+  labs(shape = "Treatment") +
+  scale_shape_manual(values = c(23,24,22), labels = c("Control", "Dung")) +
+  scale_fill_manual(values = c("#004488", "#004488", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488","#997700"),
+                     labels = c("Cattle", "Horse")) 
+  #expand_limits(y = c(10, 40)) 
+veggrowthplot
+ggsave(filename = "veg_plots/veggrowth_new.jpeg", plot = veggrowthplot, width = 6, height = 4)
+
+# Total N in veg - made this and a model to see if it differed from the CN ratio results, it does not so no need to use it.
+vegtnplot <- ggplot(veg_combined, aes(x = Animal, y = TN, fill = Animal_treatment)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
+  geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
+  geom_errorbar(data = vegtn_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=TN-TN_se, ymax=TN+TN_se)) +
+  scale_color_manual(values = c("#A4AC86", "#A68A64"), guide = "none") +
+  new_scale_color() +
+  guides(fill = "none") +
+  geom_point(
+    data = vegtn_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = treatment, color = Animal)
+  ) +
+  ylab("Total N % in soil") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(),
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 12), strip.text = element_text(size = 12)) +
+  labs(shape = "Treatment") +
+  scale_shape_manual(values = c(23,24,22), labels = c("Control", "Dung")) +
+  scale_fill_manual(values = c("#656D4A", "#656D4A", "#7F4F24", "#7F4F24")) +
+  scale_color_manual("Herbivore species", values = c("#656D4A","#7F4F24"),
+                     labels = c("Cattle", "Horse"))
+vegtnplot
+ggsave(filename = "veg_plots/vegtn_new.jpeg", plot = vegtnplot, width = 6, height = 4)
 
 
 # modelling Lasses way xD
@@ -1140,7 +1268,8 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ treatment|Animal|dung_age)
   test2 <- emmeans(model, ~ Animal|treatment|dung_age)
   test3 <- emmeans(model, ~ dung_age|Animal|treatment)
-  contrast(test, method = "pairwise") %>% as.data.frame()
+  contrast(test3, method = "pairwise") %>% as.data.frame()
+  eff_size(test3, sigma = sigma(model), edf = df.residual(model))
 }
 
 #dailies
@@ -1167,15 +1296,38 @@ veg_cn_m1 <- glmmTMB(CN_ratio ~ Animal * treatment * Campaign + (1|base_code), d
 #models with dung age - IMPROVED FOR PAPER
 veg_growth_d1 <- glmmTMB(height_value ~ Animal * treatment * dung_age + (1|base_code), data = veg_growth)
 veg_cn_d1 <- glmmTMB(CN_ratio ~ Animal * treatment * dung_age + (1|base_code), data = veg_combined)
+veg_tn_d1 <- glmmTMB(TN ~ Animal * treatment * dung_age + (1|base_code), data = veg_combined)
 
-run_model(veg_growth, veg_growth_d1)
+run_model(veg_combined, veg_cn_d1)
+
+test <- emmeans(veg_growth_d1, ~ treatment|Animal|dung_age)
+test2 <- emmeans(veg_growth_d1, ~ Animal|treatment|dung_age)
+test3 <- emmeans(veg_growth_d1, ~ dung_age|Animal|treatment)
+vgp1 <- contrast(test, method = "pairwise") %>% as.data.frame()
+vgp2 <- contrast(test2, method = "pairwise") %>% as.data.frame()
+vgp3 <- contrast(test3, method = "pairwise") %>% as.data.frame()
+vge1 <- eff_size(test, sigma = sigma(veg_growth_d1), edf = df.residual(veg_growth_d1))
+vge2 <- eff_size(test2, sigma = sigma(veg_growth_d1), edf = df.residual(veg_growth_d1))
+vge3 <- eff_size(test3, sigma = sigma(veg_growth_d1), edf = df.residual(veg_growth_d1))
+vge1list <- as.data.frame(summary(vge1))
+vge2list <- as.data.frame(summary(vge2))
+vge3list <- as.data.frame(summary(vge3))
+vg1 <- left_join(vgp1, vge1list, by = c("contrast", "Animal", "dung_age"))
+vg2 <- left_join(vgp2, vge2list, by = c("contrast", "dung_age", "treatment"))
+vg3 <- left_join(vgp3, vge3list, by = c("contrast", "treatment", "Animal"))
+write.csv(vg1, file="output/vg1.csv")
+write.csv(vg2, file="output/vg2.csv")
+write.csv(vg3, file="output/vg3.csv")
+
+standardize_parameters(veg_growth_d1, method = "refit")
+standardize_parameters(veg_cn_d1, method = "refit")
 
 #test model effects
 veg_height_effects <- allEffects(veg_height_m1)
-veg_growth_effects <- allEffects(veg_growth_m1)
+veg_growth_effects <- allEffects(veg_growth_d1)
 veg_biomass_effects <- allEffects(veg_biomass_m1)
-veg_cn_effects <- allEffects(veg_cn_m1)
-plot(veg_biomass_effects)
+veg_cn_effects <- allEffects(veg_cn_d1)
+plot(veg_growth_effects)
 
 
 dung_cn_m1 <- glmmTMB(CN_ratio ~ Animal * campaign + (1|plot_id), data = dung_data)

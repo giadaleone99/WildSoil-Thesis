@@ -11,22 +11,23 @@ library(emmeans)
 library(DHARMa)
 library(effects)
 library(ggnewscale)
+library(effectsize)
 
 soil_data_raw <- read.csv("data/soil_data_raw.csv")
 date_data <- readRDS("flux_data/clean_flux_data.rds")
 
-# get the dates per base code for days since first
+# get the dates per base code for dung age
 date_data <- date_data %>% 
   filter(gastype == "CO2") %>% 
   filter(NEERE == "RE") %>% 
   filter(treatment == "F") %>% 
   filter(Days_Since_First == 0) %>% 
-  select(base_code, longdate)
+  dplyr::select(base_code, longdate)
 
 date_data <- date_data %>% 
   mutate(days_since_first = as.numeric(as.Date("2024-08-02") - as.Date(longdate))) %>% 
   mutate(dung_age = case_when(days_since_first %in% c(3, 4) ~ "3-4", days_since_first == 18 ~ "18", days_since_first %in% c(49, 50) ~ "49-50")) %>% 
-  select(base_code, dung_age)
+  dplyr::select(base_code, dung_age)
 
 # create combined dataset with dung plot age
 comb_soil_data <- soil_data_raw %>% 
@@ -46,7 +47,7 @@ gradient_soil <- soil_data_raw %>%
   
 gradient_soil$sample_type <- factor(gradient_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 
-saveRDS(gradient_soil, "data/gradient_soil_data.rds")
+#saveRDS(gradient_soil, "data/gradient_soil_data.rds")
 
 
 daily_soil <- soil_data_raw %>% 
@@ -56,9 +57,7 @@ daily_soil <- soil_data_raw %>%
 
 daily_soil$sample_type <- factor(daily_soil$sample_type, levels = c("Dung soil", "Fresh", "Control"))
 
-saveRDS(daily_soil, "data/daily_soil_data.rds")
-
-summary(gradient_soil)
+#saveRDS(daily_soil, "data/daily_soil_data.rds")
 
 combined_soil <- full_join(gradient_soil, daily_soil, by = intersect(names(gradient_soil), names(daily_soil)))
 
@@ -245,20 +244,29 @@ ggsave(filename = "soil_plots/combinedcn.jpeg", plot = combinedcnplot, width = 8
 
 comb_soil_data <- comb_soil_data %>%
   mutate(
-    sample_type_animal = interaction(sample_type, Animal))
+    sample_type_animal = interaction(sample_type, Animal),
+    TN = TN * 10) #this changes the value from % to g/kg
 comb_soil_data$dung_age <- ordered(comb_soil_data$dung_age, levels = c("3-4", "18", "49-50"))
 
 comb_means <- comb_soil_data %>% 
   group_by(sample_type, Animal, dung_age, sample_type_animal) %>% 
-  summarise(CN_ratio=mean(CN_ratio),
+  dplyr::summarise(CN_se = std.error(CN_ratio),
+            CN_ratio=mean(CN_ratio),
+            TN_se = std.error(TN),
+            TN=mean(TN),
+            TC_se = std.error(TC),
+            TC=mean(TC),
+            pH_se = std.error(pH),
             pH=mean(pH),
+            PO4.P_se = std.error(PO4.P),
             PO4.P=mean(PO4.P))
 
 # CN ratio
 cnplot <- ggplot(comb_soil_data, aes(x = Animal, y = CN_ratio, fill = sample_type_animal)) +
-  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old")), strip.position = "bottom") +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
   geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
-  scale_color_manual(values = c("#A4AC86", "#A68A64"), guide = "none") +
+  geom_errorbar(data = comb_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=CN_ratio-CN_se, ymax=CN_ratio+CN_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
   new_scale_color() +
   guides(fill = "none") +
   geom_point(
@@ -269,23 +277,24 @@ cnplot <- ggplot(comb_soil_data, aes(x = Animal, y = CN_ratio, fill = sample_typ
   labs(shape = "Sampling location") +
   ylab("Soil C:N ratio\n") +
   theme_minimal() +
-  theme(strip.placement = "outside", panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(), axis.title = element_text(size = 12),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 10), strip.text = element_text(size = 12)) +
   scale_shape_manual(values = c(23,24,22), labels = c("Soil below dung", "Soil beside dung", "Control")) +
-  scale_fill_manual(values = c("#656D4A", "#656D4A", "#656D4A", "#7F4F24", "#7F4F24", "#7F4F24")) +
-  scale_color_manual(values = c("#656D4A", "#7F4F24"),
-                    labels = c("Cow", "Horse"))+
+  scale_fill_manual(values = c("#004488", "#004488", "#004488", "#997700", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488", "#997700"),
+                     labels = c("Cattle", "Horse"))+
   expand_limits(y = c(11, 16)) +
   scale_y_continuous(breaks = seq(11, 16, by = 1))
 cnplot
 ggsave(filename = "soil_plots/newcn.jpeg", plot = cnplot, width = 8, height = 5)
 
-# pH
-phplot <- ggplot(comb_soil_data, aes(x = Animal, y = pH, fill = sample_type_animal)) +
-  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old")), strip.position = "bottom") +
+# Total N
+tnplot <- ggplot(comb_soil_data, aes(x = Animal, y = TN, fill = sample_type_animal)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
   geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
-  scale_color_manual(values = c("#A4AC86", "#A68A64"), guide = "none") +
+  geom_errorbar(data = comb_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=TN-TN_se, ymax=TN+TN_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
   new_scale_color() +
   guides(fill = "none") +
   geom_point(
@@ -294,15 +303,69 @@ phplot <- ggplot(comb_soil_data, aes(x = Animal, y = pH, fill = sample_type_anim
     position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
   ) +
   labs(shape = "Sampling location") +
-  ylab("Soil pH\n") +
+  ylab(expression("Total N (g N kg"^{-1} * " soil)")) +
   theme_minimal() +
-  theme(strip.placement = "outside", panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(), axis.title = element_text(size = 12),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 10), strip.text = element_text(size = 12)) +
   scale_shape_manual(values = c(23,24,22), labels = c("Soil below dung", "Soil beside dung", "Control")) +
-  scale_fill_manual(values = c("#656D4A", "#656D4A", "#656D4A", "#7F4F24", "#7F4F24", "#7F4F24")) +
-  scale_color_manual(values = c("#656D4A", "#7F4F24"),
-                     labels = c("Cow", "Horse"))+
+  scale_fill_manual(values = c("#004488", "#004488", "#004488", "#997700", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488", "#997700"),
+                     labels = c("Cattle", "Horse")) +
+  expand_limits(y = c(1.5, 4)) 
+tnplot
+ggsave(filename = "soil_plots/newtn.jpeg", plot = tnplot, width = 8, height = 5)
+
+# Total C
+tcplot <- ggplot(comb_soil_data, aes(x = Animal, y = TC, fill = sample_type_animal)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
+  geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
+  geom_errorbar(data = comb_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=TC-TC_se, ymax=TC+TC_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
+  new_scale_color() +
+  guides(fill = "none") +
+  geom_point(
+    data = comb_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  ) +
+  labs(shape = "Sampling location") +
+  ylab("Total C% in soil\n") +
+  theme_minimal() +
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(), axis.title = element_text(size = 12),
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 10), strip.text = element_text(size = 12)) +
+  scale_shape_manual(values = c(23,24,22), labels = c("Soil below dung", "Soil beside dung", "Control")) +
+  scale_fill_manual(values = c("#004488", "#004488", "#004488", "#997700", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488", "#997700"),
+                     labels = c("Cattle", "Horse")) +
+  expand_limits(y = c(2, 6.5)) 
+tcplot
+ggsave(filename = "soil_plots/newtc.jpeg", plot = tcplot, width = 8, height = 5)
+
+# pH
+phplot <- ggplot(comb_soil_data, aes(x = Animal, y = pH, fill = sample_type_animal)) +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
+  geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
+  geom_errorbar(data = comb_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=pH-pH_se, ymax=pH+pH_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
+  new_scale_color() +
+  guides(fill = "none") +
+  geom_point(
+    data = comb_means,
+    size = 3,
+    position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
+  ) +
+  labs(shape = "Sampling location") +
+  ylab("Soil pH") +
+  theme_minimal() +
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(), axis.title = element_text(size = 12),
+        axis.text.x=element_blank(), axis.text.y = element_text(size = 10), strip.text = element_text(size = 12)) +
+  scale_shape_manual(values = c(23,24,22), labels = c("Soil below dung", "Soil beside dung", "Control")) +
+  scale_fill_manual(values = c("#004488", "#004488", "#004488", "#997700", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488", "#997700"),
+                     labels = c("Cattle", "Horse"))+
   expand_limits(y = c(4, 7)) +
   scale_y_continuous(breaks = seq(0, 7, by = 0.5))
 phplot
@@ -310,9 +373,10 @@ ggsave(filename = "soil_plots/newph.jpeg", plot = phplot, width = 8, height = 5)
 
 # PO4.P
 po4plot <- ggplot(comb_soil_data, aes(x = Animal, y = PO4.P, fill = sample_type_animal)) +
-  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days old", "18" = "18 days old", "49-50" = "49-50 days old")), strip.position = "bottom") +
+  facet_wrap(~dung_age, labeller = labeller(dung_age = c("3-4" = "3-4 days", "18" = "18 days", "49-50" = "49-50 days")), strip.position = "bottom") +
   geom_point(position = position_dodge(width = 1), size = 1.3, aes(color = Animal)) +
-  scale_color_manual(values = c("#A4AC86", "#A68A64"), guide = "none") +
+  geom_errorbar(data = comb_means, position = position_dodge(width = 1), linewidth = 0.3, aes(ymin=PO4.P-PO4.P_se, ymax=PO4.P+PO4.P_se)) +
+  scale_color_manual(values = c("#6699CC", "#EECC66"), guide = "none") +
   new_scale_color() +
   guides(fill = "none") +
   geom_point(
@@ -321,15 +385,15 @@ po4plot <- ggplot(comb_soil_data, aes(x = Animal, y = PO4.P, fill = sample_type_
     position = position_dodge(width = 1), aes(shape = sample_type, color = Animal)
   ) +
   labs(shape = "Sampling location") +
-  ylab("Plant available P (mg P/kg soil)\n") +
+  ylab(expression("Plant available P (mg P kg"^{-1} * " soil)")) +
   theme_minimal() +
-  theme(strip.placement = "outside", panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank(),
+  theme(strip.placement = "outside", panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
         panel.border = element_blank(), axis.line = element_line(), axis.title.x=element_blank(), axis.title = element_text(size = 12),
         axis.text.x=element_blank(), axis.text.y = element_text(size = 10), strip.text = element_text(size = 12)) +
   scale_shape_manual(values = c(23,24,22), labels = c("Soil below dung", "Soil beside dung", "Control")) +
-  scale_fill_manual(values = c("#656D4A", "#656D4A", "#656D4A", "#7F4F24", "#7F4F24", "#7F4F24")) +
-  scale_color_manual(values = c("#656D4A", "#7F4F24"),
-                     labels = c("Cow", "Horse"))+
+  scale_fill_manual(values = c("#004488", "#004488", "#004488", "#997700", "#997700", "#997700")) +
+  scale_color_manual("Herbivore species", values = c("#004488", "#997700"),
+                     labels = c("Cattle", "Horse"))+
   expand_limits(y = c(50, 370)) +
   scale_y_continuous(breaks = seq(50, 370, by = 50))
 po4plot
@@ -372,6 +436,20 @@ Gradient_summary_stats <- gradient_soil %>%
     CN_median = median(CN_ratio, na.rm = TRUE),
     CN_sd = sd(CN_ratio, na.rm = TRUE),
     CN_se = std.error(CN_ratio)
+  )
+
+# summary stats FOR PAPER
+summary_stats <- comb_soil_data %>% 
+  group_by(Animal, sample_type) %>%
+  summarise(
+    N_mean = mean(TN, na.rm = TRUE),
+    N_se = std.error(TN),
+    CN_mean = mean(CN_ratio, na.rm = TRUE),
+    CN_se = std.error(CN_ratio),
+    pH_mean = mean(pH, na.rm = TRUE),
+    pH_se = std.error(pH),
+    PO4.P_mean = mean(PO4.P, na.rm = TRUE),
+    PO4.P_se = std.error(PO4.P)
   )
 
 
@@ -546,7 +624,8 @@ run_model <- function(dataset, model) {
   test <- emmeans(model, ~ sample_type|Animal|dung_age)
   test2 <- emmeans(model, ~ dung_age|sample_type|Animal)
   test3 <- emmeans(model, ~ Animal|dung_age|sample_type)
-  contrast(test3, method = "pairwise") %>% as.data.frame()
+  contrast(test, method = "pairwise") %>% as.data.frame()
+  #eff_size(test3, sigma = sigma(model), edf = df.residual(model))
 }
 
 # Soil parameters
@@ -566,16 +645,43 @@ Soil_PO4.P_b1 <- glmmTMB(PO4.P ~ Animal * sample_type * Campaign * bulk_density 
 #models with dung age - IMPROVED FOR PAPER
 Soil_CNratio_d1 <- glmmTMB(CN_ratio ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
 
+Soil_TN_d1 <- glmmTMB(TN ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
+
 Soil_pH_d1 <- glmmTMB(pH ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
 
 Soil_PO4.P_d1 <- glmmTMB(PO4.P ~ Animal * sample_type * dung_age + (1|base_code), data = comb_soil_data)
 
 # Change this accordingly 
-run_model(comb_soil_data, Soil_CNratio_d1)
+run_model(comb_soil_data, Soil_PO4.P_d1)
+
+test <- emmeans(Soil_PO4.P_d1, ~ sample_type|Animal|dung_age)
+test2 <- emmeans(Soil_PO4.P_d1, ~ dung_age|sample_type|Animal)
+test3 <- emmeans(Soil_PO4.P_d1, ~ Animal|dung_age|sample_type)
+po4pp1 <- contrast(test, method = "pairwise") %>% as.data.frame()
+po4pp2 <- contrast(test2, method = "pairwise") %>% as.data.frame()
+po4pp3 <- contrast(test3, method = "pairwise") %>% as.data.frame()
+po4pe1 <- eff_size(test, sigma = sigma(Soil_PO4.P_d1), edf = df.residual(Soil_PO4.P_d1))
+po4pe2 <- eff_size(test2, sigma = sigma(Soil_PO4.P_d1), edf = df.residual(Soil_PO4.P_d1))
+po4pe3 <- eff_size(test3, sigma = sigma(Soil_PO4.P_d1), edf = df.residual(Soil_PO4.P_d1))
+po4pe1list <- as.data.frame(summary(po4pe1))
+po4pe2list <- as.data.frame(summary(po4pe2))
+po4pe3list <- as.data.frame(summary(po4pe3))
+po4p1 <- left_join(po4pp1, po4pe1list, by = c("contrast", "Animal", "dung_age"))
+po4p2 <- left_join(po4pp2, po4pe2list, by = c("contrast", "Animal", "sample_type"))
+po4p3 <- left_join(po4pp3, po4pe3list, by = c("contrast", "sample_type", "dung_age"))
+write.csv(po4p1, file="output/po4p1.csv")
+write.csv(po4p2, file="output/po4p2.csv")
+write.csv(po4p3, file="output/po4p3.csv")
+
+standardize_parameters(Soil_CNratio_d1, method = "refit")
+standardize_parameters(Soil_TN_d1, method = "refit")
+standardize_parameters(Soil_pH_d1, method = "refit")
+standardize_parameters(Soil_PO4.P_d1, method = "refit")
 
 # model effects
-Soil_CNratio_effects <- allEffects(Soil_CNratio_m1)
-Soil_pH_effects <- allEffects(Soil_pH_m1)
-Soil_PO4.P_effects <- allEffects(Soil_PO4.P_m1)
-print(Soil_CNratio_effects)
-plot(Soil_CNratio_effects)
+Soil_CNratio_effects <- allEffects(Soil_CNratio_d1)
+Soil_TN_effects <- allEffects(Soil_TN_d1)
+Soil_pH_effects <- allEffects(Soil_pH_d1)
+Soil_PO4.P_effects <- allEffects(Soil_PO4.P_d1)
+print(Soil_pH_effects)
+plot(Soil_pH_effects)

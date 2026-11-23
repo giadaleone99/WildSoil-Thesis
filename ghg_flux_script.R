@@ -168,7 +168,7 @@ avgflux_data <- flux_data %>%
   filter(plottype == 'Vegetated') %>% 
   filter(!(gastype %in% c("CH4", "N2O") & NEERE == "NEE"))
 
-## Cow GPP for paper
+## Cow GPP for paper (old plot, not in use for paper)
 cowGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Cow", ],
                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
   geom_jitter(position = position_jitterdodge(jitter.width = 0.5), , alpha = 0.7) + 
@@ -193,7 +193,7 @@ cowGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$
 cowGPPgraph
 ggsave(filename = "plots/cowGPPgraph.jpeg", plot = cowGPPgraph, width = 6, height = 4)
 
-## Horse GPP for paper
+## Horse GPP for paper (old plot, not in use for paper)
 horseGPPgraph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "NEE" & avgflux_data$Animal == "Horse", ],
                         aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
   geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
@@ -224,7 +224,7 @@ ggsave(filename = "plots/cowhorseGPPgraph_paper.jpeg", plot = cowhorseGPP, width
 cowhorseGPPnew <- grid.arrange(cowGPPgraph, horseGPPgraph, ncol = 1 )
 ggsave("plots/cowhorseGPPnew_plot.png", cowhorseGPPnew, width = 8, height = 7)
 
-## Cow Reco graph for paper
+## Cow Reco graph for paper (old plot, not in use for paper)
 cowRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Cow", ],
                        aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
   geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
@@ -248,7 +248,7 @@ cowRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data
 cowRecograph
 ggsave(filename = "plots/cowRecograph.jpeg", plot = cowRecograph, width = 6, height = 4)
 
-## Horse Reco graph for paper
+## Horse Reco graph for paper (old plot, not in use for paper)
 horseRecograph <- ggplot(avgflux_data[avgflux_data$gastype == "CO2" & avgflux_data$NEERE == "RE" & avgflux_data$Animal == "Horse", ],
                         aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
   geom_jitter(position = position_jitterdodge(jitter.width = 0.5), alpha = 0.7) + 
@@ -280,7 +280,7 @@ cowhorseReconew <- grid.arrange(cowRecograph, horseRecograph, ncol = 1 )
 ggsave("plots/cowhorseReconew_plot.png", cowhorseReconew, width = 8, height = 7)
 
 
-## Cow CH4 graph for paper
+## Cow CH4 graph for paper (old plot, not in use for paper)
 cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & 
                                      avgflux_data$Animal == "Cow", ],
                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
@@ -308,7 +308,7 @@ cowCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" &
 cowCH4graph
 ggsave(filename = "plots/cowCH4graph.jpeg", plot = cowCH4graph, width = 6, height = 4)
 
-#horse CH4 graph for paper
+#horse CH4 graph for paper (old plot, not in use for paper)
 horseCH4graph <- ggplot(avgflux_data[avgflux_data$gastype == "CH4" & 
                                      avgflux_data$Animal == "Horse", ],
                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
@@ -340,7 +340,7 @@ CowhorseCH4graph <- cowCH4graph + horseCH4graph
 CowhorseCH4graph
 ggsave(filename = "plots/CowhorseCH4graph_paper.jpeg", plot = CowhorseCH4graph, width = 8, height = 4)
 
-## Cow N2O graph for paper
+## Cow N2O graph for paper (old plot, not in use for paper)
 cowN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & 
                                      avgflux_data$Animal == "Cow", ],
                       aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
@@ -368,7 +368,7 @@ cowN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" &
 cowN2Ograph
 ggsave(filename = "plots/cowN2Ograph.jpeg", plot = cowN2Ograph, width = 6, height = 4)
 
-#horse N2O graph for paper
+#horse N2O graph for paper (old plot, not in use for paper)
 horseN2Ograph <- ggplot(avgflux_data[avgflux_data$gastype == "N2O" & 
                                        avgflux_data$Animal == "Horse", ],
                         aes(x = factor(Days_Since_First), y = best.flux, color = treatment)) + 
@@ -1330,19 +1330,6 @@ model <- lmer(normalized_best.flux ~ treatment +
                 (1 | Days_Since_First), data = daily_N2O_subset)
 
 summary(model)
-
-#### GRADIENT models ----------------------------------------------------------------------
-
-## Gradient PS
-
-## Gradient RE
-
-## Gradient CH4
-
-# Gradient N2O
-
-
-### Consider running the models without control treatment rows and just look at Animal (cow, horse)
 
 # remove trash and save for combined analysis
 gas_data <- flux_data_ANOVA %>% 

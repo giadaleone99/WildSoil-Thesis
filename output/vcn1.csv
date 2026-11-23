@@ -1,0 +1,7 @@
+;contrast;Animal;dung_age;estimate;SE.x;df.x;t.ratio;p.value;effect.size;SE.y;df.y;lower.CL;upper.CL
+1;Control - Fresh;Cow;18;13.2;2.493;24;5.294;0;5.294;1.259;24;2.697;7.892
+2;Control - Fresh;Horse;18;13.8;2.493;24;5.535;0;5.535;1.28;24;2.893;8.176
+3;Control - Fresh;Cow;3-apr;5.95;2.493;24;2.386;0.025;2.386;1.058;24;0.203;4.569
+4;Control - Fresh;Horse;3-apr;0.067;2.036;24;0.033;0.974;0.027;0.817;24;-1.658;1.712
+5;Control - Fresh;Cow;49-50;0.46;1.577;24;0.292;0.773;0.184;0.633;24;-1.122;1.491
+6;Control - Fresh;Horse;49-50;3.24;1.577;24;2.055;0.051;1.299;0.66;24;-0.062;2.661
